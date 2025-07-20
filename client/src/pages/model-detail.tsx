@@ -132,48 +132,101 @@ export default function ModelDetail() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/models")}
-            className="flex items-center space-x-2 font-mono"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
-              {model.name}
-            </h1>
-            <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
-              Item #{model.itemNumber}
-            </p>
+      <div className="mb-6">
+        {/* Mobile Layout */}
+        <div className="lg:hidden">
+          {/* Top row with back button and actions */}
+          <div className="flex items-center justify-between mb-3">
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/models")}
+              className="flex items-center space-x-1 font-mono p-2"
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="font-mono px-2"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 font-mono px-2"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Model info row */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0 mr-3">
+              <h1 className="text-xl font-mono font-bold text-gray-900 dark:text-white leading-tight">
+                {model.name}
+              </h1>
+              <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mt-1">
+                Item #{model.itemNumber}
+              </p>
+            </div>
+            <Badge className={`font-mono text-xs ${getStatusColor(model.buildStatus)} flex-shrink-0`}>
+              {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+            </Badge>
           </div>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <Badge className={`font-mono ${getStatusColor(model.buildStatus)}`}>
-            {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
-          </Badge>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="font-mono"
-            onClick={() => setIsEditMode(true)}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsDeleteDialogOpen(true)}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 font-mono"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+
+        {/* Desktop Layout */}
+        <div className="hidden lg:flex lg:items-center lg:justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/models")}
+              className="flex items-center space-x-2 font-mono"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Button>
+            <div>
+              <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
+                {model.name}
+              </h1>
+              <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
+                Item #{model.itemNumber}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Badge className={`font-mono ${getStatusColor(model.buildStatus)}`}>
+              {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+            </Badge>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="font-mono"
+              onClick={() => setIsEditMode(true)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 font-mono"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
 
