@@ -44,8 +44,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mock user authentication - in production, use proper auth
   app.use('/api', (req, res, next) => {
-    // For demo purposes, use a mock user ID
-    (req as any).userId = 1;
+    // For demo purposes, use a mock user ID (matches our demo user)
+    (req as any).userId = 2;
     next();
   });
 
