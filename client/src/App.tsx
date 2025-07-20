@@ -44,10 +44,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className={`min-h-screen bg-background ${isDarkMode ? "dark" : ""}`}>
+        <div className={`min-h-screen bg-background overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
           <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
           <Navigation />
-          <main className="pb-16 lg:pb-0">
+          <main className="pb-16 lg:pb-0 max-w-full">
             <Router />
           </main>
           <MobileNav />

@@ -28,23 +28,23 @@ export default function MobileNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 lg:hidden z-50">
-      <div className="grid grid-cols-5 gap-1">
+      <div className="flex items-center justify-around px-2 py-1">
         {mainNavItems.map((item) => (
           <Link key={item.href} href={item.href}>
             <button
               className={cn(
-                "flex flex-col items-center justify-center py-2 transition-colors",
+                "flex flex-col items-center justify-center py-2 px-3 transition-colors min-w-0",
                 item.isActive ? "text-red-600" : "text-gray-400"
               )}
             >
               <item.icon className="h-5 w-5" />
-              <span className="text-xs font-mono mt-1">{item.label}</span>
+              <span className="text-xs font-mono mt-1 truncate">{item.label}</span>
             </button>
           </Link>
         ))}
         
         <Link href="/models">
-          <button className="flex flex-col items-center justify-center py-2 text-red-600 bg-red-50 dark:bg-red-950 rounded-lg mx-1">
+          <button className="flex flex-col items-center justify-center py-2 px-3 text-red-600 bg-red-50 dark:bg-red-950 rounded-lg">
             <div className="bg-red-600 rounded-full p-1">
               <LayoutGrid className="h-4 w-4 text-white" />
             </div>
@@ -54,7 +54,7 @@ export default function MobileNav() {
         
         <Sheet open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
           <SheetTrigger asChild>
-            <button className="flex flex-col items-center justify-center py-2 text-gray-400">
+            <button className="flex flex-col items-center justify-center py-2 px-3 text-gray-400 min-w-0">
               <MoreHorizontal className="h-5 w-5" />
               <span className="text-xs font-mono mt-1">More</span>
             </button>

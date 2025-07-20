@@ -75,12 +75,10 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
   const createModelMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      console.log("Making API request with:", data); // Debug log
       const response = await apiRequest("POST", "/api/models", data);
       return response.json();
     },
-    onSuccess: (result) => {
-      console.log("Model created successfully:", result); // Debug log
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/models"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
@@ -91,7 +89,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       form.reset();
     },
     onError: (error) => {
-      console.error("Error creating model:", error); // Debug log
       toast({
         title: "Error",
         description: error.message,
@@ -137,12 +134,10 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   };
 
   const onSubmit = (data: FormData) => {
-    console.log("Form data:", data); // Debug log
     const submissionData = {
       ...data,
       userId: 2, // Mock user ID - should be from auth in production
     };
-    console.log("Submission data:", submissionData); // Debug log
     createModelMutation.mutate(submissionData);
   };
 
@@ -373,7 +368,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 type="submit"
                 disabled={createModelMutation.isPending || isScraping}
                 className="bg-red-600 hover:bg-red-700 font-mono"
-                onClick={() => console.log("Add button clicked")} // Debug log
               >
                 {createModelMutation.isPending || isScraping ? "Adding..." : "Add Model"}
               </Button>

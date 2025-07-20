@@ -41,7 +41,7 @@ export default function Home() {
   const allPhotos = models?.flatMap(m => m.photos).slice(0, 8) || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       {/* Quick Actions */}
       <div className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
