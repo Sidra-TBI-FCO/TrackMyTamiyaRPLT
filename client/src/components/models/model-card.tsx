@@ -74,6 +74,8 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
   const photoCount = model.photos.length;
   const hopUpCount = model.hopUpParts.length;
 
+
+
   return (
     <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow">
       {boxArtPhoto ? (
@@ -81,6 +83,9 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
           src={boxArtPhoto.url}
           alt={model.name}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            console.error(`Failed to load image for ${model.name}:`, boxArtPhoto.url);
+          }}
         />
       ) : (
         <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
