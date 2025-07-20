@@ -1,0 +1,271 @@
+import { useParams, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Camera, Wrench, Cog, Edit } from "lucide-react";
+import { ModelWithRelations } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+export default function ModelDetail() {
+  const { id } = useParams();
+  const [, setLocation] = useLocation();
+
+  const { data: model, isLoading } = useQuery<ModelWithRelations>({
+    queryKey: ["/api/models", id],
+    enabled: !!id,
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "built":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "building":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      case "planning":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6 flex items-center space-x-4">
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <Skeleton className="h-64 w-full" />
+            </Card>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!model) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card className="p-12">
+          <div className="text-center">
+            <h2 className="text-xl font-mono font-semibold text-gray-900 dark:text-white mb-2">
+              Model Not Found
+            </h2>
+            <p className="font-mono text-gray-500 dark:text-gray-400 mb-4">
+              The model you're looking for doesn't exist or you don't have access to it.
+            </p>
+            <Button onClick={() => setLocation("/models")} className="font-mono">
+              Back to Collection
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  const boxArtPhoto = model.photos.find(p => p.isBoxArt) || model.photos[0];
+  const otherPhotos = model.photos.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/models")}
+            className="flex items-center space-x-2 font-mono"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
+              {model.name}
+            </h1>
+            <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
+              Item #{model.itemNumber}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Badge className={`font-mono ${getStatusColor(model.buildStatus)}`}>
+            {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+          </Badge>
+          <Button variant="outline" size="sm" className="font-mono">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2">
+          {/* Main Photo */}
+          <Card className="mb-6">
+            <CardContent className="p-0">
+              {boxArtPhoto ? (
+                <img
+                  src={boxArtPhoto.url}
+                  alt={model.name}
+                  className="w-full h-64 lg:h-96 object-cover rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-64 lg:h-96 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg">
+                  <div className="text-center text-gray-400 dark:text-gray-500">
+                    <Camera className="h-12 w-12 mx-auto mb-2" />
+                    <p className="font-mono">No photos yet</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tabs for different sections */}
+          <Tabs defaultValue="photos" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 font-mono">
+              <TabsTrigger value="photos">Photos ({model.photos.length})</TabsTrigger>
+              <TabsTrigger value="builds">Build Log ({model.buildLogEntries.length})</TabsTrigger>
+              <TabsTrigger value="parts">Hop-Ups ({model.hopUpParts.length})</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="photos" className="space-y-4">
+              {otherPhotos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {otherPhotos.map((photo) => (
+                    <Card key={photo.id} className="overflow-hidden">
+                      <img
+                        src={photo.url}
+                        alt={photo.caption || "Model photo"}
+                        className="w-full h-32 object-cover"
+                      />
+                      {photo.caption && (
+                        <CardContent className="p-2">
+                          <p className="text-xs font-mono text-gray-600 dark:text-gray-400 truncate">
+                            {photo.caption}
+                          </p>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-8">
+                  <div className="text-center text-gray-500 dark:text-gray-400">
+                    <Camera className="h-8 w-8 mx-auto mb-2" />
+                    <p className="font-mono">No additional photos</p>
+                  </div>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="builds">
+              <Card className="p-8">
+                <div className="text-center text-gray-500 dark:text-gray-400">
+                  <Wrench className="h-8 w-8 mx-auto mb-2" />
+                  <p className="font-mono">Build logs coming soon</p>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="parts">
+              <Card className="p-8">
+                <div className="text-center text-gray-500 dark:text-gray-400">
+                  <Cog className="h-8 w-8 mx-auto mb-2" />
+                  <p className="font-mono">Hop-up parts coming soon</p>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Model Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-mono text-lg">Model Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis</p>
+                <p className="font-mono text-gray-900 dark:text-white">
+                  {model.chassis || "Not specified"}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Release Year</p>
+                <p className="font-mono text-gray-900 dark:text-white">
+                  {model.releaseYear || "Unknown"}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Total Investment</p>
+                <p className="font-mono text-gray-900 dark:text-white">
+                  ${parseFloat(model.totalCost || "0").toFixed(2)}
+                </p>
+              </div>
+              
+              {model.notes && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-1">Notes</p>
+                  <p className="font-mono text-gray-900 dark:text-white text-sm">
+                    {model.notes}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 font-mono" disabled>
+                <Camera className="mr-2 h-4 w-4" />
+                Add Photo
+              </Button>
+              <Button className="w-full bg-green-600 hover:bg-green-700 font-mono" disabled>
+                <Wrench className="mr-2 h-4 w-4" />
+                Log Progress
+              </Button>
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 font-mono" disabled>
+                <Cog className="mr-2 h-4 w-4" />
+                Add Hop-Up
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
