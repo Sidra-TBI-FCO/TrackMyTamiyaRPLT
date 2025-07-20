@@ -51,10 +51,7 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
 
   const deleteModelMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest({
-        method: "DELETE",
-        url: `/api/models/${model.id}`,
-      });
+      await apiRequest("DELETE", `/api/models/${model.id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/models"] });

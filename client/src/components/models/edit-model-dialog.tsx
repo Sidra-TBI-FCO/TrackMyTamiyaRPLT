@@ -74,11 +74,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
 
   const updateModelMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest({
-        method: "PUT",
-        url: `/api/models/${model.id}`,
-        data,
-      });
+      const response = await apiRequest("PUT", `/api/models/${model.id}`, data);
       return response;
     },
     onSuccess: () => {

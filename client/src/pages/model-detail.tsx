@@ -37,10 +37,7 @@ export default function ModelDetail() {
 
   const deleteModelMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest({
-        method: "DELETE",
-        url: `/api/models/${id}`,
-      });
+      await apiRequest("DELETE", `/api/models/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/models"] });
