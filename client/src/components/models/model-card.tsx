@@ -99,33 +99,9 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
           <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2">
             {model.name}
           </h3>
-          <div className="flex items-center space-x-2">
-            <Badge className={`text-xs font-mono ${getStatusColor(model.buildStatus)}`}>
-              {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
-            </Badge>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={`/models/${model.id}`}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Model
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  className="text-red-600 dark:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Model
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <Badge className={`text-xs font-mono ${getStatusColor(model.buildStatus)}`}>
+            {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+          </Badge>
         </div>
 
         <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-3">
@@ -167,8 +143,18 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
             size="sm"
             onClick={() => onAddPhoto(model.id)}
             className="p-2"
+            title="Add Photo"
           >
             <Camera className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+            title="Delete Model"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>
