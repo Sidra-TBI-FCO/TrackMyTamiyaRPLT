@@ -10,10 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import PhotoSlideshow from "@/components/photos/photo-slideshow";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [selectedPhotos] = useState<string[]>([]);
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
@@ -30,7 +32,7 @@ export default function Home() {
   };
 
   const handleStartPhotoFrame = () => {
-    setLocation("/photo-frame");
+    setIsSlideshowOpen(true);
   };
 
   const handleAddPhoto = (modelId: number) => {
@@ -250,6 +252,23 @@ export default function Home() {
           )}
         </CardContent>
       </Card>
+      
+      {/* Photo Slideshow */}
+      <PhotoSlideshow
+        photos={models?.flatMap(model => 
+          model.photos.map(photo => ({
+            ...photo,
+            model: {
+              id: model.id,
+              name: model.name,
+              chassisType: model.chassisType,
+              tags: model.tags
+            }
+          }))
+        ) || []}
+        isOpen={isSlideshowOpen}
+        onClose={() => setIsSlideshowOpen(false)}
+      />
     </div>
   );
 }
