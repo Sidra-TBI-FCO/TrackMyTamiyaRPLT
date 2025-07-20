@@ -22,6 +22,7 @@ export const models = pgTable("models", {
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
   notes: text("notes"),
+  tags: text("tags").array().default("{}"), // Array of tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

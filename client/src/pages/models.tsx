@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutGrid, List, Filter } from "lucide-react";
+import { LayoutGrid, List, Filter, Tag } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Models() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterTag, setFilterTag] = useState<string>("all");
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
@@ -27,9 +29,17 @@ export default function Models() {
     console.log(`Adding photo to model ${modelId}`);
   };
 
+  // Get all unique tags from models for filtering
+  const allTags = Array.from(
+    new Set(
+      models?.flatMap(model => model.tags || []) || []
+    )
+  ).sort();
+
   const filteredModels = models?.filter((model) => {
-    if (filterStatus === "all") return true;
-    return model.buildStatus === filterStatus;
+    const statusMatch = filterStatus === "all" || model.buildStatus === filterStatus;
+    const tagMatch = filterTag === "all" || (model.tags && model.tags.includes(filterTag));
+    return statusMatch && tagMatch;
   }) || [];
 
   if (isLoading) {
@@ -68,17 +78,32 @@ export default function Models() {
           My Collection ({filteredModels.length})
         </h1>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-40 font-mono">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Models</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="planning">Planning</SelectItem>
               <SelectItem value="building">Building</SelectItem>
               <SelectItem value="built">Built</SelectItem>
               <SelectItem value="maintenance">Maintenance</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filterTag} onValueChange={setFilterTag}>
+            <SelectTrigger className="w-40 font-mono">
+              <Tag className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="All Tags" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tags</SelectItem>
+              {allTags.map((tag) => (
+                <SelectItem key={tag} value={tag}>
+                  {tag}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           
@@ -102,6 +127,44 @@ export default function Models() {
           </div>
         </div>
       </div>
+
+      {/* Active Filters Display */}
+      {(filterStatus !== "all" || filterTag !== "all") && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <span className="text-sm font-mono text-gray-600 dark:text-gray-400">Active filters:</span>
+          {filterStatus !== "all" && (
+            <Badge variant="secondary" className="font-mono">
+              Status: {filterStatus}
+              <button
+                onClick={() => setFilterStatus("all")}
+                className="ml-1 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filterTag !== "all" && (
+            <Badge variant="secondary" className="font-mono">
+              Tag: {filterTag}
+              <button
+                onClick={() => setFilterTag("all")}
+                className="ml-1 hover:text-red-600"
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          <button
+            onClick={() => {
+              setFilterStatus("all");
+              setFilterTag("all");
+            }}
+            className="text-sm font-mono text-red-600 hover:text-red-700"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Models Grid/List */}
       {filteredModels.length > 0 ? (

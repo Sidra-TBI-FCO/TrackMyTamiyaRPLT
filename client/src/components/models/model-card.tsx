@@ -59,6 +59,22 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
           Item #{model.itemNumber}
         </p>
 
+        {/* Tags */}
+        {model.tags && model.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {model.tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs font-mono">
+                {tag}
+              </Badge>
+            ))}
+            {model.tags.length > 3 && (
+              <Badge variant="outline" className="text-xs font-mono text-gray-500">
+                +{model.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-sm font-mono text-gray-600 dark:text-gray-400 mb-4">
           <span>{photoCount} photos</span>
           <span>{hopUpCount} hop-ups</span>

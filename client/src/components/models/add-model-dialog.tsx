@@ -27,7 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, X, Tag } from "lucide-react";
 import { insertModelSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,7 @@ import { z } from "zod";
 
 const formSchema = insertModelSchema.extend({
   itemNumber: z.string().min(1, "Item number is required"),
+  tags: z.array(z.string()).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -46,6 +48,7 @@ interface AddModelDialogProps {
 
 export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [open, setOpen] = useState(false);
+  const [newTag, setNewTag] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { scrapeModelData, isLoading: isScraping } = useTamiyaScraper();
@@ -60,8 +63,15 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       buildStatus: "planning",
       totalCost: "0",
       notes: "",
+      tags: [],
     },
   });
+
+  const commonTags = [
+    "Racing", "Drift", "Buggy", "Touring", "Rally", "Truck", 
+    "Vintage", "Competition", "Beginner", "Advanced", "TT-02", "TT-01",
+    "Chassis", "Body", "Upgrade", "Electronics"
+  ];
 
   const createModelMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -103,8 +113,32 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     }
   };
 
+  const addTag = (tag: string) => {
+    const currentTags = form.getValues("tags") || [];
+    if (tag && !currentTags.includes(tag)) {
+      form.setValue("tags", [...currentTags, tag]);
+      setNewTag("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const currentTags = form.getValues("tags") || [];
+    form.setValue("tags", currentTags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newTag.trim()) {
+      e.preventDefault();
+      addTag(newTag.trim());
+    }
+  };
+
   const onSubmit = (data: FormData) => {
-    createModelMutation.mutate(data);
+    const submissionData = {
+      ...data,
+      userId: 2, // Mock user ID - should be from auth in production
+    };
+    createModelMutation.mutate(submissionData);
   };
 
   return (
@@ -238,6 +272,80 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                       className="font-mono"
                       rows={3}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono flex items-center">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Tags
+                  </FormLabel>
+                  <FormControl>
+                    <div className="space-y-3">
+                      {/* Current tags */}
+                      {field.value && field.value.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {field.value.map((tag) => (
+                            <Badge key={tag} variant="secondary" className="font-mono">
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => removeTag(tag)}
+                                className="ml-2 hover:text-red-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Add new tag */}
+                      <div className="flex gap-2">
+                        <Input
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyPress={handleTagInputKeyPress}
+                          placeholder="Add a tag..."
+                          className="font-mono flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addTag(newTag.trim())}
+                          disabled={!newTag.trim()}
+                          className="font-mono"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      
+                      {/* Common tags */}
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-500 font-mono">Quick add:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {commonTags.map((tag) => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => addTag(tag)}
+                              disabled={field.value?.includes(tag)}
+                              className="text-xs bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-900 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded font-mono transition-colors"
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
