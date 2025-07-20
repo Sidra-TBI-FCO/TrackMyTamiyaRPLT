@@ -1,9 +1,30 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Camera, MoreVertical, Trash2, Edit } from "lucide-react";
 import { Link } from "wouter";
 import { ModelWithRelations } from "@/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface ModelCardProps {
   model: ModelWithRelations;
@@ -11,6 +32,10 @@ interface ModelCardProps {
 }
 
 export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "built":
@@ -23,6 +48,30 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
+
+  const deleteModelMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest({
+        method: "DELETE",
+        url: `/api/models/${model.id}`,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Model deleted",
+        description: `${model.name} has been removed from your collection.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete model",
+        variant: "destructive",
+      });
+    },
+  });
 
   const boxArtPhoto = model.photos.find(p => p.isBoxArt) || model.photos[0];
   const photoCount = model.photos.length;
@@ -47,12 +96,36 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
 
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2">
+          <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2">
             {model.name}
           </h3>
-          <Badge className={`text-xs font-mono ${getStatusColor(model.buildStatus)}`}>
-            {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge className={`text-xs font-mono ${getStatusColor(model.buildStatus)}`}>
+              {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/models/${model.id}`}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Model
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Model
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-3">
@@ -99,6 +172,28 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
           </Button>
         </div>
       </CardContent>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Model</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{model.name}"? This action cannot be undone.
+              All photos, build logs, and hop-up parts associated with this model will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteModelMutation.mutate()}
+              disabled={deleteModelMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteModelMutation.isPending ? "Deleting..." : "Delete Model"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
