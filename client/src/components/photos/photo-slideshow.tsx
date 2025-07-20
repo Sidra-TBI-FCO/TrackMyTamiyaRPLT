@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getSlideshowSettings } from "@/lib/settings";
 
 interface Photo {
   id: number;
@@ -37,8 +38,16 @@ export default function PhotoSlideshow({
 }: PhotoSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [settings] = useState(() => getSlideshowSettings());
 
   const currentPhoto = photos[currentIndex];
+
+  // Auto-start slideshow when opened if enabled
+  useEffect(() => {
+    if (isOpen && settings.autoStart && photos.length > 0) {
+      setIsPlaying(true);
+    }
+  }, [isOpen, settings.autoStart, photos.length]);
 
   // Auto-advance slideshow
   useEffect(() => {
@@ -46,10 +55,10 @@ export default function PhotoSlideshow({
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % photos.length);
-    }, 4000); // 4 seconds per photo
+    }, settings.duration * 1000); // Use settings duration in milliseconds
 
     return () => clearInterval(interval);
-  }, [isPlaying, photos.length]);
+  }, [isPlaying, photos.length, settings.duration]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -92,7 +101,9 @@ export default function PhotoSlideshow({
   // Reset when photos change or slideshow opens
   useEffect(() => {
     setCurrentIndex(initialIndex);
-    setIsPlaying(false);
+    if (!isOpen) {
+      setIsPlaying(false);
+    }
   }, [photos, initialIndex, isOpen]);
 
   if (!isOpen) return null;
@@ -192,7 +203,7 @@ export default function PhotoSlideshow({
               </div>
 
               {/* Photo Caption */}
-              {currentPhoto.caption && (
+              {settings.showCaptions && currentPhoto.caption && (
                 <p className="text-white font-mono text-lg">
                   {currentPhoto.caption}
                 </p>
@@ -205,7 +216,7 @@ export default function PhotoSlideshow({
                     Box Art
                   </Badge>
                 )}
-                {currentPhoto.model.tags.map((tag) => (
+                {settings.showTags && currentPhoto.model.tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="font-mono">
                     {tag}
                   </Badge>

@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -22,7 +22,7 @@ export const models = pgTable("models", {
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
   notes: text("notes"),
-  tags: text("tags").array().default("{}"), // Array of tags for organization
+  tags: text("tags").array().default(sql`'{}'::text[]`), // Array of tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

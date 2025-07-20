@@ -187,11 +187,12 @@ export default function Models() {
         const allPhotos = filteredModels.flatMap(model => 
           model.photos.map(photo => ({
             ...photo,
+            isBoxArt: photo.isBoxArt || false,
             model: {
               id: model.id,
               name: model.name,
-              chassisType: model.chassisType,
-              tags: model.tags
+              chassisType: model.chassis,
+              tags: model.tags || []
             }
           }))
         );

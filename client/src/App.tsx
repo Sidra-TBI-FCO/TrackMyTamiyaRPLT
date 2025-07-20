@@ -12,6 +12,7 @@ import HopUpParts from "@/pages/hop-up-parts";
 import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
+import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 import Header from "@/components/layout/header";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/hop-up-parts" component={HopUpParts} />
       <Route path="/photos" component={PhotoGallery} />
       <Route path="/photo-frame" component={PhotoFrame} />
+      <Route path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
   );
