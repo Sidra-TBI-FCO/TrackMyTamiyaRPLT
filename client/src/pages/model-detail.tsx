@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import EditModelDialog from "@/components/models/edit-model-dialog";
 import AddPhotoDialog from "@/components/photos/add-photo-dialog";
+import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -29,6 +30,8 @@ export default function ModelDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+  const [slideshowStartIndex, setSlideshowStartIndex] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -151,6 +154,23 @@ export default function ModelDetail() {
 
   const boxArtPhoto = model.photos.find(p => p.isBoxArt) || model.photos[0];
   const otherPhotos = model.photos.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id);
+  
+  // Prepare photos for slideshow with model data
+  const slideshowPhotos = model.photos.map(photo => ({
+    ...photo,
+    model: {
+      id: model.id,
+      name: model.name,
+      chassisType: model.chassisType,
+      tags: model.tags
+    }
+  }));
+
+  const handlePhotoClick = (photoId: number) => {
+    const photoIndex = model.photos.findIndex(p => p.id === photoId);
+    setSlideshowStartIndex(photoIndex);
+    setIsSlideshowOpen(true);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -264,12 +284,16 @@ export default function ModelDetail() {
                   <img
                     src={boxArtPhoto.url}
                     alt={model.name}
-                    className="w-full h-64 lg:h-96 object-cover rounded-lg"
+                    className="w-full h-64 lg:h-96 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => handlePhotoClick(boxArtPhoto.id)}
                   />
                   
                   {/* Delete button for main photo */}
                   <button
-                    onClick={() => deletePhotoMutation.mutate(boxArtPhoto.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deletePhotoMutation.mutate(boxArtPhoto.id);
+                    }}
                     disabled={deletePhotoMutation.isPending}
                     className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
                     title="Delete photo"
@@ -297,19 +321,37 @@ export default function ModelDetail() {
             </TabsList>
 
             <TabsContent value="photos" className="space-y-4">
+              {/* Slideshow button */}
+              {model.photos.length > 0 && (
+                <div className="mb-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsSlideshowOpen(true)} 
+                    className="font-mono"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Slideshow ({model.photos.length} photos)
+                  </Button>
+                </div>
+              )}
+
               {otherPhotos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {otherPhotos.map((photo) => (
-                    <Card key={photo.id} className="overflow-hidden relative group">
+                    <Card key={photo.id} className="overflow-hidden relative group cursor-pointer">
                       <img
                         src={photo.url}
                         alt={photo.caption || "Model photo"}
-                        className="w-full h-32 object-cover"
+                        className="w-full h-32 object-cover hover:scale-105 transition-transform"
+                        onClick={() => handlePhotoClick(photo.id)}
                       />
                       
                       {/* Delete button */}
                       <button
-                        onClick={() => deletePhotoMutation.mutate(photo.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePhotoMutation.mutate(photo.id);
+                        }}
                         disabled={deletePhotoMutation.isPending}
                         className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
                         title="Delete photo"
@@ -449,6 +491,13 @@ export default function ModelDetail() {
         modelId={model.id}
         open={isAddPhotoOpen}
         onOpenChange={setIsAddPhotoOpen}
+      />
+
+      <PhotoSlideshow
+        photos={slideshowPhotos}
+        isOpen={isSlideshowOpen}
+        onClose={() => setIsSlideshowOpen(false)}
+        initialIndex={slideshowStartIndex}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
