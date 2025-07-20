@@ -346,17 +346,17 @@ export default function ModelDetail() {
                         onClick={() => handlePhotoClick(photo.id)}
                       />
                       
-                      {/* Delete button */}
+                      {/* Delete button - always visible on mobile, hover on desktop */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           deletePhotoMutation.mutate(photo.id);
                         }}
                         disabled={deletePhotoMutation.isPending}
-                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 md:p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-50 shadow-lg"
                         title="Delete photo"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-4 w-4 md:h-3 md:w-3" />
                       </button>
                       {photo.caption && (
                         <CardContent className="p-2">
