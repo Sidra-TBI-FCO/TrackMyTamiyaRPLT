@@ -14,15 +14,29 @@ export async function apiRequest(
 ): Promise<Response> {
   const isFormData = data instanceof FormData;
   
-  const res = await fetch(url, {
-    method,
-    headers: data && !isFormData ? { "Content-Type": "application/json" } : {},
-    body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
-    credentials: "include",
-  });
+  // Add timeout for better mobile handling
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: data && !isFormData ? { "Content-Type": "application/json" } : {},
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      credentials: "include",
+      signal: controller.signal,
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    clearTimeout(timeoutId);
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - please check your connection and try again');
+    }
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -27,17 +27,27 @@ const storage_multer = multer.diskStorage({
 const upload = multer({ 
   storage: storage_multer,
   fileFilter: (req, file, cb) => {
-    // More flexible file type checking
+    // More flexible file type checking - mobile browsers may send different MIME types
     const allowedTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a'
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a',
+      'application/octet-stream' // Some mobile browsers send this for images
     ];
     
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/') || allowedTypes.includes(file.mimetype)) {
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp3', '.wav', '.ogg', '.m4a'];
+    const extension = path.extname(file.originalname).toLowerCase();
+    
+    // Accept if MIME type is correct OR if extension is valid (handles mobile browser issues)
+    const isValidMimeType = file.mimetype.startsWith('image/') || 
+                           file.mimetype.startsWith('audio/') || 
+                           allowedTypes.includes(file.mimetype);
+    const isValidExtension = allowedExtensions.includes(extension);
+    
+    if (isValidMimeType || isValidExtension) {
       cb(null, true);
     } else {
-      console.log(`Rejected file type: ${file.mimetype}`);
-      cb(new Error(`Invalid file type: ${file.mimetype}`), false);
+      console.log(`Rejected file: ${file.originalname}, type: ${file.mimetype}, extension: ${extension}`);
+      cb(new Error(`Invalid file type: ${file.mimetype}. Allowed: JPG, PNG, GIF, WebP, MP3, WAV`), false);
     }
   },
   limits: {

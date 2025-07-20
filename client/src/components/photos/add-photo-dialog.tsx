@@ -46,18 +46,28 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
         }))
       });
 
-      // Upload each photo individually to handle individual captions and box art settings
-      const uploadPromises = photosData.map(async (photoData) => {
-        const formData = new FormData();
-        formData.append("photos", photoData.file);
-        formData.append("caption", photoData.caption);
-        formData.append("isBoxArt", photoData.isBoxArt.toString());
-        formData.append("modelId", modelId.toString());
+      // Since server expects individual captions per photo, we need to upload them separately
+      // but handle errors better for mobile
+      const results = [];
+      for (const photoData of photosData) {
+        try {
+          const formData = new FormData();
+          formData.append("photos", photoData.file);
+          formData.append("caption", photoData.caption);
+          formData.append("isBoxArt", photoData.isBoxArt.toString());
+          formData.append("modelId", modelId.toString());
 
-        return await apiRequest("POST", `/api/models/${modelId}/photos`, formData);
-      });
-
-      await Promise.all(uploadPromises);
+          console.log('Uploading photo:', photoData.file.name, 'caption:', photoData.caption, 'boxArt:', photoData.isBoxArt);
+          
+          const response = await apiRequest("POST", `/api/models/${modelId}/photos`, formData);
+          results.push(response);
+        } catch (error) {
+          console.error('Failed to upload photo:', photoData.file.name, error);
+          throw new Error(`Failed to upload ${photoData.file.name}: ${error.message || 'Network error'}`);
+        }
+      }
+      
+      return results;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/models", modelId.toString()] });
@@ -69,9 +79,10 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
       handleClose();
     },
     onError: (error: any) => {
+      console.error('Upload mutation error:', error);
       toast({
         title: "Upload failed",
-        description: error.message || "Failed to upload photos",
+        description: error.message || "Failed to upload photos. Please try again.",
         variant: "destructive",
       });
     },
