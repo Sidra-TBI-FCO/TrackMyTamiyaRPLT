@@ -42,8 +42,8 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
-      {/* Quick Actions */}
-      <div className="mb-8">
+      {/* Quick Actions - Hidden on mobile, shown on desktop */}
+      <div className="mb-8 hidden lg:block">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AddModelDialog
             trigger={

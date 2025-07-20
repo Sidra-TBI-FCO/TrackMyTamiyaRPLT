@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Home, LayoutGrid, Wrench, Cog, Camera, MoreHorizontal } from "lucide-react";
+import { Home, LayoutGrid, Wrench, Cog, Camera, MoreHorizontal, Plus } from "lucide-react";
 import { useState } from "react";
 import {
   Sheet,
@@ -9,6 +9,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import AddModelDialog from "@/components/models/add-model-dialog";
 
 export default function MobileNav() {
   const [location] = useLocation();
@@ -43,14 +44,16 @@ export default function MobileNav() {
           </Link>
         ))}
         
-        <Link href="/models">
-          <button className="flex flex-col items-center justify-center py-2 px-3 text-red-600 bg-red-50 dark:bg-red-950 rounded-lg">
-            <div className="bg-red-600 rounded-full p-1">
-              <LayoutGrid className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-xs font-mono mt-1 text-red-600">Add</span>
-          </button>
-        </Link>
+        <AddModelDialog
+          trigger={
+            <button className="flex flex-col items-center justify-center py-2 px-3 text-red-600 bg-red-50 dark:bg-red-950 rounded-lg">
+              <div className="bg-red-600 rounded-full p-1">
+                <Plus className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xs font-mono mt-1 text-red-600">Add</span>
+            </button>
+          }
+        />
         
         <Sheet open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
           <SheetTrigger asChild>
