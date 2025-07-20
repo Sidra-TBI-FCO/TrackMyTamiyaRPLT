@@ -27,10 +27,17 @@ const storage_multer = multer.diskStorage({
 const upload = multer({ 
   storage: storage_multer,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/')) {
+    // More flexible file type checking
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a'
+    ];
+    
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/') || allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type'), false);
+      console.log(`Rejected file type: ${file.mimetype}`);
+      cb(new Error(`Invalid file type: ${file.mimetype}`), false);
     }
   },
   limits: {
@@ -138,12 +145,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelId = parseInt(req.params.modelId);
       const files = req.files as Express.Multer.File[];
       
+      console.log('Upload request received:', {
+        modelId,
+        filesCount: files?.length || 0,
+        body: req.body,
+        files: files?.map(f => ({ name: f.originalname, type: f.mimetype, size: f.size }))
+      });
+      
       if (!files || files.length === 0) {
+        console.log('No files received in request');
         return res.status(400).json({ message: 'No photos uploaded' });
       }
 
       const photos = [];
       for (const file of files) {
+        console.log(`Processing file: ${file.originalname}, type: ${file.mimetype}`);
+        
         const photoData = insertPhotoSchema.parse({
           modelId,
           filename: file.filename,
@@ -158,8 +175,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         photos.push(photo);
       }
 
+      console.log(`Successfully uploaded ${photos.length} photos`);
       res.status(201).json(photos);
     } catch (error) {
+      console.error('Photo upload error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }

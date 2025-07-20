@@ -55,15 +55,34 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (data: { files: File[]; caption: string; isBoxArt: boolean }) => {
+      console.log('Starting photo upload:', {
+        fileCount: data.files.length,
+        files: data.files.map(f => ({ name: f.name, type: f.type, size: f.size })),
+        caption: data.caption,
+        isBoxArt: data.isBoxArt
+      });
+
       const formData = new FormData();
-      data.files.forEach((file) => {
+      data.files.forEach((file, index) => {
+        console.log(`Appending file ${index}: ${file.name} (${file.type})`);
         formData.append("photos", file);
       });
       formData.append("caption", data.caption);
       formData.append("isBoxArt", data.isBoxArt.toString());
       formData.append("modelId", modelId.toString());
 
+      console.log('FormData entries:', Array.from(formData.entries()).map(([key, value]) => 
+        key === 'photos' ? [key, `File: ${(value as File).name}`] : [key, value]
+      ));
+
       const response = await apiRequest("POST", `/api/models/${modelId}/photos`, formData);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+      }
+      
       return response.json();
     },
     onSuccess: () => {
@@ -85,16 +104,28 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
   });
 
   const onDrop = (acceptedFiles: File[]) => {
+    console.log('onDrop called with files:', acceptedFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     const imageFiles = acceptedFiles.filter(file => 
-      file.type.startsWith("image/")
+      file.type.startsWith("image/") || allowedTypes.includes(file.type)
     );
 
     if (imageFiles.length !== acceptedFiles.length) {
       toast({
         title: "Invalid files",
-        description: "Only image files are allowed",
+        description: "Only image files are allowed (JPG, PNG, GIF, WebP)",
         variant: "destructive",
       });
+    }
+
+    if (imageFiles.length === 0) {
+      toast({
+        title: "No valid files",
+        description: "Please select valid image files",
+        variant: "destructive",
+      });
+      return;
     }
 
     setSelectedFiles(imageFiles);
@@ -152,10 +183,11 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
   const triggerFileInput = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp";
     input.multiple = true;
     input.onchange = (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
+      console.log('File input selected files:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
       onDrop(files);
     };
     input.click();
@@ -222,11 +254,12 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
                   onClick={() => {
                     const input = document.createElement("input");
                     input.type = "file";
-                    input.accept = "image/*";
+                    input.accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp";
                     input.capture = "environment";
                     input.multiple = true;
                     input.onchange = (e) => {
                       const files = Array.from((e.target as HTMLInputElement).files || []);
+                      console.log('Camera input selected files:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
                       onDrop(files);
                     };
                     input.click();
