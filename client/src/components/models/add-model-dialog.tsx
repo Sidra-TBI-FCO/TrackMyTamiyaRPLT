@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ import { insertModelSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTamiyaScraper } from "@/hooks/use-tamiya-scraper";
+import { ModelWithRelations } from "@/types";
 import { z } from "zod";
 
 const formSchema = insertModelSchema.extend({
@@ -49,9 +50,37 @@ interface AddModelDialogProps {
 export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [open, setOpen] = useState(false);
   const [newTag, setNewTag] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { scrapeModelData, isLoading: isScraping } = useTamiyaScraper();
+
+  // Get all models to extract existing tags
+  const { data: models } = useQuery<ModelWithRelations[]>({
+    queryKey: ["/api/models"],
+  });
+
+  // Get all unique existing tags from all models
+  const allExistingTags = Array.from(
+    new Set(
+      models?.flatMap(model => model.tags || []) || []
+    )
+  ).sort();
+
+  // Update tag suggestions when newTag changes
+  useEffect(() => {
+    if (newTag.trim()) {
+      const suggestions = allExistingTags.filter(tag =>
+        tag.toLowerCase().includes(newTag.toLowerCase()) &&
+        !form.getValues("tags")?.includes(tag)
+      ).slice(0, 5);
+      setTagSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [newTag, allExistingTags]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -311,24 +340,57 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                       )}
                       
                       {/* Add new tag */}
-                      <div className="flex gap-2">
-                        <Input
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                          onKeyPress={handleTagInputKeyPress}
-                          placeholder="Add a tag..."
-                          className="font-mono flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addTag(newTag.trim())}
-                          disabled={!newTag.trim()}
-                          className="font-mono"
-                        >
-                          Add
-                        </Button>
+                      <div className="relative">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              value={newTag}
+                              onChange={(e) => setNewTag(e.target.value)}
+                              onKeyPress={handleTagInputKeyPress}
+                              placeholder="Add a tag..."
+                              className="font-mono"
+                              onFocus={() => {
+                                if (tagSuggestions.length > 0) {
+                                  setShowSuggestions(true);
+                                }
+                              }}
+                              onBlur={() => {
+                                // Delay hiding suggestions to allow clicking
+                                setTimeout(() => setShowSuggestions(false), 200);
+                              }}
+                            />
+                            
+                            {/* Tag suggestions dropdown */}
+                            {showSuggestions && tagSuggestions.length > 0 && (
+                              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                                {tagSuggestions.map((suggestion) => (
+                                  <button
+                                    key={suggestion}
+                                    type="button"
+                                    className="w-full text-left px-3 py-2 text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    onClick={() => {
+                                      addTag(suggestion);
+                                      setNewTag("");
+                                      setShowSuggestions(false);
+                                    }}
+                                  >
+                                    {suggestion}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addTag(newTag.trim())}
+                            disabled={!newTag.trim()}
+                            className="font-mono"
+                          >
+                            Add
+                          </Button>
+                        </div>
                       </div>
                       
                       {/* Common tags */}
