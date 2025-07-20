@@ -38,8 +38,8 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-8">
+          {/* Search Bar - Desktop Only */}
+          <div className="flex-1 max-w-md mx-8 hidden lg:block">
             <div className="relative">
               <Input
                 type="text"
