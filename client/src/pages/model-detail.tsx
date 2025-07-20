@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +54,27 @@ export default function ModelDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete model",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (photoId: number) => {
+      await apiRequest("DELETE", `/api/photos/${photoId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      toast({
+        title: "Photo deleted",
+        description: "Photo has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete photo",
         variant: "destructive",
       });
     },
@@ -237,13 +258,25 @@ export default function ModelDetail() {
         <div className="lg:col-span-2">
           {/* Main Photo */}
           <Card className="mb-6">
-            <CardContent className="p-0">
+            <CardContent className="p-0 relative group">
               {boxArtPhoto ? (
-                <img
-                  src={boxArtPhoto.url}
-                  alt={model.name}
-                  className="w-full h-64 lg:h-96 object-cover rounded-lg"
-                />
+                <>
+                  <img
+                    src={boxArtPhoto.url}
+                    alt={model.name}
+                    className="w-full h-64 lg:h-96 object-cover rounded-lg"
+                  />
+                  
+                  {/* Delete button for main photo */}
+                  <button
+                    onClick={() => deletePhotoMutation.mutate(boxArtPhoto.id)}
+                    disabled={deletePhotoMutation.isPending}
+                    className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                    title="Delete photo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
               ) : (
                 <div className="w-full h-64 lg:h-96 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg">
                   <div className="text-center text-gray-400 dark:text-gray-500">
@@ -267,12 +300,22 @@ export default function ModelDetail() {
               {otherPhotos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {otherPhotos.map((photo) => (
-                    <Card key={photo.id} className="overflow-hidden">
+                    <Card key={photo.id} className="overflow-hidden relative group">
                       <img
                         src={photo.url}
                         alt={photo.caption || "Model photo"}
                         className="w-full h-32 object-cover"
                       />
+                      
+                      {/* Delete button */}
+                      <button
+                        onClick={() => deletePhotoMutation.mutate(photo.id)}
+                        disabled={deletePhotoMutation.isPending}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                        title="Delete photo"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                       {photo.caption && (
                         <CardContent className="p-2">
                           <p className="text-xs font-mono text-gray-600 dark:text-gray-400 truncate">
