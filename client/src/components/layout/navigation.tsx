@@ -33,7 +33,7 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hidden lg:block">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-8">
           {navItems.map((item) => (

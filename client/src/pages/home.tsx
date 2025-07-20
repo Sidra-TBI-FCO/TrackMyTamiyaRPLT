@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Camera, Mic, Play } from "lucide-react";
+import { Plus, Camera, Mic, Play, Search } from "lucide-react";
 import { useLocation } from "wouter";
 import { ModelWithRelations } from "@/types";
 import CollectionStats from "@/components/stats/collection-stats";
@@ -7,6 +7,7 @@ import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 
@@ -42,6 +43,17 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      {/* Mobile Search Bar */}
+      <div className="mb-6 lg:hidden">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search models, parts, builds..."
+            className="w-full pl-10 pr-4 py-3 font-mono text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+          />
+          <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+        </div>
+      </div>
       {/* Quick Actions - Hidden on mobile, shown on desktop */}
       <div className="mb-8 hidden lg:block">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

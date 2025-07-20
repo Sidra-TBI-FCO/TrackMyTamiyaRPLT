@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutGrid, List, Filter, Tag } from "lucide-react";
+import { LayoutGrid, List, Filter, Tag, Search } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -72,6 +73,18 @@ export default function Models() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      {/* Mobile Search Bar */}
+      <div className="mb-6 lg:hidden">
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search models, parts, builds..."
+            className="w-full pl-10 pr-4 py-3 font-mono text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+          />
+          <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+        </div>
+      </div>
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white mb-4 sm:mb-0">
