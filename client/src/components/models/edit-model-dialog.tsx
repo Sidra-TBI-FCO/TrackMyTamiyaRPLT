@@ -66,20 +66,6 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
     )
   ).sort();
 
-  // Update tag suggestions when newTag changes
-  useEffect(() => {
-    if (newTag.trim()) {
-      const suggestions = allExistingTags.filter(tag =>
-        tag.toLowerCase().includes(newTag.toLowerCase()) &&
-        !form.getValues("tags")?.includes(tag)
-      ).slice(0, 5);
-      setTagSuggestions(suggestions);
-      setShowSuggestions(suggestions.length > 0);
-    } else {
-      setShowSuggestions(false);
-    }
-  }, [newTag, allExistingTags]);
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -140,6 +126,21 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
     const currentTags = form.getValues("tags") || [];
     form.setValue("tags", currentTags.filter(tag => tag !== tagToRemove));
   };
+
+  // Update tag suggestions when newTag changes
+  useEffect(() => {
+    if (newTag.trim()) {
+      const currentTags = form.getValues("tags") || [];
+      const suggestions = allExistingTags.filter(tag =>
+        tag.toLowerCase().includes(newTag.toLowerCase()) &&
+        !currentTags.includes(tag)
+      ).slice(0, 5);
+      setTagSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [newTag, allExistingTags]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

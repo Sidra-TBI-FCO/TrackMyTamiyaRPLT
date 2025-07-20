@@ -348,6 +348,23 @@ export default function ModelDetail() {
                   </p>
                 </div>
               )}
+
+              {model.tags && model.tags.length > 0 && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Tags</p>
+                  <div className="flex flex-wrap gap-1">
+                    {model.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

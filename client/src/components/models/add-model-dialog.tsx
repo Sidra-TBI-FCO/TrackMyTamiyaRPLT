@@ -68,20 +68,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     )
   ).sort();
 
-  // Update tag suggestions when newTag changes
-  useEffect(() => {
-    if (newTag.trim()) {
-      const suggestions = allExistingTags.filter(tag =>
-        tag.toLowerCase().includes(newTag.toLowerCase()) &&
-        !form.getValues("tags")?.includes(tag)
-      ).slice(0, 5);
-      setTagSuggestions(suggestions);
-      setShowSuggestions(suggestions.length > 0);
-    } else {
-      setShowSuggestions(false);
-    }
-  }, [newTag, allExistingTags]);
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -161,6 +147,21 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       addTag(newTag.trim());
     }
   };
+
+  // Update tag suggestions when newTag changes
+  useEffect(() => {
+    if (newTag.trim()) {
+      const currentTags = form.getValues("tags") || [];
+      const suggestions = allExistingTags.filter(tag =>
+        tag.toLowerCase().includes(newTag.toLowerCase()) &&
+        !currentTags.includes(tag)
+      ).slice(0, 5);
+      setTagSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [newTag, allExistingTags]);
 
   const onSubmit = (data: FormData) => {
     const submissionData = {
