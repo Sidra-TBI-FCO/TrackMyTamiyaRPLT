@@ -132,27 +132,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/models/:modelId/photos', upload.single('photo'), async (req, res) => {
+  app.post('/api/models/:modelId/photos', upload.array('photos', 10), async (req, res) => {
     try {
       const userId = (req as any).userId;
       const modelId = parseInt(req.params.modelId);
+      const files = req.files as Express.Multer.File[];
       
-      if (!req.file) {
-        return res.status(400).json({ message: 'No photo uploaded' });
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: 'No photos uploaded' });
       }
 
-      const photoData = insertPhotoSchema.parse({
-        modelId,
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        url: `/uploads/${req.file.filename}`,
-        caption: req.body.caption || null,
-        metadata: req.body.metadata ? JSON.parse(req.body.metadata) : null,
-        isBoxArt: req.body.isBoxArt === 'true',
-      });
+      const photos = [];
+      for (const file of files) {
+        const photoData = insertPhotoSchema.parse({
+          modelId,
+          filename: file.filename,
+          originalName: file.originalname,
+          url: `/uploads/${file.filename}`,
+          caption: req.body.caption || null,
+          metadata: req.body.metadata ? JSON.parse(req.body.metadata) : null,
+          isBoxArt: req.body.isBoxArt === 'true' && photos.length === 0, // Only first photo can be box art
+        });
 
-      const photo = await storage.createPhoto(photoData);
-      res.status(201).json(photo);
+        const photo = await storage.createPhoto(photoData);
+        photos.push(photo);
+      }
+
+      res.status(201).json(photos);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });

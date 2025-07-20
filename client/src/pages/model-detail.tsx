@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EditModelDialog from "@/components/models/edit-model-dialog";
+import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -27,6 +28,7 @@ export default function ModelDetail() {
   const [, setLocation] = useLocation();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -374,7 +376,10 @@ export default function ModelDetail() {
               <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 font-mono" disabled>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 font-mono"
+                onClick={() => setIsAddPhotoOpen(true)}
+              >
                 <Camera className="mr-2 h-4 w-4" />
                 Add Photo
               </Button>
@@ -395,6 +400,12 @@ export default function ModelDetail() {
         model={model}
         open={isEditMode}
         onOpenChange={setIsEditMode}
+      />
+
+      <AddPhotoDialog
+        modelId={model.id}
+        open={isAddPhotoOpen}
+        onOpenChange={setIsAddPhotoOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
