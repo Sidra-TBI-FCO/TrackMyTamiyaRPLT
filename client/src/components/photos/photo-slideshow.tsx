@@ -212,8 +212,8 @@ export default function PhotoSlideshow({
           </>
         )}
 
-        {/* Top Controls */}
-        <div className="absolute top-4 right-4 flex items-center space-x-2">
+        {/* Top Controls - Moved to left to avoid thumbnail overlap in landscape */}
+        <div className="absolute top-4 left-4 flex items-center space-x-2">
           {/* Photo counter */}
           {photos.length > 1 && (
             <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-mono">
