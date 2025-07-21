@@ -413,6 +413,34 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         parseLog.push("⚠️ Color not auto-detected");
       }
 
+      // Price detection (various patterns stores might use)
+      const pricePatterns = [
+        /price[_-](\d+[\._]\d{2})/i,           // price_15.99, price-15.99
+        /cost[_-](\d+[\._]\d{2})/i,            // cost_15.99, cost-15.99  
+        /\$(\d+[\._]\d{2})/,                   // $15.99
+        /usd[_-](\d+[\._]\d{2})/i,            // usd-15.99, usd_15.99
+        /(\d+[\._]\d{2})[_-]?usd/i,           // 15.99usd, 15.99-usd
+        /[_-](\d+[\._]\d{2})[_-]?$/,          // ending with price like -15.99
+      ];
+
+      let priceFound = false;
+      for (const pattern of pricePatterns) {
+        const match = url.match(pattern);
+        if (match) {
+          const priceStr = match[1].replace('_', '.');
+          const price = parseFloat(priceStr);
+          if (price > 0 && price < 10000) { // Reasonable price range
+            form.setValue('cost', price);
+            parseLog.push(`✅ Price detected: $${price.toFixed(2)}`);
+            priceFound = true;
+            break;
+          }
+        }
+      }
+      if (!priceFound) {
+        parseLog.push("⚠️ Price not found in URL - enter manually");
+      }
+
       parseLog.push("✅ URL analysis complete!");
       
       console.log("URL Parse Debug Log:", parseLog);
@@ -432,7 +460,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
   };
 
   const onSubmit = (data: FormData) => {
-    console.log("Form submission data:", data);
+    // console.log("Form submission data:", data); // Remove debug logging
     if (part) {
       updateMutation.mutate(data);
     } else {
@@ -563,7 +591,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           onChange={(e) => {
                             const value = e.target.value;
                             const numValue = value === "" ? undefined : parseFloat(value);
-                            console.log("Cost field change:", value, "->", numValue);
+                            // console.log("Cost field change:", value, "->", numValue); // Remove debug logging
                             field.onChange(numValue);
                           }}
                         />
