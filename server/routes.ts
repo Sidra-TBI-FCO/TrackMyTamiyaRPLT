@@ -28,32 +28,41 @@ const storage_multer = multer.diskStorage({
 const upload = multer({ 
   storage: storage_multer,
   fileFilter: (req, file, cb) => {
-    // More flexible file type checking - mobile browsers may send different MIME types
+    console.log(`File upload attempt: ${file.originalname}, MIME: ${file.mimetype}, Size: ${file.size || 'unknown'}`);
+    
+    // Very flexible file type checking for mobile compatibility
     const allowedTypes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a',
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac',
       'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/octet-stream' // Some mobile browsers send this for various file types
+      'application/octet-stream', 'binary/octet-stream', '' // Mobile browsers sometimes send empty MIME types
     ];
     
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp3', '.wav', '.ogg', '.m4a', '.pdf', '.doc', '.docx'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.mp3', '.wav', '.ogg', '.m4a', '.aac', '.pdf', '.doc', '.docx'];
     const extension = path.extname(file.originalname).toLowerCase();
     
-    // Accept if MIME type is correct OR if extension is valid (handles mobile browser issues)
-    const isValidMimeType = file.mimetype.startsWith('image/') || 
-                           file.mimetype.startsWith('audio/') || 
-                           allowedTypes.includes(file.mimetype);
-    const isValidExtension = allowedExtensions.includes(extension);
+    // Be very permissive for mobile uploads
+    const isImageFile = file.mimetype.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'].includes(extension);
+    const isAudioFile = file.mimetype.startsWith('audio/') || ['.mp3', '.wav', '.ogg', '.m4a', '.aac'].includes(extension);
+    const isDocFile = file.mimetype.includes('pdf') || file.mimetype.includes('document') || ['.pdf', '.doc', '.docx'].includes(extension);
+    const isMobileUpload = !file.mimetype || file.mimetype === 'application/octet-stream';
     
-    if (isValidMimeType || isValidExtension) {
+    if (isImageFile || isAudioFile || isDocFile || (isMobileUpload && allowedExtensions.includes(extension))) {
+      console.log(`✓ Accepted file: ${file.originalname}`);
       cb(null, true);
     } else {
-      console.log(`Rejected file: ${file.originalname}, type: ${file.mimetype}, extension: ${extension}`);
-      cb(new Error(`Invalid file type: ${file.mimetype}. Allowed: JPG, PNG, GIF, WebP, MP3, WAV, PDF, DOC`) as any, false);
+      console.log(`✗ Rejected file: ${file.originalname}, type: ${file.mimetype}, extension: ${extension}`);
+      cb(new Error(`Invalid file type. Allowed: JPG, PNG, GIF, WebP, HEIC, MP3, WAV, PDF, DOC`) as any, false);
     }
   },
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 15 * 1024 * 1024, // Increased to 15MB for HEIC and high-quality mobile photos
+    files: 10, // Allow up to 10 files per upload
+    fieldSize: 2 * 1024 * 1024, // 2MB field size
+  },
+  onError: (err, next) => {
+    console.error('Multer error:', err);
+    next(err);
   }
 });
 
@@ -196,9 +205,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const photo = await storage.createPhoto(photoData);
           photos.push(photo);
           console.log(`File uploaded to Replit Object Storage: ${savedFilename}`);
-        } catch (uploadError) {
+        } catch (uploadError: any) {
           console.error(`Failed to upload file ${file.originalname}:`, uploadError);
-          // Continue with other files
+          // Return partial success with error details for better mobile debugging
+          if (photos.length === 0) {
+            return res.status(500).json({ 
+              message: `Upload failed: ${uploadError.message}`,
+              error: 'UPLOAD_FAILED',
+              filename: file.originalname
+            });
+          }
+          // Continue with other files if some succeeded
         }
       }
 
