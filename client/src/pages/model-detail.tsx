@@ -42,6 +42,19 @@ export default function ModelDetail() {
     enabled: !!id,
   });
 
+  // Listen for header slideshow trigger - must be before any early returns
+  useEffect(() => {
+    const handleHeaderSlideshow = () => {
+      if (model && model.photos.length > 0) {
+        setSlideshowStartIndex(0);
+        setIsSlideshowOpen(true);
+      }
+    };
+
+    document.addEventListener('triggerModelSlideshow', handleHeaderSlideshow);
+    return () => document.removeEventListener('triggerModelSlideshow', handleHeaderSlideshow);
+  }, [model]);
+
   const deleteModelMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("DELETE", `/api/models/${id}`);
@@ -154,11 +167,11 @@ export default function ModelDetail() {
     );
   }
 
-  const boxArtPhoto = model.photos.find(p => p.isBoxArt) || model.photos[0];
-  const otherPhotos = model.photos.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id);
+  const boxArtPhoto = model?.photos?.find(p => p.isBoxArt) || model?.photos?.[0];
+  const otherPhotos = model?.photos?.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id) || [];
   
   // Prepare photos for slideshow with model data
-  const slideshowPhotos = model.photos.map(photo => ({
+  const slideshowPhotos = model?.photos?.map(photo => ({
     ...photo,
     isBoxArt: photo.isBoxArt || false,
     model: {
@@ -167,26 +180,13 @@ export default function ModelDetail() {
       chassisType: model.chassis,
       tags: model.tags || []
     }
-  }));
+  })) || [];
 
   const handlePhotoClick = (photoId: number) => {
-    const photoIndex = model.photos.findIndex(p => p.id === photoId);
+    const photoIndex = model?.photos.findIndex(p => p.id === photoId) || 0;
     setSlideshowStartIndex(photoIndex);
     setIsSlideshowOpen(true);
   };
-
-  // Listen for header slideshow trigger
-  useEffect(() => {
-    const handleHeaderSlideshow = () => {
-      if (model && model.photos.length > 0) {
-        setSlideshowStartIndex(0);
-        setIsSlideshowOpen(true);
-      }
-    };
-
-    document.addEventListener('triggerModelSlideshow', handleHeaderSlideshow);
-    return () => document.removeEventListener('triggerModelSlideshow', handleHeaderSlideshow);
-  }, [model]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
