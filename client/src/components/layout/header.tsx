@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useSlideshow } from "@/lib/slideshow-context";
 
 interface HeaderProps {
   onToggleDarkMode: () => void;
@@ -12,9 +13,10 @@ interface HeaderProps {
 export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
+  const { openSlideshow } = useSlideshow();
 
   const handlePhotoFrameClick = () => {
-    setLocation("/photo-frame");
+    openSlideshow();
   };
 
   return (
@@ -73,6 +75,7 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setLocation("/settings")}
               className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
             >
               <Settings className="h-5 w-5" />
