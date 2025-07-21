@@ -349,33 +349,31 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
       }
 
-      // Detect official Tamiya parts - look for tamiya-xxxxx patterns where xxxxx is 4-5 digit part number
-      const tamiyaPartPattern = /tamiya-(\d{4,5})/i;
+      // Detect official Tamiya parts and extract part number properly
+      // Pattern for URLs like: tamiya-ta02-carbon-chassis-conversion-47479-00112749
+      const tamiyaPartPattern = /tamiya-.*?-(\d{4,5})-\d+$/i;
       const tamiyaMatch = url.match(tamiyaPartPattern);
       
-      if (tamiyaMatch || urlLower.includes('/tamiya-') || urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54')) {
+      if (tamiyaMatch) {
+        form.setValue('isTamiyaBrand', true);
+        form.setValue('manufacturer', 'Tamiya');
+        form.setValue('itemNumber', tamiyaMatch[1]);
+        parseLog.push("✅ Official Tamiya part detected");
+        parseLog.push(`✅ Official Tamiya part number: ${tamiyaMatch[1]}`);
+      } else if (urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54') || urlLower.includes('/tamiya/')) {
         form.setValue('isTamiyaBrand', true);
         form.setValue('manufacturer', 'Tamiya');
         parseLog.push("✅ Official Tamiya part detected");
-        
-        // Extract official Tamiya part number
-        if (tamiyaMatch) {
-          const tamiyaPartNumber = tamiyaMatch[1];
-          form.setValue('itemNumber', tamiyaPartNumber);
-          parseLog.push(`✅ Official Tamiya part number: ${tamiyaPartNumber}`);
-        }
       } else if (detectedBrand) {
         form.setValue('isTamiyaBrand', false);
         parseLog.push("✅ Marked as aftermarket part");
       }
       
-      // Extract part numbers - look for Tamiya parts first, then brand-specific patterns
+      // Extract part numbers - look for brand-specific patterns first
       let partNumberFound = false;
       
-      // Skip additional part number extraction if we already found a Tamiya part number
-      const alreadyHasTamiyaNumber = form.getValues('itemNumber') && form.getValues('isTamiyaBrand');
-      
-      if (alreadyHasTamiyaNumber) {
+      // Check if we already have a Tamiya part number
+      if (form.getValues('itemNumber') && form.getValues('isTamiyaBrand')) {
         partNumberFound = true;
       } else if (detectedBrand) {
         // Look for brand-specific part number patterns
@@ -427,20 +425,11 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
       }
       
-      // Extract part name from URL path - improved logic for Tamiya parts
+      // Extract part name from URL path - improved logic
       const pathParts = url.split('/').pop()?.split('-') || [];
       if (pathParts.length > 2) {
-        // For Tamiya parts, remove the tamiya prefix and part number
-        let filteredParts = pathParts;
-        if (form.getValues('isTamiyaBrand')) {
-          filteredParts = pathParts.filter(part => 
-            part.toLowerCase() !== 'tamiya' && 
-            !part.match(/^\d{4,5}$/) // Remove 4-5 digit Tamiya part numbers
-          );
-        }
-        
         // Remove brand name, model numbers, and store-specific codes
-        filteredParts = filteredParts
+        const filteredParts = pathParts
           .filter(part => 
             !part.match(/^\d+$/) && // Remove pure numbers
             part.length > 1 && // Remove single characters
