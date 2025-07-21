@@ -262,11 +262,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req as any).userId;
       const id = parseInt(req.params.id);
       const photoData = insertPhotoSchema.partial().parse(req.body);
-      const photo = await storage.updatePhoto(id, userId, photoData);
-      if (!photo) {
+      
+      // If setting isBoxArt to true, first set all other photos of the same model to false
+      if (photoData.isBoxArt === true) {
+        const photo = await storage.getPhoto(id, userId);
+        if (photo) {
+          await storage.clearModelBoxArt(photo.modelId, userId);
+        }
+      }
+      
+      const updatedPhoto = await storage.updatePhoto(id, userId, photoData);
+      if (!updatedPhoto) {
         return res.status(404).json({ message: 'Photo not found' });
       }
-      res.json(photo);
+      res.json(updatedPhoto);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });

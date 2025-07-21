@@ -196,8 +196,31 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                   <FormControl>
                     <Input
                       {...field}
+                      value={field.value || ""}
                       placeholder="e.g. TT-02"
                       className="font-mono"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="releaseYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Release Year</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value || ""}
+                      type="number"
+                      placeholder="e.g. 2023"
+                      className="font-mono"
+                      min={1960}
+                      max={new Date().getFullYear() + 1}
                     />
                   </FormControl>
                   <FormMessage />

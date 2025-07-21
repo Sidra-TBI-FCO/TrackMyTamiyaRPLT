@@ -20,6 +20,7 @@ import {
 import EditModelDialog from "@/components/models/edit-model-dialog";
 import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
+import BoxArtSelector from "@/components/photos/box-art-selector";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSlideshow } from "@/lib/slideshow-context";
@@ -33,6 +34,7 @@ export default function ModelDetail() {
   const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
   const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState(0);
+  const [isBoxArtSelectorOpen, setIsBoxArtSelectorOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openSlideshow: openGlobalSlideshow } = useSlideshow();
@@ -304,6 +306,21 @@ export default function ModelDetail() {
                     onClick={() => handlePhotoClick(boxArtPhoto.id)}
                   />
                   
+                  {/* Box Art Badge */}
+                  <div className="absolute top-4 left-4">
+                    <Badge 
+                      variant="secondary" 
+                      className="font-mono text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 cursor-pointer hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsBoxArtSelectorOpen(true);
+                      }}
+                      title="Click to change box art"
+                    >
+                      Box Art - Click to Change
+                    </Badge>
+                  </div>
+                  
                   {/* Delete button for main photo */}
                   <button
                     onClick={(e) => {
@@ -514,6 +531,13 @@ export default function ModelDetail() {
         isOpen={isSlideshowOpen}
         onClose={() => setIsSlideshowOpen(false)}
         initialIndex={slideshowStartIndex}
+      />
+
+      <BoxArtSelector
+        modelId={model.id}
+        photos={model.photos}
+        open={isBoxArtSelectorOpen}
+        onOpenChange={setIsBoxArtSelectorOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

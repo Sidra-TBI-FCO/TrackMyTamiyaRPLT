@@ -256,6 +256,29 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
             <FormField
               control={form.control}
+              name="releaseYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Release Year</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value || ""}
+                      type="number"
+                      placeholder="e.g. 2023"
+                      className="font-mono"
+                      disabled={isScraping}
+                      min={1960}
+                      max={new Date().getFullYear() + 1}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="buildStatus"
               render={({ field }) => (
                 <FormItem>

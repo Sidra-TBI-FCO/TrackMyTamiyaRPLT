@@ -180,6 +180,36 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  async clearModelBoxArt(modelId: number, userId: number): Promise<void> {
+    // Verify model belongs to user
+    const model = await db.query.models.findFirst({
+      where: and(eq(models.id, modelId), eq(models.userId, userId)),
+    });
+    
+    if (!model) return;
+
+    // Set all photos in this model to isBoxArt = false
+    await db
+      .update(photos)
+      .set({ isBoxArt: false })
+      .where(eq(photos.modelId, modelId));
+  }
+
+  async getPhoto(id: number, userId: number): Promise<Photo | undefined> {
+    const photo = await db.query.photos.findFirst({
+      where: eq(photos.id, id),
+      with: {
+        model: true,
+      },
+    });
+
+    if (!photo || photo.model.userId !== userId) {
+      return undefined;
+    }
+
+    return photo;
+  }
+
   async getBuildLogEntries(modelId: number, userId: number): Promise<BuildLogEntryWithPhotos[]> {
     // Verify model belongs to user
     const model = await db.query.models.findFirst({
