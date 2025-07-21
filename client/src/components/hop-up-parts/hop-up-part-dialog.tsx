@@ -33,6 +33,9 @@ import { useState, useEffect } from "react";
 
 const formSchema = insertHopUpPartSchema.extend({
   cost: z.coerce.number().optional(),
+  compatibility: z.array(z.string()).default([]),
+  installationDate: z.string().optional(),
+  manufacturer: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -85,7 +88,8 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       itemNumber: "",
       category: "",
       supplier: "",
-      cost: 0,
+      manufacturer: "",
+      cost: undefined,
       installationStatus: "planned",
       notes: "",
       isTamiyaBrand: false,
@@ -106,6 +110,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         itemNumber: part.itemNumber || "",
         category: part.category,
         supplier: part.supplier || "",
+        manufacturer: part.manufacturer || "",
         cost: part.cost ? parseFloat(part.cost) : undefined,
         installationStatus: part.installationStatus,
         notes: part.notes || "",
@@ -123,7 +128,8 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         itemNumber: "",
         category: "",
         supplier: "",
-        cost: 0,
+        manufacturer: "",
+        cost: undefined,
         installationStatus: "planned",
         notes: "",
         isTamiyaBrand: false,
@@ -552,8 +558,11 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           type="number" 
                           step="0.01" 
                           placeholder="0.00" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? undefined : parseFloat(value) || 0);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
