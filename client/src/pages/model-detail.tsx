@@ -50,7 +50,10 @@ export default function ModelDetail() {
   // Calculate total investment including hop-up parts
   const totalInvestment = model 
     ? (parseFloat(model.totalCost || "0") + 
-       (model.hopUpParts?.reduce((sum, part) => sum + parseFloat(part.cost || "0"), 0) || 0))
+       (model.hopUpParts?.reduce((sum, part) => {
+         const partCost = part.cost ? parseFloat(part.cost) : 0;
+         return sum + (isNaN(partCost) ? 0 : partCost);
+       }, 0) || 0))
     : 0;
 
   // Listen for header slideshow trigger - must be before any early returns
