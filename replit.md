@@ -87,10 +87,12 @@ The application uses a relational PostgreSQL schema with the following main enti
 - Foreign key relationships maintain data integrity
 
 ### File Storage
-- Local file system storage for uploaded images and audio
+- **Development**: Local file system storage for uploaded images and audio
+- **Production**: Ephemeral storage with graceful degradation and cloud storage preparation
 - Unique filename generation to prevent conflicts
 - File type validation and size limits
 - Static serving through Express middleware
+- Fallback system for missing files in deployment environments
 
 ## External Dependencies
 
