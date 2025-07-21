@@ -1,0 +1,242 @@
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+content.js:985 Imprivata CE >> setUp (content)
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+_app-f10df38f71c1285f.js:38 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+Tracking Prevention blocked access to storage for <URL>.
+_app-f10df38f71c1285f.js:38 [LaunchDarkly] LaunchDarkly client initialized
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+ Imprivata CE >> Creating LogHelper_Content
+ Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://www.googletagmanager.com/static/service_worker/57f0/sw_iframe.html?origin=https%3A%2F%2Freplit.com (confirmid_content.js:281)
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+ Imprivata CE >> Disable Trace Logging
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://td.doubleclick.net/td/rul/11411994397?random=1753085138281&cv=11&fst=1753085138281&fmt=3&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be57g1h1v9171242957za200&gcd=13l3l3l3l1l1&dma=0&tag_exp=101509157~103116026~103200004~103233427~104684208~104684211&u_w=5120&u_h=1440&url=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&ref=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&hn=www.googleadservices.com&frm=0&tiba=Loading...%20-%20Replit&npa=0&pscdl=noapi&auid=454504379.1751196902&fledge=1&data=event%3Dgtag.config (confirmid_content.js:281)
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdqhwwoAAAAAFPdw8jCuvY3PaHQItGj3RzOS4fW&co=aHR0cHM6Ly9yZXBsaXQuY29tOjQ0Mw..&hl=en&v=3jpV4E_UA9gZWYy11LtggjoU&size=invisible&anchor-ms=20000&execute-ms=15000&cb=6klrwkqeazyd (confirmid_content.js:281)
+capture_page_info.js:1016 Imprivata CE >> Gather controls: 4.891845703125 ms
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+TamiyaTracker:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'battery'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'layout-animations'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'navigation-override'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'oversized-images'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'publickey-credentials'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'speaker-selection'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'unoptimized-images'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'unsized-media'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Unrecognized feature: 'pointer-lock'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-d6ce62f547324137.js:1
+framework-d6ce62f547324137.js:1  Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-d6ce62f547324137.js:1
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&title=TamiyaTracker%20-%20Replit&referrer=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&muid=5797bdf7-8c02-456b-a85f-90910650dd8b8e96f3&sid=30d161fa-8371-4aab-a1e9-b8e8ea9d131338cb98&version=6&preview=false&__shared_params__[version]=acacia (confirmid_content.js:281)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://js.stripe.com/v3/m-outer-3437aaddcdf6922d623e172c2d6f9278.html#url=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&title=TamiyaTracker%20-%20Replit&referrer=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&muid=5797bdf7-8c02-456b-a85f-90910650dd8b8e96f3&sid=30d161fa-8371-4aab-a1e9-b8e8ea9d131338cb98&version=6&preview=false&__shared_params__[version]=acacia (confirmid_content.js:281)
+sw_iframe.html:1  Error handling response: Error: runtime/sendMessage: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+    at chrome-extension://gehmmocbbkpblljhkekmfhjpfbkclbph/content/contentScripts/kwift.CHROME.js:1:184411
+m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&title=TamiyaTracker%20-%20Replit&referrer=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&muid=5797bdf7-8c02-456b-a85f-90910650dd8b8e96f3&sid=30d161fa-8371-4aab-a1e9-b8e8ea9d131338cb98&version=6&preview=false&__shared_params__[version]=acacia:1  Error handling response: Error: runtime/sendMessage: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+    at chrome-extension://gehmmocbbkpblljhkekmfhjpfbkclbph/content/contentScripts/kwift.CHROME.js:1:184411
+sw_iframe.html:1  Error handling response: Error: runtime/sendMessage: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+    at chrome-extension://gehmmocbbkpblljhkekmfhjpfbkclbph/content/contentScripts/kwift.CHROME.js:1:184411
+m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&title=TamiyaTracker%20-%20Replit&referrer=https%3A%2F%2Freplit.com%2F%40wouterhendrickx%2FTamiyaTracker&muid=5797bdf7-8c02-456b-a85f-90910650dd8b8e96f3&sid=30d161fa-8371-4aab-a1e9-b8e8ea9d131338cb98&version=6&preview=false&__shared_params__[version]=acacia:1  Error handling response: Error: runtime/sendMessage: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+    at chrome-extension://gehmmocbbkpblljhkekmfhjpfbkclbph/content/contentScripts/kwift.CHROME.js:1:184411
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+workspace_iframe.html:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html:32  Unrecognized feature: 'battery'.
+workspace_iframe.html:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://3d21f948-9483-4020-b76b-9f98c4878f7a-00-20kvxxuv56qet.picard.replit.dev/ (confirmid_content.js:281)
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+eruda.js:2  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+Mt.forEach.n.<computed> @ Console.js:61
+eruda.js:2 Add Model button clicked
+eruda.js:2 Form state: Object
+eruda.js:2 Form values: Object
+eruda.js:2 Add Model button clicked
+eruda.js:2 Form state: Object
+eruda.js:2 Form values: Object
+eruda.js:2 Add Model button clicked
+eruda.js:2 Form state: Object
+eruda.js:2 Form values: Object
+eruda.js:2 Add Model button clicked
+eruda.js:2 Form state: Object
+eruda.js:2 Form values: Object
+eruda.js:2 Add Model button clicked
+eruda.js:2 Form state: Object
+eruda.js:2 Form values: Object
+eruda.js:2 Add Model button clicked
+eruda.js:2 Form state: Object
+eruda.js:2 Form values: Object
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+eruda.js:2 [vite] server connection lost. Polling for restart...
+ Imprivata CE >> Creating LogHelper_Content
+ Imprivata CE >> setUp (confirmid_content)
+workspace_iframe.html:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html:32  Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html:32  Unrecognized feature: 'battery'.
+workspace_iframe.html:32  Unrecognized feature: 'battery'.
+workspace_iframe.html:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html:32  Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html:32  Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html:32  Unrecognized feature: 'layout-animations'.
+workspace_iframe.html:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html:32  Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html:32  Unrecognized feature: 'navigation-override'.
+workspace_iframe.html:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html:32  Unrecognized feature: 'oversized-images'.
+workspace_iframe.html:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html:32  Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html:32  Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html:32  Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html:32  Unrecognized feature: 'unsized-media'.
+workspace_iframe.html:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html:32  Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+workspace_iframe.html:32  Allow attribute will take precedence over 'allowpaymentrequest'.
+ Imprivata CE >> Creating LogHelper_Content
+ Imprivata CE >> setUp (confirmid_content)
+ Imprivata CE >> onCompleted_CID for https://3d21f948-9483-4020-b76b-9f98c4878f7a-00-20kvxxuv56qet.picard.replit.dev/ (confirmid_content.js:281)
+ Imprivata CE >> onCompleted_CID for https://3d21f948-9483-4020-b76b-9f98c4878f7a-00-20kvxxuv56qet.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arfj%3A (confirmid_content.js:281)
+ Imprivata CE >> Disable Trace Logging
+ Imprivata CE >> Disable Trace Logging
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+trans_defs.js:2907 Imprivata CE >> Creating LogHelper_Content
+confirmid_content.js:286 Imprivata CE >> setUp (confirmid_content)
+trans_defs.js:2862 Imprivata CE >> onCompleted_CID for https://3d21f948-9483-4020-b76b-9f98c4878f7a-00-20kvxxuv56qet.picard.replit.dev/ (confirmid_content.js:281)
+trans_defs.js:2850 Imprivata CE >> Disable Trace Logging
+Console.js:61  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+Mt.forEach.n.<computed> @ Console.js:61
+(anonymous) @ dialog.tsx:542
+commitHookEffectListMount @ react-dom.development.js:23189
+commitPassiveMountOnFiber @ react-dom.development.js:24965
+commitPassiveMountEffects_complete @ react-dom.development.js:24930
+commitPassiveMountEffects_begin @ react-dom.development.js:24917
+commitPassiveMountEffects @ react-dom.development.js:24905
+flushPassiveEffectsImpl @ react-dom.development.js:27078
+flushPassiveEffects @ react-dom.development.js:27023
+commitRootImpl @ react-dom.development.js:26974
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+Console.js:61 Add Model button clicked
+Console.js:61 Form state: {defaultValues: {…}, …}
+Console.js:61 Form values: {name: 'Opel Calibra V6', itemNumber: '47461', chassis: 'TA-02', releaseYear: 2023, buildStatus: 'building', …}
+Console.js:61 Form errors: {}
+Console.js:61 Form is valid: false
+Console.js:61 Form is submitting: false
+Console.js:61 Form submission data: {name: 'Opel Calibra V6', itemNumber: '47461', chassis: 'TA-02', releaseYear: 2023, buildStatus: 'building', …}
+Console.js:61 Form errors: {}
+Console.js:61 Submitting data: {name: 'Opel Calibra V6', itemNumber: '47461', chassis: 'TA-02', releaseYear: 2023, buildStatus: 'building', …}

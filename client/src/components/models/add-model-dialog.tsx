@@ -36,13 +36,13 @@ import { useTamiyaScraper } from "@/hooks/use-tamiya-scraper";
 import { ModelWithRelations } from "@/types";
 import { z } from "zod";
 
-const formSchema = insertModelSchema.extend({
-  itemNumber: z.string().min(1, "Item number is required"),
-  tags: z.array(z.string()).optional(),
-}).omit({
+const formSchema = insertModelSchema.omit({
   userId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  itemNumber: z.string().min(1, "Item number is required"),
+  tags: z.array(z.string()).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -108,9 +108,10 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       form.reset();
     },
     onError: (error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to add model",
         variant: "destructive",
       });
     },
