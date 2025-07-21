@@ -52,9 +52,13 @@ const categories = [
 ];
 
 const suppliers = [
-  "Tamiya", "Yeah Racing", "MST", "Xtra Speed", "3Racing",
-  "GPM Racing", "Hot Racing", "RC Mart", "AMain Hobbies", "Tower Hobbies",
-  "Horizon Hobby", "Other"
+  "RC Mart", "AMain Hobbies", "Tower Hobbies", "Horizon Hobby", 
+  "TamiyaBase", "HobbyLink Japan", "Plaza Japan", "Other"
+];
+
+const manufacturers = [
+  "Tamiya", "Xtra Speed", "Yeah Racing", "MST", "3Racing",
+  "GPM Racing", "Hot Racing", "Kyosho", "Associated", "TLR", "Other"
 ];
 
 const chassisCompatibility = [
@@ -190,7 +194,27 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         return;
       }
 
-      // Detect brand/manufacturer from URL path (before detecting Tamiya)
+      // Detect store/supplier from URL domain
+      if (urlLower.includes('rcmart')) {
+        form.setValue('supplier', 'RC Mart');
+        parseLog.push("✅ Store detected: RC Mart");
+      } else if (urlLower.includes('amain')) {
+        form.setValue('supplier', 'AMain Hobbies');
+        parseLog.push("✅ Store detected: AMain Hobbies");
+      } else if (urlLower.includes('tower')) {
+        form.setValue('supplier', 'Tower Hobbies');
+        parseLog.push("✅ Store detected: Tower Hobbies");
+      } else if (urlLower.includes('horizonhobby')) {
+        form.setValue('supplier', 'Horizon Hobby');
+        parseLog.push("✅ Store detected: Horizon Hobby");
+      } else if (urlLower.includes('tamiyabase')) {
+        form.setValue('supplier', 'TamiyaBase');
+        parseLog.push("✅ Store detected: TamiyaBase");
+      } else {
+        parseLog.push("⚠️ Store not auto-detected");
+      }
+
+      // Detect brand/manufacturer from URL path
       const brandPatterns = [
         { pattern: /xtra-speed/i, brand: 'Xtra Speed', code: 'XS' },
         { pattern: /yeah-racing/i, brand: 'Yeah Racing', code: 'YR' },
@@ -203,9 +227,9 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       let detectedBrand = null;
       for (const { pattern, brand, code } of brandPatterns) {
         if (pattern.test(url)) {
-          form.setValue('supplier', brand);
+          form.setValue('manufacturer', brand);
           detectedBrand = { brand, code };
-          parseLog.push(`✅ Brand detected: ${brand}`);
+          parseLog.push(`✅ Manufacturer detected: ${brand}`);
           break;
         }
       }
@@ -213,7 +237,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       // Only detect Tamiya if no other brand was found and it's actually a Tamiya part
       if (!detectedBrand && (urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54') || urlLower.includes('/tamiya/47') || urlLower.includes('/tamiya/54'))) {
         form.setValue('isTamiyaBrand', true);
-        form.setValue('supplier', 'Tamiya');
+        form.setValue('manufacturer', 'Tamiya');
         parseLog.push("✅ Official Tamiya part detected");
       } else if (detectedBrand) {
         form.setValue('isTamiyaBrand', false);
@@ -538,23 +562,48 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                 />
               </div>
 
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="category"
+                  name="supplier"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
+                      <FormLabel>Store/Supplier</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
+                            <SelectValue placeholder="Select store" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
+                          {suppliers.map((supplier) => (
+                            <SelectItem key={supplier} value={supplier}>
+                              {supplier}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -566,20 +615,20 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
                 <FormField
                   control={form.control}
-                  name="supplier"
+                  name="manufacturer"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Supplier</FormLabel>
+                      <FormLabel>Manufacturer/Brand</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select supplier" />
+                            <SelectValue placeholder="Select brand" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {suppliers.map((supplier) => (
-                            <SelectItem key={supplier} value={supplier}>
-                              {supplier}
+                          {manufacturers.map((manufacturer) => (
+                            <SelectItem key={manufacturer} value={manufacturer}>
+                              {manufacturer}
                             </SelectItem>
                           ))}
                         </SelectContent>

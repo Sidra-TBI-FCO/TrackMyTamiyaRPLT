@@ -65,7 +65,8 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
   const filteredParts = parts.filter(part => {
     const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          part.itemNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         part.supplier?.toLowerCase().includes(searchTerm.toLowerCase());
+                         part.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         part.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "all" || part.category === filterCategory;
     const matchesStatus = filterStatus === "all" || part.installationStatus === filterStatus;
     const matchesBrand = filterBrand === "all" || 
@@ -202,8 +203,11 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
             <CardContent className="space-y-3">
               <div className="space-y-1">
                 <div className="text-sm font-medium">{part.category}</div>
+                {part.manufacturer && (
+                  <div className="text-sm text-muted-foreground">by {part.manufacturer}</div>
+                )}
                 {part.supplier && (
-                  <div className="text-sm text-muted-foreground">by {part.supplier}</div>
+                  <div className="text-xs text-muted-foreground">from {part.supplier}</div>
                 )}
                 {part.cost && (
                   <div className="text-sm font-medium text-green-600">${parseFloat(part.cost).toFixed(2)}</div>

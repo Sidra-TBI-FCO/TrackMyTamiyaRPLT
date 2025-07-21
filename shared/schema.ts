@@ -63,7 +63,8 @@ export const hopUpParts = pgTable("hop_up_parts", {
   name: text("name").notNull(),
   itemNumber: text("item_number"),
   category: text("category").notNull(), // motor, suspension, tires, body, electronics, etc.
-  supplier: text("supplier"),
+  supplier: text("supplier"), // Store/retailer where purchased
+  manufacturer: text("manufacturer"), // Brand that makes the part
   cost: numeric("cost", { precision: 10, scale: 2 }),
   installationStatus: text("installation_status").notNull().default("planned"), // planned, installed, removed
   installationDate: timestamp("installation_date"),
