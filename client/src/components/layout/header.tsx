@@ -1,4 +1,4 @@
-import { Search, Images, Moon, Sun, Settings } from "lucide-react";
+import { Search, Images, Moon, Sun, Settings, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -48,8 +48,8 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-tamiya-red rounded-lg flex items-center justify-center">
-                <div className="text-white text-lg font-bold">🏎️</div>
+              <div className="w-10 h-10 bg-tamiya-red dark:bg-tamiya-blue rounded-lg flex items-center justify-center">
+                <Star className="h-5 w-5 text-white fill-white" />
               </div>
               <div>
                 <h1 className="text-xl font-mono font-bold text-gray-900 dark:text-white">
