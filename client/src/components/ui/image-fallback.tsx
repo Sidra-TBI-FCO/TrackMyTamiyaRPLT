@@ -17,7 +17,10 @@ export default function ImageFallback({ src, alt, className = "", fallbackText }
       <div className={`flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 ${className}`}>
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="text-sm text-center">
-          {fallbackText || "Image not available in this environment"}
+          {fallbackText || "Image not available"}
+        </p>
+        <p className="text-xs text-center mt-1 opacity-70">
+          URL: {src}
         </p>
       </div>
     );
@@ -28,18 +31,25 @@ export default function ImageFallback({ src, alt, className = "", fallbackText }
       {isLoading && (
         <div className={`absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className}`}>
           <ImageIcon className="h-8 w-8 text-gray-400 animate-pulse" />
+          <span className="ml-2 text-sm text-gray-500">Loading...</span>
         </div>
       )}
       <img
         src={src}
         alt={alt}
         className={className}
-        onLoad={() => setIsLoading(false)}
-        onError={() => {
+        onLoad={() => {
+          console.log(`Image loaded successfully: ${src}`);
+          setIsLoading(false);
+        }}
+        onError={(e) => {
+          console.error(`Failed to load image for ${alt}:`, src);
+          console.error('Image error event:', e);
           setHasError(true);
           setIsLoading(false);
         }}
         style={{ display: isLoading ? 'none' : 'block' }}
+        loading="lazy"
       />
     </div>
   );

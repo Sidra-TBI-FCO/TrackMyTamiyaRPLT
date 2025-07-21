@@ -430,8 +430,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentType = contentTypes[ext] || 'application/octet-stream';
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      res.setHeader('Access-Control-Allow-Origin', '*'); // Add CORS support
+      res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests
       
-      console.log(`Successfully serving file: ${filename}, type: ${contentType}`);
+      console.log(`Successfully serving file: ${filename}, type: ${contentType}, size: ${file.length} bytes`);
       res.send(file);
     } catch (error: any) {
       console.error('File serving error:', error);
