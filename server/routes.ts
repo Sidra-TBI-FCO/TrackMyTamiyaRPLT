@@ -408,11 +408,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { Client } = await import('@replit/object-storage');
       const client = new Client();
       
-      // Get file from Replit Object Storage using the bucket name
-      const bucketName = 'MyTamTrackPhotos';
-      console.log(`Downloading from bucket: ${bucketName}, file: ${filename}`);
+      // Get raw bytes from Replit Object Storage
+      console.log(`Downloading file: ${filename}`);
       
-      const file = await client.downloadAsBytes(filename);
+      // The downloadAsBytes returns raw bytes, not a wrapped response
+      const fileBytes = await client.downloadAsBytes(filename);
+      
+      // Convert to buffer directly - the API should return Uint8Array
+      let buffer: Buffer;
+      if (fileBytes instanceof Uint8Array) {
+        buffer = Buffer.from(fileBytes);
+      } else if (Buffer.isBuffer(fileBytes)) {
+        buffer = fileBytes;
+      } else {
+        // Handle the case where it's wrapped in a response object
+        console.log('Unexpected file data format, trying to extract...');
+        throw new Error('Unable to process file data from storage');
+      }
+      
+      console.log(`File buffer created, size: ${buffer.length} bytes`);
       
       // Set appropriate content type based on file extension
       const ext = path.extname(filename).toLowerCase();
@@ -429,12 +443,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const contentType = contentTypes[ext] || 'application/octet-stream';
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-      res.setHeader('Access-Control-Allow-Origin', '*'); // Add CORS support
-      res.setHeader('Accept-Ranges', 'bytes'); // Enable range requests
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Length', buffer.length.toString());
       
-      console.log(`Successfully serving file: ${filename}, type: ${contentType}, size: ${file.length} bytes`);
-      res.send(file);
+      console.log(`Successfully serving file: ${filename}, type: ${contentType}, size: ${buffer.length} bytes`);
+      res.send(buffer);
     } catch (error: any) {
       console.error('File serving error:', error);
       console.error('Error details:', {
