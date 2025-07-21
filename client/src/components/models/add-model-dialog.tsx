@@ -39,6 +39,10 @@ import { z } from "zod";
 const formSchema = insertModelSchema.extend({
   itemNumber: z.string().min(1, "Item number is required"),
   tags: z.array(z.string()).optional(),
+}).omit({
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -441,6 +445,9 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                   console.log("Add Model button clicked");
                   console.log("Form state:", form.formState);
                   console.log("Form values:", form.getValues());
+                  console.log("Form errors:", form.formState.errors);
+                  console.log("Form is valid:", form.formState.isValid);
+                  console.log("Form is submitting:", form.formState.isSubmitting);
                 }}
               >
                 {createModelMutation.isPending || isScraping ? "Adding..." : "Add Model"}
