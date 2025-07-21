@@ -60,8 +60,10 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
                 </div>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide" style={{fontFamily: 'Bebas Neue, Arial, sans-serif'}}>
-                  TRACKMYTAMIYA
+                <h1 className="text-xl font-bold tracking-wide" style={{fontFamily: 'Bebas Neue, Arial, sans-serif'}}>
+                  <span className="text-tamiya-red dark:text-tamiya-blue">TRACK</span>
+                  <span className="text-tamiya-blue dark:text-tamiya-red">MY</span>
+                  <span className="text-tamiya-red dark:text-tamiya-blue">TAMIYA</span>
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   RC Collection Manager
