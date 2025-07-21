@@ -160,75 +160,180 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
   const parseProductUrl = async (url: string) => {
     setIsParsingUrl(true);
+    
+    const parseLog: string[] = ["🔍 Starting URL analysis..."];
+    
     try {
+      const urlLower = url.toLowerCase();
+      parseLog.push(`📝 Processing: ${url}`);
+
       // Auto-detect if this is a TamiyaBase URL and move it to the correct field
       if (url.includes('tamiyabase.com')) {
         form.setValue('tamiyaBaseUrl', url);
         form.setValue('productUrl', '');
         form.setValue('isTamiyaBrand', true);
-        toast({ title: "TamiyaBase URL detected and moved to correct field" });
+        parseLog.push("✅ TamiyaBase URL detected - moved to correct field");
+        parseLog.push("✅ Marked as official Tamiya part");
+        
+        // Extract TamiyaBase part number
+        const tamiyaPartMatch = url.match(/parts\/(\d+)-(\d+)/);
+        if (tamiyaPartMatch) {
+          const partNumber = tamiyaPartMatch[2];
+          form.setValue('itemNumber', partNumber);
+          parseLog.push(`✅ Extracted TamiyaBase part number: ${partNumber}`);
+        }
+        
+        toast({ 
+          title: "TamiyaBase URL Processed",
+          description: parseLog.join('\n')
+        });
         return;
       }
 
-      // Simple URL parsing for common RC retailers
-      const urlLower = url.toLowerCase();
-      
-      // Detect Tamiya parts from official sources
-      if (urlLower.includes('tamiya') || urlLower.includes('47') || urlLower.includes('54')) {
-        form.setValue('isTamiyaBrand', true);
-        form.setValue('supplier', 'Tamiya');
-      }
-      
       // Detect suppliers from URL
       if (urlLower.includes('rcmart')) {
         form.setValue('supplier', 'RC Mart');
+        parseLog.push("✅ Supplier detected: RC Mart");
       } else if (urlLower.includes('amain')) {
         form.setValue('supplier', 'AMain Hobbies');
+        parseLog.push("✅ Supplier detected: AMain Hobbies");
       } else if (urlLower.includes('tower')) {
         form.setValue('supplier', 'Tower Hobbies');
+        parseLog.push("✅ Supplier detected: Tower Hobbies");
+      } else if (urlLower.includes('horizonhobby')) {
+        form.setValue('supplier', 'Horizon Hobby');
+        parseLog.push("✅ Supplier detected: Horizon Hobby");
+      } else {
+        parseLog.push("⚠️ Supplier not auto-detected");
       }
       
-      // Extract potential part numbers from URL
-      const partNumberMatch = url.match(/(\d{5,})/);
-      if (partNumberMatch && !form.getValues('itemNumber')) {
-        form.setValue('itemNumber', partNumberMatch[1]);
+      // Detect Tamiya parts from official sources or part numbers
+      if (urlLower.includes('tamiya') || urlLower.includes('47') || urlLower.includes('54')) {
+        form.setValue('isTamiyaBrand', true);
+        form.setValue('supplier', 'Tamiya');
+        parseLog.push("✅ Official Tamiya part detected");
       }
       
-      // Auto-categorize based on URL keywords
-      if (urlLower.includes('motor')) {
-        form.setValue('category', 'Motor');
-      } else if (urlLower.includes('chassis') || urlLower.includes('frame')) {
-        form.setValue('category', 'Chassis');
-      } else if (urlLower.includes('damper') || urlLower.includes('shock')) {
-        form.setValue('category', 'Suspension');
-      } else if (urlLower.includes('wheel') || urlLower.includes('rim')) {
-        form.setValue('category', 'Wheels');
-      } else if (urlLower.includes('tire') || urlLower.includes('tyre')) {
-        form.setValue('category', 'Tires');
-      } else if (urlLower.includes('body') || urlLower.includes('shell')) {
-        form.setValue('category', 'Body');
+      // Extract potential part numbers from URL (5+ digits)
+      const partNumberMatches = url.match(/(\d{5,})/g);
+      if (partNumberMatches && !form.getValues('itemNumber')) {
+        const partNumber = partNumberMatches[0];
+        form.setValue('itemNumber', partNumber);
+        parseLog.push(`✅ Part number extracted: ${partNumber}`);
+      } else if (!partNumberMatches) {
+        parseLog.push("⚠️ No part number found in URL");
       }
-
-      // Detect materials from URL
-      if (urlLower.includes('carbon')) {
-        form.setValue('material', 'Carbon Fiber');
-      } else if (urlLower.includes('aluminum') || urlLower.includes('aluminium')) {
-        form.setValue('material', 'Aluminum');
-      }
-
-      // Detect chassis compatibility from URL
-      const chassisMatch = url.match(/(ta\d+|tb\d+|tt\d+|df\d+|m\d+)/i);
-      if (chassisMatch) {
-        const chassis = chassisMatch[1].toUpperCase();
-        const currentCompat = form.getValues('compatibility') || [];
-        if (!currentCompat.includes(chassis)) {
-          form.setValue('compatibility', [...currentCompat, chassis]);
+      
+      // Extract part name from URL path
+      const pathParts = url.split('/').pop()?.split('-') || [];
+      if (pathParts.length > 2) {
+        const potentialName = pathParts
+          .filter(part => !part.match(/^\d+$/) && part.length > 2)
+          .join(' ')
+          .replace(/[^a-zA-Z0-9\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (potentialName && !form.getValues('name')) {
+          form.setValue('name', potentialName.charAt(0).toUpperCase() + potentialName.slice(1));
+          parseLog.push(`✅ Part name extracted: ${potentialName}`);
         }
       }
 
-      toast({ title: "URL analyzed and fields populated" });
+      // Auto-categorize based on URL keywords
+      const categoryKeywords = {
+        'Motor': ['motor', 'brushless', 'brushed'],
+        'Chassis': ['chassis', 'frame', 'main-frame'],
+        'Suspension': ['damper', 'shock', 'spring', 'suspension'],
+        'Wheels': ['wheel', 'rim', 'hub'],
+        'Tires': ['tire', 'tyre', 'rubber'],
+        'Body': ['body', 'shell', 'lexan'],
+        'Drivetrain': ['gear', 'differential', 'driveshaft', 'belt'],
+        'Electronics': ['esc', 'servo', 'receiver', 'transmitter'],
+        'Tools': ['tool', 'wrench', 'hex', 'driver']
+      };
+
+      let categoryFound = false;
+      for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        if (keywords.some(keyword => urlLower.includes(keyword))) {
+          form.setValue('category', category);
+          parseLog.push(`✅ Category detected: ${category}`);
+          categoryFound = true;
+          break;
+        }
+      }
+      if (!categoryFound) {
+        parseLog.push("⚠️ Category not auto-detected");
+      }
+
+      // Detect materials from URL
+      const materialKeywords = {
+        'Carbon Fiber': ['carbon', 'cf'],
+        'Aluminum': ['aluminum', 'aluminium', 'alu'],
+        'Steel': ['steel', 'hardened'],
+        'Plastic': ['plastic', 'abs'],
+        'Titanium': ['titanium', 'ti']
+      };
+
+      let materialFound = false;
+      for (const [material, keywords] of Object.entries(materialKeywords)) {
+        if (keywords.some(keyword => urlLower.includes(keyword))) {
+          form.setValue('material', material);
+          parseLog.push(`✅ Material detected: ${material}`);
+          materialFound = true;
+          break;
+        }
+      }
+      if (!materialFound) {
+        parseLog.push("⚠️ Material not auto-detected");
+      }
+
+      // Detect chassis compatibility from URL
+      const chassisPatterns = [
+        /(ta0?\d+)/i, /(tb0?\d+)/i, /(tt0?\d+)/i, /(df0?\d+)/i, 
+        /(m0?\d+)/i, /(tc0?\d+)/i, /(xv0?\d+)/i
+      ];
+      
+      let chassisFound = false;
+      for (const pattern of chassisPatterns) {
+        const chassisMatch = url.match(pattern);
+        if (chassisMatch) {
+          const chassis = chassisMatch[1].toUpperCase();
+          const currentCompat = form.getValues('compatibility') || [];
+          if (!currentCompat.includes(chassis)) {
+            form.setValue('compatibility', [...currentCompat, chassis]);
+            parseLog.push(`✅ Chassis compatibility detected: ${chassis}`);
+            chassisFound = true;
+          }
+        }
+      }
+      if (!chassisFound) {
+        parseLog.push("⚠️ Chassis compatibility not auto-detected");
+      }
+
+      // Color detection
+      const colorKeywords = ['red', 'blue', 'black', 'white', 'silver', 'gold', 'green', 'orange', 'purple'];
+      const colorFound = colorKeywords.find(color => urlLower.includes(color));
+      if (colorFound) {
+        form.setValue('color', colorFound.charAt(0).toUpperCase() + colorFound.slice(1));
+        parseLog.push(`✅ Color detected: ${colorFound}`);
+      } else {
+        parseLog.push("⚠️ Color not auto-detected");
+      }
+
+      parseLog.push("✅ URL analysis complete!");
+      
+      console.log("URL Parse Debug Log:", parseLog);
+      
+      toast({ 
+        title: "URL Analysis Complete",
+        description: `Found ${parseLog.filter(log => log.includes('✅')).length - 1} details. Check console for full log.`
+      });
+      
     } catch (error) {
-      toast({ title: "Could not parse URL automatically", variant: "destructive" });
+      parseLog.push(`❌ Error: ${error}`);
+      console.error("URL Parse Error:", parseLog);
+      toast({ title: "URL parsing failed", description: "Check console for details", variant: "destructive" });
     } finally {
       setIsParsingUrl(false);
     }
@@ -256,9 +361,70 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* URL Parser - First Section */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm">Quick Add from Store URL</h4>
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border">
+                <FormField
+                  control={form.control}
+                  name="productUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paste Store URL</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input 
+                            placeholder="https://www.rcmart.com/..." 
+                            {...field}
+                            className="font-mono text-sm"
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="default"
+                          onClick={() => {
+                            const url = form.getValues('productUrl');
+                            if (url) parseProductUrl(url);
+                          }}
+                          disabled={isParsingUrl || !field.value}
+                          className="whitespace-nowrap"
+                        >
+                          {isParsingUrl ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Auto-Fill"
+                          )}
+                        </Button>
+                      </div>
+                      <FormDescription className="text-xs">
+                        <div className="space-y-1">
+                          <div>Supported stores: RC Mart, AMain Hobbies, Tower Hobbies, TamiyaBase</div>
+                          <details className="text-xs">
+                            <summary className="cursor-pointer hover:text-blue-600">Click for example URLs to test</summary>
+                            <div className="mt-2 space-y-1 pl-4 border-l-2 border-blue-200">
+                              <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
+                                https://www.rcmart.com/yeah-racing-aluminum-3-5mm-carbon-fiber-chassis-for-tamiya-ta07-pro-ta07pro-010
+                              </div>
+                              <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
+                                https://tamiyabase.com/parts/7073-10004432
+                              </div>
+                              <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
+                                https://www.amainhobbies.com/tamiya-54732-ta07-carbon-damper-stay
+                              </div>
+                            </div>
+                          </details>
+                        </div>
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Basic Information</h4>
+              <h4 className="font-semibold text-sm">Part Details</h4>
               
               <FormField
                 control={form.control}
@@ -382,68 +548,55 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="productUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product URL</FormLabel>
-                    <div className="flex gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="productUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Store URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://www.rcmart.com/..." {...field} />
+                        <Input placeholder="https://www.rcmart.com/..." {...field} className="font-mono text-sm" />
                       </FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          const url = form.getValues('productUrl');
-                          if (url) parseProductUrl(url);
-                        }}
-                        disabled={isParsingUrl || !field.value}
-                      >
-                        {isParsingUrl ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Parse"
-                        )}
-                      </Button>
-                    </div>
-                    <FormDescription>
-                      Paste a URL from RC Mart, AMain, etc. and click Parse to auto-fill fields
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormDescription className="text-xs">
+                        Link to product page
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="tamiyaBaseUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>TamiyaBase URL</FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl>
-                        <Input placeholder="https://tamiyabase.com/parts/..." {...field} />
-                      </FormControl>
-                      {field.value && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(field.value, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    <FormDescription>
-                      Link to TamiyaBase part database entry
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="tamiyaBaseUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>TamiyaBase URL</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input placeholder="https://tamiyabase.com/parts/..." {...field} className="font-mono text-sm" />
+                        </FormControl>
+                        {field.value && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(field.value, '_blank')}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <FormDescription className="text-xs">
+                        Official parts database
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+
             </div>
 
             {/* Specifications */}
