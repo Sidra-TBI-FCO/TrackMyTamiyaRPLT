@@ -77,8 +77,105 @@ const chassisCompatibility = [
 
 export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: HopUpPartDialogProps) {
   const [isParsingUrl, setIsParsingUrl] = useState(false);
+  const [parseLog, setParseLog] = useState<string[]>([]);
+  const [isScrapingPage, setIsScrapingPage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Enhanced page scraping function
+  const scrapeProductPage = async (url: string) => {
+    if (!url) return;
+    
+    setIsScrapingPage(true);
+    setParseLog(["🔄 Scraping product page..."]);
+    
+    try {
+      const response = await fetch('/api/scrape-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Scraping failed: ${response.status}`);
+      }
+      
+      const scrapedData = await response.json();
+      const newLog = ["✅ Successfully scraped product page!"];
+      
+      // Apply the scraped data to the form
+      if (scrapedData.name) {
+        form.setValue('name', scrapedData.name);
+        newLog.push(`✅ Product name: ${scrapedData.name}`);
+      }
+      
+      if (scrapedData.manufacturer) {
+        form.setValue('manufacturer', scrapedData.manufacturer);
+        newLog.push(`✅ Manufacturer: ${scrapedData.manufacturer}`);
+      }
+      
+      if (scrapedData.category) {
+        form.setValue('category', scrapedData.category);
+        newLog.push(`✅ Category: ${scrapedData.category}`);
+      }
+      
+      if (scrapedData.material) {
+        form.setValue('material', scrapedData.material);
+        newLog.push(`✅ Material: ${scrapedData.material}`);
+      }
+      
+      if (scrapedData.color) {
+        form.setValue('color', scrapedData.color);
+        newLog.push(`✅ Color: ${scrapedData.color}`);
+      }
+      
+      if (scrapedData.compatibility && scrapedData.compatibility.length > 0) {
+        const currentCompat = form.getValues('compatibility') || [];
+        const newCompatibility = Array.from(new Set([...currentCompat, ...scrapedData.compatibility]));
+        form.setValue('compatibility', newCompatibility);
+        newLog.push(`✅ Chassis compatibility: ${scrapedData.compatibility.join(', ')}`);
+      }
+      
+      if (scrapedData.cost) {
+        form.setValue('cost', scrapedData.cost);
+        newLog.push(`✅ Price: $${scrapedData.cost}`);
+      }
+      
+      // Extract item number from URL as fallback
+      const itemNumberMatch = url.match(/([a-z]{2,4}-[a-z0-9]+)/i);
+      if (itemNumberMatch) {
+        form.setValue('itemNumber', itemNumberMatch[1].toUpperCase());
+        newLog.push(`✅ Item number: ${itemNumberMatch[1].toUpperCase()}`);
+      }
+      
+      // Set store based on URL
+      if (url.includes('rcmart.com')) {
+        form.setValue('supplier', 'RC Mart');
+        newLog.push(`✅ Store: RC Mart`);
+      }
+      
+      setParseLog(newLog);
+      
+      toast({
+        title: "Page scraped successfully!",
+        description: `Found ${newLog.length - 1} product details`,
+      });
+      
+    } catch (error: any) {
+      console.error('Scraping error:', error);
+      setParseLog([`❌ Scraping failed: ${error.message}`]);
+      
+      toast({
+        title: "Scraping failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsScrapingPage(false);
+    }
+  };
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -545,28 +642,47 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                             className="font-mono text-sm"
                           />
                         </FormControl>
-                        <Button
-                          type="button"
-                          variant="default"
-                          onClick={() => {
-                            const url = form.getValues('productUrl');
-                            if (url) parseProductUrl(url);
-                          }}
-                          disabled={isParsingUrl || !field.value}
-                          className="whitespace-nowrap"
-                        >
-                          {isParsingUrl ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            "Auto-Fill"
-                          )}
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="default"
+                            onClick={() => {
+                              const url = form.getValues('productUrl');
+                              if (url) scrapeProductPage(url);
+                            }}
+                            disabled={isScrapingPage || !field.value}
+                            className="whitespace-nowrap px-3"
+                          >
+                            {isScrapingPage ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Scrape Page"
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const url = form.getValues('productUrl');
+                              if (url) parseProductUrl(url);
+                            }}
+                            disabled={isParsingUrl || !field.value}
+                            className="whitespace-nowrap px-3"
+                          >
+                            {isParsingUrl ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "URL Only"
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       <FormDescription className="text-xs">
                         <div className="space-y-1">
-                          <div>Supported stores: RC Mart, AMain Hobbies, Tower Hobbies, TamiyaBase</div>
+                          <div><strong>Scrape Page</strong>: Fetches complete product details from page content</div>
+                          <div><strong>URL Only</strong>: Extracts basic info from URL structure (faster but limited)</div>
                           <details className="text-xs">
-                            <summary className="cursor-pointer hover:text-blue-600">Click for example URLs to test</summary>
+                            <summary className="cursor-pointer hover:text-blue-600">Supported stores & example URLs</summary>
                             <div className="mt-2 space-y-1 pl-4 border-l-2 border-blue-200">
                               <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
                                 https://www.rcmart.com/yeah-racing-aluminum-3-5mm-carbon-fiber-chassis-for-tamiya-ta07-pro-ta07pro-010

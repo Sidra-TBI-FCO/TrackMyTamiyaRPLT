@@ -8,6 +8,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileStorage } from "./storage-service";
+import { JSDOM } from "jsdom";
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -539,27 +540,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tamiya scraping route
-  app.post('/api/scrape-tamiya', async (req, res) => {
+  // Product page scraping route
+  app.post('/api/scrape-product', async (req, res) => {
     try {
-      const { itemNumber } = req.body;
-      if (!itemNumber) {
-        return res.status(400).json({ message: 'Item number is required' });
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ message: 'URL is required' });
       }
 
-      // This would implement actual scraping logic
-      // For now, return mock data
-      const mockData = {
-        name: `Model ${itemNumber}`,
-        chassis: 'TT-02',
-        releaseYear: 2023,
-        boxArt: null,
-        manualUrl: null,
+      console.log(`Scraping product page: ${url}`);
+      
+      // Fetch the page content
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const html = await response.text();
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+      
+      // Initialize result object
+      const scrapedData: any = {
+        name: '',
+        manufacturer: '',
+        category: '',
+        material: '',
+        color: '',
+        compatibility: [],
+        itemNumber: '',
+        cost: null
       };
-
-      res.json(mockData);
+      
+      // RC Mart specific scraping
+      if (url.includes('rcmart.com')) {
+        // Product title
+        const titleElement = document.querySelector('h1.product-title, .product-name h1, .product-info h1');
+        if (titleElement) {
+          scrapedData.name = titleElement.textContent?.trim() || '';
+        }
+        
+        // Extract manufacturer from title
+        const title = scrapedData.name.toLowerCase();
+        if (title.includes('xtra speed')) scrapedData.manufacturer = 'Xtra Speed';
+        else if (title.includes('yeah racing')) scrapedData.manufacturer = 'Yeah Racing';
+        else if (title.includes('tamiya')) scrapedData.manufacturer = 'Tamiya';
+        else if (title.includes('mst')) scrapedData.manufacturer = 'MST';
+        else if (title.includes('3racing')) scrapedData.manufacturer = '3Racing';
+        
+        // Extract material from title
+        if (title.includes('aluminum') || title.includes('aluminium')) scrapedData.material = 'Aluminum';
+        else if (title.includes('carbon')) scrapedData.material = 'Carbon Fiber';
+        else if (title.includes('steel')) scrapedData.material = 'Steel';
+        else if (title.includes('plastic')) scrapedData.material = 'Plastic';
+        
+        // Extract color from title
+        const colors = ['red', 'blue', 'black', 'white', 'silver', 'gold', 'green', 'orange'];
+        const foundColor = colors.find(color => title.includes(color));
+        if (foundColor) scrapedData.color = foundColor.charAt(0).toUpperCase() + foundColor.slice(1);
+        
+        // Extract chassis compatibility from title
+        const chassisPattern = /(ta0?[0-9]{1,2}(?:sw)?|tb0?[0-9]{1,2}|tt0?[0-9]{1,2}|df0?[0-9]{1,2}|m0?[0-9]{1,2}|tc0?[0-9]{1,2}|xv0?[0-9]{1,2}|cc0?[0-9]{1,2}|ff0?[0-9]{1,2})/gi;
+        const chassisMatches = title.match(chassisPattern);
+        if (chassisMatches) {
+          scrapedData.compatibility = Array.from(new Set(chassisMatches.map((c: string) => c.toUpperCase())));
+        }
+        
+        // Try to find price
+        const priceElement = document.querySelector('.price, .product-price, .current-price');
+        if (priceElement) {
+          const priceText = priceElement.textContent?.replace(/[^0-9.]/g, '');
+          if (priceText) scrapedData.cost = parseFloat(priceText);
+        }
+        
+        // Category detection based on title keywords
+        if (title.includes('damper') || title.includes('shock')) scrapedData.category = 'Suspension';
+        else if (title.includes('upright') || title.includes('knuckle')) scrapedData.category = 'Suspension';
+        else if (title.includes('chassis')) scrapedData.category = 'Chassis';
+        else if (title.includes('wheel') || title.includes('rim')) scrapedData.category = 'Wheels';
+        else if (title.includes('motor')) scrapedData.category = 'Motor';
+        else if (title.includes('servo')) scrapedData.category = 'Servo';
+      }
+      
+      console.log('Scraped data:', scrapedData);
+      res.json(scrapedData);
+      
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      console.error('Scraping error:', error);
+      res.status(500).json({ message: `Scraping failed: ${error.message}` });
     }
   });
 
