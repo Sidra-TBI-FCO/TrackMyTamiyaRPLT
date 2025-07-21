@@ -432,6 +432,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
   };
 
   const onSubmit = (data: FormData) => {
+    console.log("Form submission data:", data);
     if (part) {
       updateMutation.mutate(data);
     } else {
@@ -561,7 +562,9 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           value={field.value || ""}
                           onChange={(e) => {
                             const value = e.target.value;
-                            field.onChange(value === "" ? undefined : parseFloat(value) || 0);
+                            const numValue = value === "" ? undefined : parseFloat(value);
+                            console.log("Cost field change:", value, "->", numValue);
+                            field.onChange(numValue);
                           }}
                         />
                       </FormControl>
