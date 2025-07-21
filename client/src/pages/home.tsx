@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Camera, Mic, Play, Search } from "lucide-react";
+import { Plus, Camera, Mic, Play, Search, Wrench } from "lucide-react";
 import { useLocation } from "wouter";
 import { ModelWithRelations } from "@/types";
 import CollectionStats from "@/components/stats/collection-stats";
@@ -34,6 +34,11 @@ export default function Home() {
     console.log("Starting voice recording");
   };
 
+  const handleAddHopUp = () => {
+    // Navigate to models list to select which model to add hop-up part to
+    setLocation("/models");
+  };
+
 
 
   const handleAddPhoto = (modelId: number) => {
@@ -61,6 +66,9 @@ export default function Home() {
       </div>
       {/* Quick Actions - Hidden on mobile, shown on desktop */}
       <div className="mb-8 hidden lg:block">
+        <h2 className="text-lg font-mono font-bold text-gray-900 dark:text-white mb-4">
+          Quick Actions
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AddModelDialog
             trigger={
@@ -86,13 +94,13 @@ export default function Home() {
           </Button>
 
           <Button
-            onClick={handleVoiceNote}
-            className="bg-green-600 text-white p-4 h-auto hover:bg-green-700 transition-colors flex items-center space-x-3 justify-start"
+            onClick={handleAddHopUp}
+            className="bg-orange-600 text-white p-4 h-auto hover:bg-orange-700 transition-colors flex items-center space-x-3 justify-start"
           >
-            <Mic className="text-xl" />
+            <Wrench className="text-xl" />
             <div className="text-left">
-              <div className="font-mono font-semibold">Voice Note</div>
-              <div className="text-sm opacity-90">Record build progress</div>
+              <div className="font-mono font-semibold">Add Hop-Up</div>
+              <div className="text-sm opacity-90">Track performance parts</div>
             </div>
           </Button>
         </div>
