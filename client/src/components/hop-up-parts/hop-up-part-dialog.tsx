@@ -380,24 +380,24 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         parseLog.push("⚠️ Material not auto-detected");
       }
 
-      // Detect chassis compatibility from URL
-      const chassisPatterns = [
-        /(ta0?\d+)/i, /(tb0?\d+)/i, /(tt0?\d+)/i, /(df0?\d+)/i, 
-        /(m0?\d+)/i, /(tc0?\d+)/i, /(xv0?\d+)/i
-      ];
+      // Detect chassis compatibility from URL - use global regex to find all matches
+      const chassisRegex = /(ta0?\d+|tb0?\d+|tt0?\d+|df0?\d+|m0?\d+|tc0?\d+|xv0?\d+)/gi;
+      const chassisMatches = [];
+      let match;
+      while ((match = chassisRegex.exec(url)) !== null) {
+        chassisMatches.push(match[1].toUpperCase());
+      }
       
       let chassisFound = false;
-      for (const pattern of chassisPatterns) {
-        const chassisMatch = url.match(pattern);
-        if (chassisMatch) {
-          const chassis = chassisMatch[1].toUpperCase();
-          const currentCompat = form.getValues('compatibility') || [];
-          if (!currentCompat.includes(chassis)) {
-            form.setValue('compatibility', [...currentCompat, chassis]);
-            parseLog.push(`✅ Chassis compatibility detected: ${chassis}`);
-            chassisFound = true;
-          }
-        }
+      if (chassisMatches.length > 0) {
+        const uniqueChassis = [...new Set(chassisMatches)];
+        const currentCompat = form.getValues('compatibility') || [];
+        const newCompatibility = [...new Set([...currentCompat, ...uniqueChassis])];
+        form.setValue('compatibility', newCompatibility);
+        uniqueChassis.forEach(chassis => {
+          parseLog.push(`✅ Chassis compatibility detected: ${chassis}`);
+        });
+        chassisFound = true;
       }
       if (!chassisFound) {
         parseLog.push("⚠️ Chassis compatibility not auto-detected");
