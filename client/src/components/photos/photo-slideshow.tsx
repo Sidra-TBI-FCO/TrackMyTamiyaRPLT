@@ -41,8 +41,6 @@ export default function PhotoSlideshow({
   const [isPlaying, setIsPlaying] = useState(false);
   const [settings] = useState(() => getSlideshowSettings());
 
-  const currentPhoto = photos[currentIndex];
-
   // Auto-start slideshow when opened if enabled
   useEffect(() => {
     if (isOpen && settings.autoStart && photos.length > 0) {
@@ -56,7 +54,7 @@ export default function PhotoSlideshow({
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % photos.length);
-    }, settings.duration * 1000); // Use settings duration in milliseconds
+    }, settings.duration * 1000);
 
     return () => clearInterval(interval);
   }, [isPlaying, photos.length, settings.duration]);
@@ -71,33 +69,25 @@ export default function PhotoSlideshow({
           onClose();
           break;
         case 'ArrowLeft':
-          goToPrevious();
+          e.preventDefault();
+          setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
           break;
         case 'ArrowRight':
-          goToNext();
+          e.preventDefault();
+          setCurrentIndex((prev) => (prev + 1) % photos.length);
           break;
         case ' ':
           e.preventDefault();
-          togglePlayPause();
+          setIsPlaying(prev => !prev);
+          break;
+        default:
           break;
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
-
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % photos.length);
-  }, [photos.length]);
-
-  const goToPrevious = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
-  }, [photos.length]);
-
-  const togglePlayPause = useCallback(() => {
-    setIsPlaying(prev => !prev);
-  }, []);
+  }, [isOpen, photos.length, onClose]);
 
   // Reset when photos change or slideshow opens
   useEffect(() => {
@@ -155,6 +145,19 @@ export default function PhotoSlideshow({
     };
   }, [isOpen]);
 
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % photos.length);
+  }, [photos.length]);
+
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
+  }, [photos.length]);
+
+  const togglePlayPause = useCallback(() => {
+    setIsPlaying(prev => !prev);
+  }, []);
+
+  // Early returns after all hooks
   if (!isOpen) return null;
   
   // If no photos, show empty state
@@ -172,6 +175,7 @@ export default function PhotoSlideshow({
     );
   }
   
+  const currentPhoto = photos[currentIndex];
   if (!currentPhoto) return null;
 
   return (
@@ -209,28 +213,32 @@ export default function PhotoSlideshow({
         )}
 
         {/* Top Controls */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {photos.length > 1 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={togglePlayPause}
-                className="bg-black/50 hover:bg-black/70 text-white border-0"
-              >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-            )}
-            <span className="text-white font-mono text-sm bg-black/50 px-2 py-1 rounded">
+        <div className="absolute top-4 right-4 flex items-center space-x-2">
+          {/* Photo counter */}
+          {photos.length > 1 && (
+            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-mono">
               {currentIndex + 1} / {photos.length}
-            </span>
-          </div>
+            </div>
+          )}
 
+          {/* Play/Pause button */}
+          {photos.length > 1 && (
+            <Button
+              onClick={togglePlayPause}
+              variant="ghost"
+              size="icon"
+              className="bg-black/50 hover:bg-black/70 text-white rounded-full"
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+          )}
+
+          {/* Close button */}
           <Button
-            variant="ghost"
-            size="sm"
             onClick={onClose}
-            className="bg-black/50 hover:bg-black/70 text-white border-0"
+            variant="ghost"
+            size="icon"
+            className="bg-black/50 hover:bg-black/70 text-white rounded-full"
           >
             <X className="h-4 w-4" />
           </Button>
