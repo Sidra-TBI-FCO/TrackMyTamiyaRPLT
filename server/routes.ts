@@ -32,10 +32,11 @@ const upload = multer({
     const allowedTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
       'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a',
-      'application/octet-stream' // Some mobile browsers send this for images
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/octet-stream' // Some mobile browsers send this for various file types
     ];
     
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp3', '.wav', '.ogg', '.m4a'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp3', '.wav', '.ogg', '.m4a', '.pdf', '.doc', '.docx'];
     const extension = path.extname(file.originalname).toLowerCase();
     
     // Accept if MIME type is correct OR if extension is valid (handles mobile browser issues)
@@ -48,7 +49,7 @@ const upload = multer({
       cb(null, true);
     } else {
       console.log(`Rejected file: ${file.originalname}, type: ${file.mimetype}, extension: ${extension}`);
-      cb(new Error(`Invalid file type: ${file.mimetype}. Allowed: JPG, PNG, GIF, WebP, MP3, WAV`) as any, false);
+      cb(new Error(`Invalid file type: ${file.mimetype}. Allowed: JPG, PNG, GIF, WebP, MP3, WAV, PDF, DOC`) as any, false);
     }
   },
   limits: {
@@ -71,14 +72,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const storageClient = new Client();
         
         try {
-          const result = await storageClient.downloadAsBytes(filename);
-          if (result && typeof result === 'object' && 'length' in result && result.length > 0) {
-            const buffer = Buffer.from(result as any);
+          const fileBytes = await storageClient.downloadAsBytes(filename);
+          if (fileBytes) {
+            // Determine content type based on file extension
+            const ext = filename.toLowerCase().split('.').pop();
+            let contentType = 'application/octet-stream';
+            if (ext === 'jpg' || ext === 'jpeg') contentType = 'image/jpeg';
+            else if (ext === 'png') contentType = 'image/png';
+            else if (ext === 'gif') contentType = 'image/gif';
+            else if (ext === 'webp') contentType = 'image/webp';
+            else if (ext === 'pdf') contentType = 'application/pdf';
+            else if (ext === 'mp3') contentType = 'audio/mpeg';
+            else if (ext === 'wav') contentType = 'audio/wav';
+
             res.set({
-              'Content-Type': 'application/octet-stream',
+              'Content-Type': contentType,
               'Content-Disposition': `inline; filename="${filename}"`,
             });
-            res.send(buffer);
+            res.send(Buffer.from(fileBytes));
             return;
           }
         } catch (storageError) {

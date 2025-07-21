@@ -18,7 +18,7 @@ For production deployments, you need to configure persistent cloud storage. Here
 **Setup Steps:**
 1. In your Replit workspace, go to the Storage tab (bucket icon in left sidebar)
 2. Click "Create new bucket" or "Use an existing bucket"
-3. Create a bucket named `trackmytamiya-uploads` (or use the default bucket)
+3. Create a bucket with any name (e.g., `MyTamTrackPhotos`, `trackmytamiya-uploads`)
 4. The application will automatically detect and use Replit Object Storage in production
 
 **Features:**

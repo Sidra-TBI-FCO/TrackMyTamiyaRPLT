@@ -87,12 +87,13 @@ The application uses a relational PostgreSQL schema with the following main enti
 - Foreign key relationships maintain data integrity
 
 ### File Storage
-- **Development**: Local file system storage for uploaded images and audio
-- **Production**: Ephemeral storage with graceful degradation and cloud storage preparation
+- **Development**: Local file system storage for uploaded images, audio, and documents
+- **Production**: Replit Object Storage integration with bucket "MyTamTrackPhotos" for persistent storage
+- Supports multiple file types: images (JPG, PNG, GIF, WebP), audio (MP3, WAV), documents (PDF, DOC)
 - Unique filename generation to prevent conflicts
-- File type validation and size limits
-- Static serving through Express middleware
-- Fallback system for missing files in deployment environments
+- File type validation and size limits (10MB max)
+- Static serving through Express middleware with proper MIME type detection
+- Graceful fallback system for missing files in deployment environments
 
 ## External Dependencies
 

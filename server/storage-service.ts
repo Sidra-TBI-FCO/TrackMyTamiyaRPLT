@@ -51,7 +51,7 @@ class LocalFileStorage implements FileStorageService {
 }
 
 class ReplitObjectStorage implements FileStorageService {
-  private bucketName = 'default'; // Use default bucket that's automatically available
+  private bucketName = 'MyTamTrackPhotos'; // Use the user's created bucket
 
   async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
     if (!replitStorage) {
