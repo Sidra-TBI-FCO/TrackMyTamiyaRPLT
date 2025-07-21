@@ -48,12 +48,20 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-tamiya-red dark:bg-tamiya-blue rounded-lg flex items-center justify-center">
-                <Star className="h-5 w-5 text-white fill-white" />
+              <div className="w-10 h-10 bg-tamiya-red dark:bg-tamiya-blue flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'}}>
+                {/* Angular star similar to Tamiya style */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div 
+                    className="w-6 h-6 bg-white"
+                    style={{
+                      clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                    }}
+                  />
+                </div>
               </div>
               <div>
-                <h1 className="text-xl font-mono font-bold text-gray-900 dark:text-white">
-                  TrackMyTamiya
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide" style={{fontFamily: 'Bebas Neue, Arial, sans-serif'}}>
+                  TRACKMYTAMIYA
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   RC Collection Manager
