@@ -65,12 +65,13 @@ export default function PhotoGallery({
               />
             </div>
             
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <div className="flex space-x-2">
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 opacity-0 group-hover:opacity-100">
+              {/* Action buttons positioned on the right side vertically for better mobile landscape view */}
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col space-y-2">
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="h-8 w-8"
+                  className="h-8 w-8 shadow-lg"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditPhoto(photo);
@@ -82,7 +83,7 @@ export default function PhotoGallery({
                   <Button
                     size="icon"
                     variant="destructive"
-                    className="h-8 w-8"
+                    className="h-8 w-8 shadow-lg"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeletePhoto(photo.id);
