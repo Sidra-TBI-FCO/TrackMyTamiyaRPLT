@@ -47,7 +47,7 @@ const upload = multer({
       cb(null, true);
     } else {
       console.log(`Rejected file: ${file.originalname}, type: ${file.mimetype}, extension: ${extension}`);
-      cb(new Error(`Invalid file type: ${file.mimetype}. Allowed: JPG, PNG, GIF, WebP, MP3, WAV`), false);
+      cb(new Error(`Invalid file type: ${file.mimetype}. Allowed: JPG, PNG, GIF, WebP, MP3, WAV`) as any, false);
     }
   },
   limits: {
@@ -56,8 +56,13 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve uploaded files
+  // Serve uploaded files with error handling for missing files
   app.use('/uploads', express.static(uploadDir));
+  
+  // Handle missing files gracefully
+  app.get('/uploads/*', (req, res) => {
+    res.status(404).json({ error: 'File not found in this environment' });
+  });
 
   // Mock user authentication - in production, use proper auth
   app.use('/api', (req, res, next) => {
@@ -72,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req as any).userId;
       const models = await storage.getModels(userId);
       res.json(models);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -86,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Model not found' });
       }
       res.json(model);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -97,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelData = insertModelSchema.parse({ ...req.body, userId });
       const model = await storage.createModel(modelData);
       res.status(201).json(model);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -115,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Model not found' });
       }
       res.json(model);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -132,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Model not found' });
       }
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -144,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelId = parseInt(req.params.modelId);
       const photos = await storage.getPhotos(modelId, userId);
       res.json(photos);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -187,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Successfully uploaded ${photos.length} photos`);
       res.status(201).json(photos);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Photo upload error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
@@ -206,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Photo not found' });
       }
       res.json(photo);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -223,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Photo not found' });
       }
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -235,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelId = parseInt(req.params.modelId);
       const entries = await storage.getBuildLogEntries(modelId, userId);
       res.json(entries);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -263,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(201).json(entry);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -281,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Build log entry not found' });
       }
       res.json(entry);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -298,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Build log entry not found' });
       }
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -310,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelId = parseInt(req.params.modelId);
       const parts = await storage.getHopUpParts(modelId, userId);
       res.json(parts);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -322,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const partData = insertHopUpPartSchema.parse({ ...req.body, modelId });
       const part = await storage.createHopUpPart(partData);
       res.status(201).json(part);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -340,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Hop-up part not found' });
       }
       res.json(part);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
@@ -357,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Hop-up part not found' });
       }
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -368,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req as any).userId;
       const stats = await storage.getCollectionStats(userId);
       res.json(stats);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -392,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       res.json(mockData);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });

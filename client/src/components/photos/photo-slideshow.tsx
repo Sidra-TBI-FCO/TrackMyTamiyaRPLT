@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSlideshowSettings } from "@/lib/settings";
+import ImageFallback from "@/components/ui/image-fallback";
 
 interface Photo {
   id: number;
@@ -133,10 +134,11 @@ export default function PhotoSlideshow({
       {/* Content */}
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Main Image */}
-        <img
+        <ImageFallback
           src={currentPhoto.url}
           alt={currentPhoto.caption || `${currentPhoto.model.name} photo`}
           className="max-w-full max-h-full object-contain"
+          fallbackText="Photo not available in this environment"
         />
 
         {/* Navigation Controls */}

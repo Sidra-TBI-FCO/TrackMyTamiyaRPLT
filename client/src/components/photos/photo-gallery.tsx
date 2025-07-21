@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit2, Trash2, Star } from "lucide-react";
 import { Photo } from "@/types";
+import ImageFallback from "@/components/ui/image-fallback";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,7 @@ export default function PhotoGallery({
     }
   };
 
-  const gridCols = {
+  const gridCols: Record<number, string> = {
     2: "grid-cols-2",
     3: "grid-cols-2 md:grid-cols-3",
     4: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
@@ -55,12 +56,14 @@ export default function PhotoGallery({
       <div className={`grid ${gridCols[columns]} gap-4`}>
         {photos.map((photo) => (
           <Card key={photo.id} className="overflow-hidden group relative">
-            <img
-              src={photo.url}
-              alt={photo.caption || "RC model photo"}
-              className="w-full aspect-square object-cover cursor-pointer"
-              onClick={() => setSelectedPhoto(photo)}
-            />
+            <div onClick={() => setSelectedPhoto(photo)}>
+              <ImageFallback
+                src={photo.url}
+                alt={photo.caption || "RC model photo"}
+                className="w-full aspect-square object-cover cursor-pointer"
+                fallbackText="Photo not available in this environment"
+              />
+            </div>
             
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
               <div className="flex space-x-2">

@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import { useSlideshow } from "@/lib/slideshow-context";
+import StorageWarning from "@/components/ui/storage-warning";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -44,6 +45,7 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      <StorageWarning />
       {/* Mobile Search Bar */}
       <div className="mb-6 lg:hidden">
         <div className="relative">
