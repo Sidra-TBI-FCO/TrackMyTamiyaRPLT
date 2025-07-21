@@ -60,50 +60,6 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files with error handling for missing files
   app.use('/uploads', express.static(uploadDir));
-  
-  // Serve files from Replit Object Storage or handle missing files gracefully
-  app.get('/api/files/:filename', async (req, res) => {
-    try {
-      const filename = req.params.filename;
-      
-      if (isUsingReplitStorage) {
-        // Import the Client here to access the storage
-        const { Client } = await import('@replit/object-storage');
-        const storageClient = new Client();
-        
-        try {
-          const fileBytes = await storageClient.downloadAsBytes(filename);
-          if (fileBytes) {
-            // Determine content type based on file extension
-            const ext = filename.toLowerCase().split('.').pop();
-            let contentType = 'application/octet-stream';
-            if (ext === 'jpg' || ext === 'jpeg') contentType = 'image/jpeg';
-            else if (ext === 'png') contentType = 'image/png';
-            else if (ext === 'gif') contentType = 'image/gif';
-            else if (ext === 'webp') contentType = 'image/webp';
-            else if (ext === 'pdf') contentType = 'application/pdf';
-            else if (ext === 'mp3') contentType = 'audio/mpeg';
-            else if (ext === 'wav') contentType = 'audio/wav';
-
-            res.set({
-              'Content-Type': contentType,
-              'Content-Disposition': `inline; filename="${filename}"`,
-            });
-            res.send(Buffer.from(fileBytes as any));
-            return;
-          }
-        } catch (storageError) {
-          console.error('Failed to download from Replit Object Storage:', storageError);
-        }
-      }
-      
-      // Fallback to local file or 404
-      res.status(404).json({ error: 'File not found in this environment' });
-    } catch (error) {
-      console.error('File serve error:', error);
-      res.status(404).json({ error: 'File not found' });
-    }
-  });
 
   // Handle missing files gracefully for legacy uploads path
   app.get('/uploads/*', (req, res) => {
@@ -447,10 +403,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/files/:filename', async (req, res) => {
     try {
       const { filename } = req.params;
+      console.log(`Attempting to serve file: ${filename}`);
+      
       const { Client } = await import('@replit/object-storage');
       const client = new Client();
       
-      // Get file from Replit Object Storage
+      // Get file from Replit Object Storage using the bucket name
+      const bucketName = 'MyTamTrackPhotos';
+      console.log(`Downloading from bucket: ${bucketName}, file: ${filename}`);
+      
       const file = await client.downloadAsBytes(filename);
       
       // Set appropriate content type based on file extension
@@ -470,10 +431,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
       
-      res.send(Buffer.from(file));
+      console.log(`Successfully serving file: ${filename}, type: ${contentType}`);
+      res.send(file);
     } catch (error: any) {
       console.error('File serving error:', error);
-      res.status(404).json({ message: 'File not found' });
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        filename: req.params.filename
+      });
+      res.status(404).json({ message: 'File not found', error: error.message });
     }
   });
 
