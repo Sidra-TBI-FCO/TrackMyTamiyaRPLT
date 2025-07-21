@@ -286,7 +286,7 @@ export default function PhotoSlideshow({
         {photos.length > 1 && (
           <>
             {/* Portrait mode: Bottom horizontal layout */}
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 portrait:block landscape:hidden">
+            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 portrait:block landscape:hidden">
               <div className="flex space-x-2 bg-black/50 p-2 rounded-lg max-w-md overflow-x-auto">
                 {photos.map((photo, index) => (
                   <button
