@@ -309,10 +309,15 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   }, [chassisValue]);
 
   const onSubmit = (data: FormData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
     const submissionData = {
       ...data,
       userId: 2, // Mock user ID - should be from auth in production
     };
+    
+    console.log("Submitting to API:", submissionData);
     createModelMutation.mutate(submissionData);
   };
 
