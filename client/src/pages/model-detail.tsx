@@ -22,7 +22,8 @@ import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useSlideshow } from "@/lib/slideshow-context";
+import { useState, useEffect } from "react";
 
 export default function ModelDetail() {
   const { id } = useParams();
@@ -34,6 +35,7 @@ export default function ModelDetail() {
   const [slideshowStartIndex, setSlideshowStartIndex] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { openSlideshow: openGlobalSlideshow } = useSlideshow();
 
   const { data: model, isLoading } = useQuery<ModelWithRelations>({
     queryKey: ["/api/models", id],
@@ -158,11 +160,12 @@ export default function ModelDetail() {
   // Prepare photos for slideshow with model data
   const slideshowPhotos = model.photos.map(photo => ({
     ...photo,
+    isBoxArt: photo.isBoxArt || false,
     model: {
       id: model.id,
       name: model.name,
-      chassisType: model.chassisType,
-      tags: model.tags
+      chassisType: model.chassis,
+      tags: model.tags || []
     }
   }));
 
@@ -171,6 +174,19 @@ export default function ModelDetail() {
     setSlideshowStartIndex(photoIndex);
     setIsSlideshowOpen(true);
   };
+
+  // Listen for header slideshow trigger
+  useEffect(() => {
+    const handleHeaderSlideshow = () => {
+      if (model && model.photos.length > 0) {
+        setSlideshowStartIndex(0);
+        setIsSlideshowOpen(true);
+      }
+    };
+
+    document.addEventListener('triggerModelSlideshow', handleHeaderSlideshow);
+    return () => document.removeEventListener('triggerModelSlideshow', handleHeaderSlideshow);
+  }, [model]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

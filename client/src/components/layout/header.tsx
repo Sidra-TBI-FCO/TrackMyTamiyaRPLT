@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useSlideshow } from "@/lib/slideshow-context";
+import { useQuery } from "@tanstack/react-query";
+import { ModelWithRelations } from "@/types";
 
 interface HeaderProps {
   onToggleDarkMode: () => void;
@@ -12,10 +14,30 @@ interface HeaderProps {
 
 export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { openSlideshow } = useSlideshow();
 
+  // Get all models for global slideshow
+  const { data: models } = useQuery<ModelWithRelations[]>({
+    queryKey: ["/api/models"],
+  });
+
   const handlePhotoFrameClick = () => {
+    // Check if we're on a model detail page
+    const modelMatch = location.match(/^\/models\/(\d+)$/);
+    if (modelMatch && models) {
+      const modelId = parseInt(modelMatch[1]);
+      const currentModel = models.find(m => m.id === modelId);
+      if (currentModel && currentModel.photos.length > 0) {
+        // Trigger slideshow for current model's photos
+        // This will need to be handled by the model detail page itself
+        const event = new CustomEvent('triggerModelSlideshow');
+        document.dispatchEvent(event);
+        return;
+      }
+    }
+    
+    // Default: open global slideshow
     openSlideshow();
   };
 

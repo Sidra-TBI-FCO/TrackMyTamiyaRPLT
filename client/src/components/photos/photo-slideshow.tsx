@@ -126,18 +126,66 @@ export default function PhotoSlideshow({
   
   if (!currentPhoto) return null;
 
+  // Hide mobile navigation and ensure full screen on mobile
+  useEffect(() => {
+    if (isOpen) {
+      // Hide mobile bottom navigation
+      const mobileNav = document.querySelector('[class*="pb-16"]') as HTMLElement;
+      if (mobileNav) {
+        mobileNav.style.paddingBottom = '0';
+      }
+      
+      // Prevent scrolling on body
+      document.body.style.overflow = 'hidden';
+      
+      // Hide mobile browser UI by scrolling to top
+      window.scrollTo(0, 0);
+      
+      // Request fullscreen on mobile if supported
+      if (document.documentElement.requestFullscreen && /Mobi|Android/i.test(navigator.userAgent)) {
+        document.documentElement.requestFullscreen().catch(() => {
+          // Fullscreen request failed, continue without it
+        });
+      }
+    } else {
+      // Restore mobile navigation
+      const mobileNav = document.querySelector('[class*="pb-16"]') as HTMLElement;
+      if (mobileNav) {
+        mobileNav.style.paddingBottom = '';
+      }
+      
+      // Restore scrolling
+      document.body.style.overflow = '';
+      
+      // Exit fullscreen if it was activated
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {
+          // Exit fullscreen failed, continue without it
+        });
+      }
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      document.body.style.overflow = '';
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [isOpen]);
+
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center">
       {/* Background overlay */}
       <div className="absolute inset-0 bg-black" onClick={onClose} />
 
       {/* Content */}
       <div className="relative w-full h-full flex items-center justify-center">
-        {/* Main Image */}
+        {/* Main Image - Full screen on mobile */}
         <ImageFallback
           src={currentPhoto.url}
           alt={currentPhoto.caption || `${currentPhoto.model.name} photo`}
-          className="max-w-full max-h-full object-contain"
+          className="w-full h-full object-contain md:max-w-full md:max-h-full"
           fallbackText="Photo not available in this environment"
         />
 
@@ -188,42 +236,40 @@ export default function PhotoSlideshow({
           </Button>
         </div>
 
-        {/* Photo Information Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="space-y-3">
-              {/* Model Name and Chassis */}
-              <div>
-                <h2 className="text-2xl font-mono font-bold text-white">
-                  {currentPhoto.model.name}
-                </h2>
-                {currentPhoto.model.chassisType && (
-                  <p className="text-lg font-mono text-gray-300">
-                    {currentPhoto.model.chassisType}
-                  </p>
-                )}
-              </div>
-
-              {/* Photo Caption */}
-              {settings.showCaptions && currentPhoto.caption && (
-                <p className="text-white font-mono text-lg">
-                  {currentPhoto.caption}
+        {/* Photo Information Overlay - Bottom left on mobile */}
+        <div className="absolute bottom-0 left-0 right-0 md:right-auto bg-gradient-to-t md:bg-gradient-to-r from-black/90 to-transparent p-4 md:p-6 md:max-w-md">
+          <div className="space-y-2 md:space-y-3">
+            {/* Model Name and Chassis */}
+            <div>
+              <h2 className="text-lg md:text-2xl font-mono font-bold text-white">
+                {currentPhoto.model.name}
+              </h2>
+              {currentPhoto.model.chassisType && (
+                <p className="text-sm md:text-lg font-mono text-gray-300">
+                  {currentPhoto.model.chassisType}
                 </p>
               )}
+            </div>
 
-              {/* Tags and Box Art Badge */}
-              <div className="flex items-center space-x-2 flex-wrap">
-                {currentPhoto.isBoxArt && (
-                  <Badge className="bg-red-600 text-white font-mono">
-                    Box Art
-                  </Badge>
-                )}
-                {settings.showTags && currentPhoto.model.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="font-mono">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
+            {/* Photo Caption */}
+            {settings.showCaptions && currentPhoto.caption && (
+              <p className="text-white font-mono text-sm md:text-lg">
+                {currentPhoto.caption}
+              </p>
+            )}
+
+            {/* Tags and Box Art Badge */}
+            <div className="flex items-center space-x-2 flex-wrap">
+              {currentPhoto.isBoxArt && (
+                <Badge className="bg-red-600 text-white font-mono text-xs md:text-sm">
+                  Box Art
+                </Badge>
+              )}
+              {settings.showTags && currentPhoto.model.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="font-mono text-xs md:text-sm">
+                  {tag}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
