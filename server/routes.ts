@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               'Content-Type': contentType,
               'Content-Disposition': `inline; filename="${filename}"`,
             });
-            res.send(Buffer.from(fileBytes as ArrayBuffer));
+            res.send(Buffer.from(fileBytes as any));
             return;
           }
         } catch (storageError) {
