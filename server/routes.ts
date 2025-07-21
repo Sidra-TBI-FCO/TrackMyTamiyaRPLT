@@ -550,15 +550,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Scraping product page: ${url}`);
       
-      // Fetch the page content
+      // Fetch the page content with better headers to avoid bot detection
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0'
         }
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // If scraping fails, provide fallback URL parsing
+        console.log(`Scraping failed with status ${response.status}, falling back to URL parsing`);
+        return res.status(200).json({
+          message: `Page scraping blocked (${response.status}), but URL parsing can still extract basic info. Use "URL Only" button instead.`,
+          fallbackSuggested: true
+        });
       }
       
       const html = await response.text();
@@ -577,12 +592,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cost: null
       };
       
-      // RC Mart specific scraping
+      // RC Mart specific scraping - try multiple selectors
       if (url.includes('rcmart.com')) {
-        // Product title
-        const titleElement = document.querySelector('h1.product-title, .product-name h1, .product-info h1');
-        if (titleElement) {
-          scrapedData.name = titleElement.textContent?.trim() || '';
+        // Product title - try multiple selectors
+        const titleSelectors = [
+          'h1.product-title',
+          '.product-name h1', 
+          '.product-info h1',
+          'h1[data-test="product-title"]',
+          '.product-detail h1',
+          'h1.title',
+          '.product-name',
+          'h1'
+        ];
+        
+        for (const selector of titleSelectors) {
+          const titleElement = document.querySelector(selector);
+          if (titleElement && titleElement.textContent?.trim()) {
+            scrapedData.name = titleElement.textContent.trim();
+            break;
+          }
         }
         
         // Extract manufacturer from title

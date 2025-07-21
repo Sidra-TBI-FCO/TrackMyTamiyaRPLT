@@ -103,6 +103,18 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       }
       
       const scrapedData = await response.json();
+      
+      // Check if scraping was blocked but we got a fallback suggestion
+      if (scrapedData.fallbackSuggested) {
+        setParseLog([`⚠️ ${scrapedData.message}`]);
+        toast({
+          title: "Scraping blocked",
+          description: "Store is blocking automated requests. Use 'URL Only' button instead.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const newLog = ["✅ Successfully scraped product page!"];
       
       // Apply the scraped data to the form
