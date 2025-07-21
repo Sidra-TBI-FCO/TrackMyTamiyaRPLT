@@ -47,6 +47,12 @@ export default function ModelDetail() {
     enabled: !!id,
   });
 
+  // Calculate total investment including hop-up parts
+  const totalInvestment = model 
+    ? (parseFloat(model.totalCost || "0") + 
+       (model.hopUpParts?.reduce((sum, part) => sum + parseFloat(part.cost || "0"), 0) || 0))
+    : 0;
+
   // Listen for header slideshow trigger - must be before any early returns
   useEffect(() => {
     const handleHeaderSlideshow = () => {
@@ -454,7 +460,7 @@ export default function ModelDetail() {
               <div>
                 <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Total Investment</p>
                 <p className="font-mono text-gray-900 dark:text-white">
-                  ${parseFloat(model.totalCost || "0").toFixed(2)}
+                  ${totalInvestment.toFixed(2)}
                 </p>
               </div>
               
