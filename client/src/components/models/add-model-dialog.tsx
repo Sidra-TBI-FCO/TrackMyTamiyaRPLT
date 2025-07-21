@@ -294,9 +294,9 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     }
   }, [newTag, allExistingTags]);
 
-  // Update chassis suggestions when chassis field changes
+  // Update chassis suggestions when chassis field changes  
+  const chassisValue = form.watch("chassis");
   useEffect(() => {
-    const chassisValue = form.watch("chassis");
     if (chassisValue && chassisValue.trim()) {
       const suggestions = popularChassis.filter(chassis =>
         chassis.toLowerCase().includes(chassisValue.toLowerCase())
@@ -306,7 +306,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     } else {
       setShowChassisSuggestions(false);
     }
-  }, [form.watch("chassis")]);
+  }, [chassisValue]);
 
   const onSubmit = (data: FormData) => {
     const submissionData = {
