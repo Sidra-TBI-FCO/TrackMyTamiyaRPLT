@@ -48,6 +48,14 @@ interface AddModelDialogProps {
   trigger?: React.ReactNode;
 }
 
+const popularChassis = [
+  "TT-01", "TT-02", "TT-03", "TA-01", "TA-02", "TA-03", "TA-04", "TA-05", "TA-06", "TA-07", "TA-08",
+  "TB-01", "TB-02", "TB-03", "TB-04", "TB-05", "TC-01", "TC-02", "TC-03",
+  "DF-01", "DF-02", "DF-03", "DF-04", "M-01", "M-02", "M-03", "M-04", "M-05", "M-06", "M-07", "M-08",
+  "XV-01", "XV-02", "CC-01", "CC-02", "CR-01", "DT-01", "DT-02", "DT-03",
+  "FF-01", "FF-02", "FF-03", "F-1", "F103", "F104", "F201", "Gravel Hound"
+];
+
 export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [open, setOpen] = useState(false);
   const [newTag, setNewTag] = useState("");
@@ -56,6 +64,8 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [productUrl, setProductUrl] = useState("");
   const [isParsingUrl, setIsParsingUrl] = useState(false);
   const [parseLog, setParseLog] = useState<string[]>([]);
+  const [chassisSuggestions, setChassisSuggestions] = useState<string[]>([]);
+  const [showChassisSuggestions, setShowChassisSuggestions] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { scrapeModelData, isLoading: isScraping } = useTamiyaScraper();
@@ -181,20 +191,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
           newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
         }
 
-        if (scrapedData.scale) {
-          form.setValue('scale', scrapedData.scale);
-          newLog.push(`✅ Scale: ${scrapedData.scale}`);
-        }
-
-        if (scrapedData.type) {
-          form.setValue('type', scrapedData.type);
-          newLog.push(`✅ Type: ${scrapedData.type}`);
-        }
-
-        if (scrapedData.driveType) {
-          form.setValue('driveType', scrapedData.driveType);
-          newLog.push(`✅ Drive: ${scrapedData.driveType}`);
-        }
+        // Note: scale, type, and driveType are not in the current model schema
 
         if (scrapedData.totalCost) {
           form.setValue('totalCost', scrapedData.totalCost.toString());
@@ -227,10 +224,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
             if (scrapedData.chassis) {
               form.setValue("chassis", scrapedData.chassis);
               newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
-            }
-            if (scrapedData.scale) {
-              form.setValue("scale", scrapedData.scale);
-              newLog.push(`✅ Scale: ${scrapedData.scale}`);
             }
             if (scrapedData.releaseYear) {
               form.setValue("releaseYear", scrapedData.releaseYear);
@@ -300,6 +293,20 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       setShowSuggestions(false);
     }
   }, [newTag, allExistingTags]);
+
+  // Update chassis suggestions when chassis field changes
+  useEffect(() => {
+    const chassisValue = form.watch("chassis");
+    if (chassisValue && chassisValue.trim()) {
+      const suggestions = popularChassis.filter(chassis =>
+        chassis.toLowerCase().includes(chassisValue.toLowerCase())
+      ).slice(0, 5);
+      setChassisSuggestions(suggestions);
+      setShowChassisSuggestions(suggestions.length > 0 && suggestions[0] !== chassisValue);
+    } else {
+      setShowChassisSuggestions(false);
+    }
+  }, [form.watch("chassis")]);
 
   const onSubmit = (data: FormData) => {
     const submissionData = {
@@ -406,15 +413,46 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="font-mono">Chassis</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value || ""}
-                      placeholder="e.g. TT-02"
-                      className="font-mono"
-                      disabled={isScraping}
-                    />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ""}
+                        placeholder="e.g. TT-02"
+                        className="font-mono"
+                        disabled={isScraping}
+                        onFocus={() => {
+                          if (!field.value) {
+                            setChassisSuggestions(popularChassis.slice(0, 8));
+                            setShowChassisSuggestions(true);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Delay hiding suggestions to allow clicking on them
+                          setTimeout(() => setShowChassisSuggestions(false), 150);
+                        }}
+                      />
+                    </FormControl>
+                    
+                    {/* Chassis suggestions dropdown */}
+                    {showChassisSuggestions && chassisSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {chassisSuggestions.map((chassis) => (
+                          <button
+                            key={chassis}
+                            type="button"
+                            className="w-full px-3 py-2 text-left text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
+                            onClick={() => {
+                              field.onChange(chassis);
+                              setShowChassisSuggestions(false);
+                            }}
+                          >
+                            {chassis}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
