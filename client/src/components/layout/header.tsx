@@ -105,7 +105,14 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocation("/settings")}
+              onClick={() => {
+                // Toggle settings: if on settings page, go back to home; otherwise go to settings
+                if (location === "/settings") {
+                  setLocation("/");
+                } else {
+                  setLocation("/settings");
+                }
+              }}
               className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
             >
               <Settings className="h-5 w-5" />
