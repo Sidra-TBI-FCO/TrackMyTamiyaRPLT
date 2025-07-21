@@ -164,10 +164,13 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   }, [newTag, allExistingTags]);
 
   const onSubmit = (data: FormData) => {
+    console.log("Form submission data:", data);
+    console.log("Form errors:", form.formState.errors);
     const submissionData = {
       ...data,
       userId: 2, // Mock user ID - should be from auth in production
     };
+    console.log("Submitting data:", submissionData);
     createModelMutation.mutate(submissionData);
   };
 
@@ -434,6 +437,11 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 type="submit"
                 disabled={createModelMutation.isPending || isScraping}
                 className="bg-red-600 hover:bg-red-700 font-mono"
+                onClick={() => {
+                  console.log("Add Model button clicked");
+                  console.log("Form state:", form.formState);
+                  console.log("Form values:", form.getValues());
+                }}
               >
                 {createModelMutation.isPending || isScraping ? "Adding..." : "Add Model"}
               </Button>
