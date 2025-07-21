@@ -349,20 +349,35 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
       }
 
-      // Only detect Tamiya if no other brand was found and it's actually a Tamiya part
-      if (!detectedBrand && (urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54') || urlLower.includes('/tamiya/47') || urlLower.includes('/tamiya/54'))) {
+      // Detect official Tamiya parts - look for tamiya-xxxxx patterns where xxxxx is 4-5 digit part number
+      const tamiyaPartPattern = /tamiya-(\d{4,5})/i;
+      const tamiyaMatch = url.match(tamiyaPartPattern);
+      
+      if (tamiyaMatch || urlLower.includes('/tamiya-') || urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54')) {
         form.setValue('isTamiyaBrand', true);
         form.setValue('manufacturer', 'Tamiya');
         parseLog.push("✅ Official Tamiya part detected");
+        
+        // Extract official Tamiya part number
+        if (tamiyaMatch) {
+          const tamiyaPartNumber = tamiyaMatch[1];
+          form.setValue('itemNumber', tamiyaPartNumber);
+          parseLog.push(`✅ Official Tamiya part number: ${tamiyaPartNumber}`);
+        }
       } else if (detectedBrand) {
         form.setValue('isTamiyaBrand', false);
         parseLog.push("✅ Marked as aftermarket part");
       }
       
-      // Extract part numbers - look for brand-specific patterns first
+      // Extract part numbers - look for Tamiya parts first, then brand-specific patterns
       let partNumberFound = false;
       
-      if (detectedBrand) {
+      // Skip additional part number extraction if we already found a Tamiya part number
+      const alreadyHasTamiyaNumber = form.getValues('itemNumber') && form.getValues('isTamiyaBrand');
+      
+      if (alreadyHasTamiyaNumber) {
+        partNumberFound = true;
+      } else if (detectedBrand) {
         // Look for brand-specific part number patterns
         const brandPartPatterns = [
           new RegExp(`${detectedBrand.code.toLowerCase()}-([a-z0-9]+)`, 'i'), // XS-TA29181RD
@@ -412,11 +427,20 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
       }
       
-      // Extract part name from URL path - improved logic
+      // Extract part name from URL path - improved logic for Tamiya parts
       const pathParts = url.split('/').pop()?.split('-') || [];
       if (pathParts.length > 2) {
+        // For Tamiya parts, remove the tamiya prefix and part number
+        let filteredParts = pathParts;
+        if (form.getValues('isTamiyaBrand')) {
+          filteredParts = pathParts.filter(part => 
+            part.toLowerCase() !== 'tamiya' && 
+            !part.match(/^\d{4,5}$/) // Remove 4-5 digit Tamiya part numbers
+          );
+        }
+        
         // Remove brand name, model numbers, and store-specific codes
-        const filteredParts = pathParts
+        filteredParts = filteredParts
           .filter(part => 
             !part.match(/^\d+$/) && // Remove pure numbers
             part.length > 1 && // Remove single characters
