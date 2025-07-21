@@ -15,7 +15,7 @@ interface HopUpPartsListProps {
   modelId: number;
 }
 
-export function HopUpPartsList({ modelId }: HopUpPartsListProps) {
+export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<HopUpPart | null>(null);
   const [searchTerm, setSearchTerm] = useState("");

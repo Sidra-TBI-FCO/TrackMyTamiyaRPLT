@@ -21,7 +21,7 @@ import EditModelDialog from "@/components/models/edit-model-dialog";
 import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import BoxArtSelector from "@/components/photos/box-art-selector";
-import { HopUpPartsList } from "@/components/hop-up-parts/hop-up-parts-list";
+import HopUpPartsList from "@/components/hop-up-parts/hop-up-parts-list";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSlideshow } from "@/lib/slideshow-context";
