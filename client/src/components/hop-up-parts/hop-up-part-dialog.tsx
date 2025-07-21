@@ -83,7 +83,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       modelId,
       name: "",
       itemNumber: "",
-      category: "Other",
+      category: "",
       supplier: "",
       cost: 0,
       installationStatus: "planned",
@@ -121,7 +121,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         modelId,
         name: "",
         itemNumber: "",
-        category: "Other",
+        category: "",
         supplier: "",
         cost: 0,
         installationStatus: "planned",
@@ -321,12 +321,12 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       };
 
       let categoryFound = false;
-      // Check for specific part types first
+      // Check for specific part types first (more specific patterns)
       if (urlLower.includes('steering')) {
         form.setValue('category', 'Suspension');
         parseLog.push("✅ Category detected: Suspension (steering component)");
         categoryFound = true;
-      } else if (urlLower.includes('drive-shaft') || urlLower.includes('driveshaft')) {
+      } else if (urlLower.includes('drive-shaft') || urlLower.includes('driveshaft') || urlLower.includes('main-drive-shaft')) {
         form.setValue('category', 'Drivetrain');
         parseLog.push("✅ Category detected: Drivetrain (drive shaft)");
         categoryFound = true;
