@@ -22,6 +22,7 @@ import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import BoxArtSelector from "@/components/photos/box-art-selector";
 import HopUpPartsList from "@/components/hop-up-parts/hop-up-parts-list";
+import HopUpPartDialog from "@/components/hop-up-parts/hop-up-part-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSlideshow } from "@/lib/slideshow-context";
@@ -36,6 +37,7 @@ export default function ModelDetail() {
   const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState(0);
   const [isBoxArtSelectorOpen, setIsBoxArtSelectorOpen] = useState(false);
+  const [isAddHopUpOpen, setIsAddHopUpOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openSlideshow: openGlobalSlideshow } = useSlideshow();
@@ -501,7 +503,10 @@ export default function ModelDetail() {
                 <Wrench className="mr-2 h-4 w-4" />
                 Log Progress
               </Button>
-              <Button className="w-full bg-orange-600 hover:bg-orange-700 font-mono" disabled>
+              <Button 
+                className="w-full bg-orange-600 hover:bg-orange-700 font-mono"
+                onClick={() => setIsAddHopUpOpen(true)}
+              >
                 <Cog className="mr-2 h-4 w-4" />
                 Add Hop-Up
               </Button>
@@ -534,6 +539,12 @@ export default function ModelDetail() {
         photos={model.photos}
         open={isBoxArtSelectorOpen}
         onOpenChange={setIsBoxArtSelectorOpen}
+      />
+
+      <HopUpPartDialog
+        modelId={model.id}
+        open={isAddHopUpOpen}
+        onOpenChange={setIsAddHopUpOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
