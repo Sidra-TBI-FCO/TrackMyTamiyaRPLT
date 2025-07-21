@@ -107,25 +107,6 @@ export default function PhotoSlideshow({
     }
   }, [photos, initialIndex, isOpen]);
 
-  if (!isOpen) return null;
-  
-  // If no photos, show empty state
-  if (photos.length === 0) {
-    return (
-      <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black" onClick={onClose} />
-        <div className="relative text-center text-white">
-          <h2 className="text-2xl font-mono mb-4">No Photos Available</h2>
-          <Button onClick={onClose} variant="outline" className="text-white border-white">
-            Close
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!currentPhoto) return null;
-
   // Hide mobile navigation and ensure full screen on mobile
   useEffect(() => {
     if (isOpen) {
@@ -173,6 +154,25 @@ export default function PhotoSlideshow({
       }
     };
   }, [isOpen]);
+
+  if (!isOpen) return null;
+  
+  // If no photos, show empty state
+  if (photos.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black" onClick={onClose} />
+        <div className="relative text-center text-white">
+          <h2 className="text-2xl font-mono mb-4">No Photos Available</h2>
+          <Button onClick={onClose} variant="outline" className="text-white border-white">
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!currentPhoto) return null;
 
   return (
     <div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center">
