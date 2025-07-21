@@ -1,19 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
+import { Client } from '@replit/object-storage';
 import fs from 'fs';
 import path from 'path';
 
-// Check if we should use cloud storage or local storage
-const useCloudStorage = process.env.NODE_ENV === 'production' && 
-                       process.env.SUPABASE_URL && 
-                       process.env.SUPABASE_ANON_KEY;
+// Use Replit Object Storage for persistent storage in production
+const useReplitStorage = process.env.NODE_ENV === 'production' && process.env.REPLIT_DB_URL;
 
-let supabase: any = null;
+let replitStorage: Client | null = null;
 
-if (useCloudStorage) {
-  supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!
-  );
+if (useReplitStorage) {
+  try {
+    // Initialize with a bucket name for Replit Object Storage
+    replitStorage = new Client();
+    console.log('Replit Object Storage initialized successfully');
+  } catch (error) {
+    console.log('Replit Object Storage not available, falling back to local storage:', error);
+    useReplitStorage && console.log('Note: Replit Object Storage requires proper setup for persistent file storage');
+  }
 }
 
 export interface FileStorageService {
@@ -48,53 +50,62 @@ class LocalFileStorage implements FileStorageService {
   }
 }
 
-class CloudFileStorage implements FileStorageService {
-  private bucket = 'trackmytamiya-uploads';
+class ReplitObjectStorage implements FileStorageService {
+  private bucketName = 'trackmytamiya-uploads';
 
   async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
-    const fileBuffer = fs.readFileSync(file.path);
-    
-    const { data, error } = await supabase.storage
-      .from(this.bucket)
-      .upload(filename, fileBuffer, {
-        contentType: file.mimetype,
-        upsert: true
-      });
-
-    if (error) {
-      console.error('Cloud upload error:', error);
-      throw new Error(`Failed to upload file to cloud storage: ${error.message}`);
+    if (!replitStorage) {
+      throw new Error('Replit Object Storage not initialized');
     }
 
-    // Clean up local temp file
-    fs.unlinkSync(file.path);
+    const fileBuffer = fs.readFileSync(file.path);
+    
+    try {
+      // Upload to Replit Object Storage
+      await replitStorage.uploadFromBytes(filename, fileBuffer);
 
-    return filename;
+      // Clean up local temp file
+      fs.unlinkSync(file.path);
+
+      return filename;
+    } catch (error) {
+      console.error('Replit storage upload error:', error);
+      throw new Error(`Failed to upload file to Replit storage: ${(error as any).message}`);
+    }
   }
 
   async deleteFile(filename: string): Promise<void> {
-    const { error } = await supabase.storage
-      .from(this.bucket)
-      .remove([filename]);
+    if (!replitStorage) return;
 
-    if (error) {
-      console.error('Cloud delete error:', error);
+    try {
+      await replitStorage.delete(filename);
+    } catch (error) {
+      console.error('Replit storage delete error:', error);
       // Don't throw error for delete failures
     }
   }
 
   getFileUrl(filename: string): string {
-    const { data } = supabase.storage
-      .from(this.bucket)
-      .getPublicUrl(filename);
+    if (!replitStorage) {
+      return `/uploads/${filename}`;
+    }
     
-    return data.publicUrl;
+    try {
+      // For Replit Object Storage, we need to serve files through our own endpoint
+      return `/api/files/${filename}`;
+    } catch (error) {
+      console.error('Failed to get Replit storage URL:', error);
+      return `/uploads/${filename}`;
+    }
   }
 }
 
 // Export the appropriate storage service
-export const fileStorage: FileStorageService = useCloudStorage 
-  ? new CloudFileStorage() 
+export const fileStorage: FileStorageService = (replitStorage)
+  ? new ReplitObjectStorage() 
   : new LocalFileStorage();
 
-export const isUsingCloudStorage = useCloudStorage;
+export const isUsingReplitStorage = replitStorage !== null;
+
+// Log which storage is being used
+console.log(`File storage: ${isUsingReplitStorage ? 'Replit Object Storage (persistent)' : 'Local filesystem (temporary in production)'}`);

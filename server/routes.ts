@@ -7,6 +7,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileStorage, isUsingReplitStorage } from "./storage-service";
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -59,7 +60,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files with error handling for missing files
   app.use('/uploads', express.static(uploadDir));
   
-  // Handle missing files gracefully
+  // Serve files from Replit Object Storage or handle missing files gracefully
+  app.get('/api/files/:filename', async (req, res) => {
+    try {
+      const filename = req.params.filename;
+      
+      if (isUsingReplitStorage) {
+        // Import the Client here to access the storage
+        const { Client } = await import('@replit/object-storage');
+        const storageClient = new Client();
+        
+        try {
+          const fileBytes = await storageClient.downloadAsBytes(filename);
+          if (fileBytes && fileBytes.length > 0) {
+            res.set({
+              'Content-Type': 'application/octet-stream',
+              'Content-Disposition': `inline; filename="${filename}"`,
+            });
+            res.send(Buffer.from(fileBytes));
+            return;
+          }
+        } catch (storageError) {
+          console.error('Failed to download from Replit Object Storage:', storageError);
+        }
+      }
+      
+      // Fallback to local file or 404
+      res.status(404).json({ error: 'File not found in this environment' });
+    } catch (error) {
+      console.error('File serve error:', error);
+      res.status(404).json({ error: 'File not found' });
+    }
+  });
+
+  // Handle missing files gracefully for legacy uploads path
   app.get('/uploads/*', (req, res) => {
     res.status(404).json({ error: 'File not found in this environment' });
   });
@@ -176,18 +210,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const file of files) {
         console.log(`Processing file: ${file.originalname}, type: ${file.mimetype}`);
         
-        const photoData = insertPhotoSchema.parse({
-          modelId,
-          filename: file.filename,
-          originalName: file.originalname,
-          url: `/uploads/${file.filename}`,
-          caption: req.body.caption || null,
-          metadata: req.body.metadata ? JSON.parse(req.body.metadata) : null,
-          isBoxArt: req.body.isBoxArt === 'true' && photos.length === 0, // Only first photo can be box art
-        });
+        try {
+          // Upload file using storage service (Replit Object Storage or local)
+          const savedFilename = await fileStorage.uploadFile(file, file.filename);
+          const fileUrl = fileStorage.getFileUrl(savedFilename);
+          
+          const photoData = insertPhotoSchema.parse({
+            modelId,
+            filename: savedFilename,
+            originalName: file.originalname,
+            url: fileUrl,
+            caption: req.body.caption || null,
+            metadata: req.body.metadata ? JSON.parse(req.body.metadata) : null,
+            isBoxArt: req.body.isBoxArt === 'true' && photos.length === 0, // Only first photo can be box art
+          });
 
-        const photo = await storage.createPhoto(photoData);
-        photos.push(photo);
+          const photo = await storage.createPhoto(photoData);
+          photos.push(photo);
+          console.log(`File uploaded to ${isUsingReplitStorage ? 'Replit Object Storage' : 'local storage'}: ${savedFilename}`);
+        } catch (uploadError) {
+          console.error(`Failed to upload file ${file.originalname}:`, uploadError);
+          // Continue with other files
+        }
       }
 
       console.log(`Successfully uploaded ${photos.length} photos`);
