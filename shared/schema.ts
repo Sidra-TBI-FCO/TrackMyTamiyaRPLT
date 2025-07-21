@@ -132,7 +132,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 });
 
-export const insertModelSchema = createInsertSchema(models).omit({
+export const insertModelSchema = createInsertSchema(models, {
+  releaseYear: z.coerce.number().optional(),
+  totalCost: z.coerce.number().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

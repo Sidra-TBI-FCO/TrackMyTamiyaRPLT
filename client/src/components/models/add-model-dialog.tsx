@@ -36,13 +36,10 @@ import { useTamiyaScraper } from "@/hooks/use-tamiya-scraper";
 import { ModelWithRelations } from "@/types";
 import { z } from "zod";
 
-const formSchema = insertModelSchema.omit({
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+const formSchema = insertModelSchema.extend({
   itemNumber: z.string().min(1, "Item number is required"),
-  tags: z.array(z.string()).optional(),
+  name: z.string().min(1, "Model name is required"),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -76,11 +73,11 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      itemNumber: "",
+      itemNumber: "", 
       chassis: "",
       releaseYear: undefined,
       buildStatus: "planning",
-      totalCost: "0",
+      totalCost: 0,
       notes: "",
       tags: [],
     },
@@ -270,6 +267,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                       disabled={isScraping}
                       min={1960}
                       max={new Date().getFullYear() + 1}
+                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                     />
                   </FormControl>
                   <FormMessage />

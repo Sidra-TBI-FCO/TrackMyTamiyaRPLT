@@ -36,7 +36,8 @@ import { z } from "zod";
 
 const formSchema = insertModelSchema.extend({
   itemNumber: z.string().min(1, "Item number is required"),
-  tags: z.array(z.string()).optional(),
+  name: z.string().min(1, "Model name is required"),
+  tags: z.array(z.string()).optional().default([]),
 }).partial();
 
 type FormData = z.infer<typeof formSchema>;
@@ -74,7 +75,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
       chassis: model.chassis || "",
       releaseYear: model.releaseYear || undefined,
       buildStatus: model.buildStatus,
-      totalCost: model.totalCost || "0",
+      totalCost: parseFloat(model.totalCost || "0"),
       notes: model.notes || "",
       tags: model.tags || [],
     },
@@ -221,6 +222,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                       className="font-mono"
                       min={1960}
                       max={new Date().getFullYear() + 1}
+                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                     />
                   </FormControl>
                   <FormMessage />
