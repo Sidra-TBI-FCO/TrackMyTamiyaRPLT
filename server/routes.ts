@@ -71,13 +71,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const storageClient = new Client();
         
         try {
-          const fileBytes = await storageClient.downloadAsBytes(filename);
-          if (fileBytes && fileBytes.length > 0) {
+          const result = await storageClient.downloadAsBytes(filename);
+          if (result && typeof result === 'object' && 'length' in result && result.length > 0) {
+            const buffer = Buffer.from(result as any);
             res.set({
               'Content-Type': 'application/octet-stream',
               'Content-Disposition': `inline; filename="${filename}"`,
             });
-            res.send(Buffer.from(fileBytes));
+            res.send(buffer);
             return;
           }
         } catch (storageError) {

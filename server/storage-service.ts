@@ -51,7 +51,7 @@ class LocalFileStorage implements FileStorageService {
 }
 
 class ReplitObjectStorage implements FileStorageService {
-  private bucketName = 'trackmytamiya-uploads';
+  private bucketName = 'default'; // Use default bucket that's automatically available
 
   async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
     if (!replitStorage) {

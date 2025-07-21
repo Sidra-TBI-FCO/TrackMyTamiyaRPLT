@@ -14,10 +14,17 @@ TrackMyTamiya currently stores uploaded photos in the local filesystem (`./uploa
 For production deployments, you need to configure persistent cloud storage. Here are the recommended options:
 
 #### Option 1: Replit Object Storage (Recommended for Replit deployments)
-```bash
-# Automatically configured in Replit production environments
-# No additional setup required - files will persist across restarts
-```
+
+**Setup Steps:**
+1. In your Replit workspace, go to the Storage tab (bucket icon in left sidebar)
+2. Click "Create new bucket" or "Use an existing bucket"
+3. Create a bucket named `trackmytamiya-uploads` (or use the default bucket)
+4. The application will automatically detect and use Replit Object Storage in production
+
+**Features:**
+- Automatically shared between development and production
+- Persistent across container restarts and deployments
+- No additional environment variables needed
 
 #### Option 2: Supabase Storage
 ```bash
