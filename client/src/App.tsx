@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Models from "@/pages/models";
 import BuildLogs from "@/pages/build-logs";
 import HopUpParts from "@/pages/hop-up-parts";
+import Parts from "@/pages/parts";
 import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/models/:id" component={ModelDetail} />
       <Route path="/build-logs" component={BuildLogs} />
       <Route path="/hop-up-parts" component={HopUpParts} />
+      <Route path="/parts" component={Parts} />
       <Route path="/photos" component={PhotoGallery} />
       <Route path="/photo-frame" component={PhotoFrame} />
       <Route path="/settings" component={SettingsPage} />

@@ -19,7 +19,7 @@ export default function MobileNav() {
     { href: "/", icon: Home, label: "Home", isActive: location === "/" },
     { href: "/models", icon: LayoutGrid, label: "Models", isActive: location === "/models" },
     { href: "/build-logs", icon: Wrench, label: "Logs", isActive: location === "/build-logs" },
-    { href: "/hop-up-parts", icon: Cog, label: "Parts", isActive: location === "/hop-up-parts" },
+    { href: "/parts", icon: Cog, label: "Parts", isActive: location === "/parts" },
   ];
 
   return (
