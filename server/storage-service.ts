@@ -2,20 +2,16 @@ import { Client } from '@replit/object-storage';
 import fs from 'fs';
 import path from 'path';
 
-// Use Replit Object Storage for persistent storage in production
-const useReplitStorage = process.env.NODE_ENV === 'production' && process.env.REPLIT_DB_URL;
-
+// Always use Replit Object Storage for consistent persistent storage
 let replitStorage: Client | null = null;
 
-if (useReplitStorage) {
-  try {
-    // Initialize with a bucket name for Replit Object Storage
-    replitStorage = new Client();
-    console.log('Replit Object Storage initialized successfully');
-  } catch (error) {
-    console.log('Replit Object Storage not available, falling back to local storage:', error);
-    useReplitStorage && console.log('Note: Replit Object Storage requires proper setup for persistent file storage');
-  }
+try {
+  // Initialize with a bucket name for Replit Object Storage
+  replitStorage = new Client();
+  console.log('Replit Object Storage initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize Replit Object Storage:', error);
+  throw new Error('Replit Object Storage is required but not available');
 }
 
 export interface FileStorageService {
@@ -24,31 +20,7 @@ export interface FileStorageService {
   getFileUrl(filename: string): string;
 }
 
-class LocalFileStorage implements FileStorageService {
-  private uploadDir = path.join(process.cwd(), 'uploads');
-
-  constructor() {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
-
-  async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
-    // File is already saved by multer, just return the filename
-    return filename;
-  }
-
-  async deleteFile(filename: string): Promise<void> {
-    const filePath = path.join(this.uploadDir, filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-  }
-
-  getFileUrl(filename: string): string {
-    return `/uploads/${filename}`;
-  }
-}
+// Removed LocalFileStorage - only using Replit Object Storage now
 
 class ReplitObjectStorage implements FileStorageService {
   private bucketName = 'MyTamTrackPhotos'; // Use the user's created bucket
@@ -100,12 +72,8 @@ class ReplitObjectStorage implements FileStorageService {
   }
 }
 
-// Export the appropriate storage service
-export const fileStorage: FileStorageService = (replitStorage)
-  ? new ReplitObjectStorage() 
-  : new LocalFileStorage();
+// Always use Replit Object Storage
+export const fileStorage: FileStorageService = new ReplitObjectStorage();
 
-export const isUsingReplitStorage = replitStorage !== null;
-
-// Log which storage is being used
-console.log(`File storage: ${isUsingReplitStorage ? 'Replit Object Storage (persistent)' : 'Local filesystem (temporary in production)'}`);
+// Log that we're using Replit Object Storage
+console.log('File storage: Replit Object Storage (persistent)');

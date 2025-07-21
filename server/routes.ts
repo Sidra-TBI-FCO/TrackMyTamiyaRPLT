@@ -7,7 +7,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { fileStorage, isUsingReplitStorage } from "./storage-service";
+import { fileStorage } from "./storage-service";
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -239,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const photo = await storage.createPhoto(photoData);
           photos.push(photo);
-          console.log(`File uploaded to ${isUsingReplitStorage ? 'Replit Object Storage' : 'local storage'}: ${savedFilename}`);
+          console.log(`File uploaded to Replit Object Storage: ${savedFilename}`);
         } catch (uploadError) {
           console.error(`Failed to upload file ${file.originalname}:`, uploadError);
           // Continue with other files
@@ -440,6 +440,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // File serving endpoint for Replit Object Storage
+  app.get('/api/files/:filename', async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const { Client } = await import('@replit/object-storage');
+      const client = new Client();
+      
+      // Get file from Replit Object Storage
+      const file = await client.downloadAsBytes(filename);
+      
+      // Set appropriate content type based on file extension
+      const ext = path.extname(filename).toLowerCase();
+      const contentTypes: { [key: string]: string } = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.pdf': 'application/pdf'
+      };
+      
+      const contentType = contentTypes[ext] || 'application/octet-stream';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      
+      res.send(Buffer.from(file));
+    } catch (error: any) {
+      console.error('File serving error:', error);
+      res.status(404).json({ message: 'File not found' });
     }
   });
 
