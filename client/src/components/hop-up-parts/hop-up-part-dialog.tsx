@@ -369,13 +369,13 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         parseLog.push("⚠️ Category not auto-detected - leave blank for manual selection");
       }
 
-      // Detect materials from URL - prioritize the actual part material over context
+      // Detect materials from URL - look for material hints in product names
       const materialKeywords = {
-        'Aluminum': ['aluminum-', 'aluminium-', '-aluminum', '-aluminium'], // More specific patterns
-        'Carbon Fiber': ['carbon-fiber', '-carbon-', 'cf-'],
-        'Steel': ['steel-', '-steel', 'hardened-steel'],
-        'Plastic': ['plastic-', '-plastic', 'abs-'],
-        'Titanium': ['titanium-', '-titanium', 'ti-']
+        'Aluminum': ['aluminum', 'aluminium', '-alu-', 'alloy'],
+        'Carbon Fiber': ['carbon-fiber', 'carbon', '-cf-', '-carbon-'],
+        'Steel': ['steel', '-steel-', 'hardened'],
+        'Plastic': ['plastic', '-plastic-', 'abs', 'delrin'],
+        'Titanium': ['titanium', '-ti-', '-titan-']
       };
 
       let materialFound = false;
@@ -388,30 +388,36 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
       }
       
-      // Special case: if we see "carbon chassis" but the part itself is aluminum
-      if (!materialFound && urlLower.includes('aluminum')) {
-        form.setValue('material', 'Aluminum');
-        parseLog.push("✅ Material detected: Aluminum (from part description)");
-        materialFound = true;
+      // Common RC part material detection from context
+      if (!materialFound) {
+        if (urlLower.includes('damper') || urlLower.includes('shock')) {
+          form.setValue('material', 'Aluminum'); // Most aftermarket dampers are aluminum
+          parseLog.push("✅ Material detected: Aluminum (typical for dampers)");
+          materialFound = true;
+        }
       }
       
       if (!materialFound) {
         parseLog.push("⚠️ Material not auto-detected");
       }
 
-      // Detect chassis compatibility from URL - use global regex to find all matches
-      const chassisRegex = /(ta0?\d+|tb0?\d+|tt0?\d+|df0?\d+|m0?\d+|tc0?\d+|xv0?\d+)/gi;
+      // Detect chassis compatibility from URL - be more careful not to confuse with part numbers
+      const chassisRegex = /(^|[^a-z\d])(ta0?[0-9]{1,2}(?:sw)?|tb0?[0-9]{1,2}|tt0?[0-9]{1,2}|df0?[0-9]{1,2}|m0?[0-9]{1,2}|tc0?[0-9]{1,2}|xv0?[0-9]{1,2}|cc0?[0-9]{1,2}|ff0?[0-9]{1,2})(?=[^a-z\d]|$)/gi;
       const chassisMatches = [];
       let match;
-      while ((match = chassisRegex.exec(url)) !== null) {
-        chassisMatches.push(match[1].toUpperCase());
+      const urlForChassis = url.replace(/xs-ta\d+/gi, ''); // Remove part numbers like XS-TA29171SV to avoid confusion
+      while ((match = chassisRegex.exec(urlForChassis)) !== null) {
+        const chassis = match[2]; // match[2] because we have capturing groups
+        if (chassis && chassis.length <= 6) { // Reasonable chassis code length
+          chassisMatches.push(chassis.toUpperCase());
+        }
       }
       
       let chassisFound = false;
       if (chassisMatches.length > 0) {
-        const uniqueChassis = [...new Set(chassisMatches)];
+        const uniqueChassis = Array.from(new Set(chassisMatches));
         const currentCompat = form.getValues('compatibility') || [];
-        const newCompatibility = [...new Set([...currentCompat, ...uniqueChassis])];
+        const newCompatibility = Array.from(new Set([...currentCompat, ...uniqueChassis]));
         form.setValue('compatibility', newCompatibility);
         uniqueChassis.forEach(chassis => {
           parseLog.push(`✅ Chassis compatibility detected: ${chassis}`);
@@ -422,12 +428,32 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         parseLog.push("⚠️ Chassis compatibility not auto-detected");
       }
 
-      // Color detection
-      const colorKeywords = ['red', 'blue', 'black', 'white', 'silver', 'gold', 'green', 'orange', 'purple'];
-      const colorFound = colorKeywords.find(color => urlLower.includes(color));
+      // Color detection - look for color indicators in part numbers and descriptions
+      const colorKeywords = ['red', 'blue', 'black', 'white', 'silver', 'gold', 'green', 'orange', 'purple', 'grey', 'gray'];
+      const colorSuffixes = ['rd', 'bl', 'bk', 'wh', 'sv', 'gd', 'gn', 'or', 'pp']; // Common color codes in part numbers
+      
+      let colorFound = null;
+      
+      // First try direct color words
+      colorFound = colorKeywords.find(color => urlLower.includes(color));
+      
+      // Then try color suffix codes (like SV for silver in XS-TA29171SV)
+      if (!colorFound) {
+        const partNumber = form.getValues('itemNumber') || '';
+        if (partNumber.includes('SV')) {
+          colorFound = 'silver';
+        } else if (partNumber.includes('RD')) {
+          colorFound = 'red';
+        } else if (partNumber.includes('BK')) {
+          colorFound = 'black';
+        } else if (partNumber.includes('BL')) {
+          colorFound = 'blue';
+        }
+      }
+      
       if (colorFound) {
         form.setValue('color', colorFound.charAt(0).toUpperCase() + colorFound.slice(1));
-        parseLog.push(`✅ Color detected: ${colorFound}`);
+        parseLog.push(`✅ Color detected: ${colorFound.charAt(0).toUpperCase() + colorFound.slice(1)}`);
       } else {
         parseLog.push("⚠️ Color not auto-detected");
       }
@@ -588,7 +614,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                     <FormItem>
                       <FormLabel>Item Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., 47479" {...field} />
+                        <Input placeholder="e.g., 47479" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -653,7 +679,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Store/Supplier</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select store" />
@@ -678,7 +704,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Manufacturer/Brand</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select brand" />
@@ -716,7 +742,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                     </div>
                     <FormControl>
                       <Switch
-                        checked={field.value}
+                        checked={field.value || false}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
@@ -732,7 +758,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                     <FormItem>
                       <FormLabel>Store URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://www.rcmart.com/..." {...field} className="font-mono text-sm" />
+                        <Input placeholder="https://www.rcmart.com/..." {...field} value={field.value || ""} className="font-mono text-sm" />
                       </FormControl>
                       <FormDescription className="text-xs">
                         Link to product page
@@ -750,14 +776,14 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                       <FormLabel>TamiyaBase URL</FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
-                          <Input placeholder="https://tamiyabase.com/parts/..." {...field} className="font-mono text-sm" />
+                          <Input placeholder="https://tamiyabase.com/parts/..." {...field} value={field.value || ""} className="font-mono text-sm" />
                         </FormControl>
                         {field.value && (
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(field.value, '_blank')}
+                            onClick={() => window.open(field.value || "", '_blank')}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
@@ -787,7 +813,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                     <FormItem>
                       <FormLabel>Material</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Carbon Fiber, Aluminum" {...field} />
+                        <Input placeholder="e.g., Carbon Fiber, Aluminum" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -801,7 +827,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                     <FormItem>
                       <FormLabel>Color</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Red, Blue, Black" {...field} />
+                        <Input placeholder="e.g., Red, Blue, Black" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -884,6 +910,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                         placeholder="Installation notes, performance improvements, etc."
                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />
