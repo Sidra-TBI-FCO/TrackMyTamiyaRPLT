@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Tag } from "lucide-react";
+import { Plus, X, Tag, Link, Loader2, Globe } from "lucide-react";
 import { insertModelSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +53,9 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [newTag, setNewTag] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [productUrl, setProductUrl] = useState("");
+  const [isParsingUrl, setIsParsingUrl] = useState(false);
+  const [parseLog, setParseLog] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { scrapeModelData, isLoading: isScraping } = useTamiyaScraper();
@@ -130,6 +133,139 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     }
   };
 
+  // URL parsing function for models
+  const parseProductUrl = async (url: string) => {
+    if (!url.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a product URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsParsingUrl(true);
+    setParseLog(["🔄 Parsing product URL..."]);
+    
+    try {
+      // Extract item number from URL first
+      const tamiyaItemMatch = url.match(/(\d{5})/);
+      let extractedItemNumber = "";
+      
+      if (tamiyaItemMatch) {
+        extractedItemNumber = tamiyaItemMatch[1];
+        form.setValue('itemNumber', extractedItemNumber);
+        setParseLog(prev => [...prev, `✅ Item number: ${extractedItemNumber}`]);
+      }
+
+      // Try web scraping
+      const response = await fetch('/api/scrape-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      });
+      
+      if (response.ok) {
+        const scrapedData = await response.json();
+        const newLog = [...parseLog, "✅ Successfully scraped product page!"];
+        
+        if (scrapedData.name) {
+          form.setValue('name', scrapedData.name);
+          newLog.push(`✅ Model name: ${scrapedData.name}`);
+        }
+        
+        if (scrapedData.chassis) {
+          form.setValue('chassis', scrapedData.chassis);
+          newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
+        }
+
+        if (scrapedData.scale) {
+          form.setValue('scale', scrapedData.scale);
+          newLog.push(`✅ Scale: ${scrapedData.scale}`);
+        }
+
+        if (scrapedData.type) {
+          form.setValue('type', scrapedData.type);
+          newLog.push(`✅ Type: ${scrapedData.type}`);
+        }
+
+        if (scrapedData.driveType) {
+          form.setValue('driveType', scrapedData.driveType);
+          newLog.push(`✅ Drive: ${scrapedData.driveType}`);
+        }
+
+        if (scrapedData.totalCost) {
+          form.setValue('totalCost', scrapedData.totalCost.toString());
+          newLog.push(`✅ Price: $${scrapedData.totalCost}`);
+        }
+
+        if (scrapedData.releaseYear) {
+          form.setValue('releaseYear', scrapedData.releaseYear);
+          newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
+        }
+        
+        setParseLog(newLog);
+        
+        toast({
+          title: "Product scraped successfully!",
+          description: `Found ${newLog.length - 2} product details`,
+        });
+      } else {
+        // Fallback to item number-based scraping if we have it
+        if (extractedItemNumber) {
+          setParseLog(prev => [...prev, "⚠️ Web scraping failed, trying Tamiya database..."]);
+          const scrapedData = await scrapeModelData(extractedItemNumber);
+          if (scrapedData) {
+            const newLog = [...parseLog, "✅ Found data from Tamiya database!"];
+            
+            if (scrapedData.name) {
+              form.setValue("name", scrapedData.name);
+              newLog.push(`✅ Model name: ${scrapedData.name}`);
+            }
+            if (scrapedData.chassis) {
+              form.setValue("chassis", scrapedData.chassis);
+              newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
+            }
+            if (scrapedData.scale) {
+              form.setValue("scale", scrapedData.scale);
+              newLog.push(`✅ Scale: ${scrapedData.scale}`);
+            }
+            if (scrapedData.releaseYear) {
+              form.setValue("releaseYear", scrapedData.releaseYear);
+              newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
+            }
+            
+            setParseLog(newLog);
+            toast({
+              title: "Tamiya data found!",
+              description: `Found model details from Tamiya database`,
+            });
+          } else {
+            setParseLog(prev => [...prev, "⚠️ No additional data found in Tamiya database"]);
+          }
+        } else {
+          setParseLog(prev => [...prev, "❌ Could not extract item number or scrape page"]);
+          toast({
+            title: "Parsing failed",
+            description: "Could not extract model details from URL",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      setParseLog(prev => [...prev, "❌ Error occurred while parsing URL"]);
+      toast({
+        title: "Error",
+        description: "Failed to parse product URL",
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingUrl(false);
+    }
+  };
+
   const addTag = (tag: string) => {
     const currentTags = form.getValues("tags") || [];
     if (tag && !currentTags.includes(tag)) {
@@ -193,6 +329,39 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* URL Parsing Section */}
+            <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center gap-2">
+                <Link className="h-4 w-4 text-blue-600" />
+                <h3 className="font-mono text-sm font-semibold">Parse from URL</h3>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://www.rcmart.com/tamiya-1-10-xv-02-pro-4wd-chassis-kit-ep-58707-00117470"
+                  value={productUrl}
+                  onChange={(e) => setProductUrl(e.target.value)}
+                  className="font-mono text-sm"
+                  disabled={isParsingUrl}
+                />
+                <Button 
+                  type="button"
+                  onClick={() => parseProductUrl(productUrl)}
+                  disabled={isParsingUrl || !productUrl.trim()}
+                  size="sm"
+                >
+                  {isParsingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                  Parse
+                </Button>
+              </div>
+              
+              {parseLog.length > 0 && (
+                <div className="text-xs font-mono space-y-1 max-h-20 overflow-y-auto">
+                  {parseLog.map((log, index) => (
+                    <div key={index} className="text-gray-600 dark:text-gray-300">{log}</div>
+                  ))}
+                </div>
+              )}
+            </div>
             <FormField
               control={form.control}
               name="itemNumber"
