@@ -112,27 +112,64 @@ export default function PhotoGallery({
         ))}
       </div>
 
-      {/* Photo Detail Dialog */}
+      {/* Photo Detail Dialog with Thumbnail Navigation */}
       <Dialog open={!!selectedPhoto && !isEditing} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-6xl h-[90vh] p-0">
           {selectedPhoto && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="font-mono">Photo Detail</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <img
-                  src={selectedPhoto.url}
-                  alt={selectedPhoto.caption || "RC model photo"}
-                  className="w-full max-h-96 object-contain rounded"
-                />
+            <div className="flex h-full">
+              {/* Main photo area */}
+              <div className="flex-1 flex flex-col">
+                <DialogHeader className="p-4 pb-2">
+                  <DialogTitle className="font-mono">Photo Detail</DialogTitle>
+                </DialogHeader>
+                
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <img
+                    src={selectedPhoto.url}
+                    alt={selectedPhoto.caption || "RC model photo"}
+                    className="max-w-full max-h-full object-contain rounded"
+                  />
+                </div>
+                
                 {selectedPhoto.caption && (
-                  <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
-                    {selectedPhoto.caption}
-                  </p>
+                  <div className="p-4 pt-2">
+                    <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
+                      {selectedPhoto.caption}
+                    </p>
+                  </div>
                 )}
               </div>
-            </>
+              
+              {/* Thumbnail navigation on the right */}
+              <div className="w-20 md:w-24 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                  <p className="text-xs font-mono text-gray-500 dark:text-gray-400 text-center">
+                    {photos.findIndex(p => p.id === selectedPhoto.id) + 1}/{photos.length}
+                  </p>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                  {photos.map((photo) => (
+                    <button
+                      key={photo.id}
+                      onClick={() => setSelectedPhoto(photo)}
+                      className={`w-full aspect-square rounded overflow-hidden border-2 transition-all ${
+                        photo.id === selectedPhoto.id 
+                          ? 'border-blue-500 ring-1 ring-blue-500' 
+                          : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <ImageFallback
+                        src={photo.url}
+                        alt={photo.caption || "RC model photo"}
+                        className="w-full h-full object-cover"
+                        fallbackText="N/A"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
