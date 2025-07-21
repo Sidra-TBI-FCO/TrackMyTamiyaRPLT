@@ -282,29 +282,55 @@ export default function PhotoSlideshow({
           </div>
         </div>
 
-        {/* Thumbnail Strip (for multiple photos) - Positioned vertically on right for mobile landscape */}
+        {/* Thumbnail Strip (for multiple photos) - Responsive positioning */}
         {photos.length > 1 && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className="flex flex-col space-y-2 bg-black/50 p-2 rounded-lg max-h-96 overflow-y-auto">
-              {photos.map((photo, index) => (
-                <button
-                  key={photo.id}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`flex-shrink-0 w-12 h-12 rounded overflow-hidden border-2 transition-colors ${
-                    index === currentIndex
-                      ? 'border-white'
-                      : 'border-transparent hover:border-gray-400'
-                  }`}
-                >
-                  <img
-                    src={photo.url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
+          <>
+            {/* Portrait mode: Bottom horizontal layout */}
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 portrait:block landscape:hidden">
+              <div className="flex space-x-2 bg-black/50 p-2 rounded-lg max-w-md overflow-x-auto">
+                {photos.map((photo, index) => (
+                  <button
+                    key={photo.id}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`flex-shrink-0 w-12 h-12 rounded overflow-hidden border-2 transition-colors ${
+                      index === currentIndex
+                        ? 'border-white'
+                        : 'border-transparent hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={photo.url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+            
+            {/* Landscape mode: Right vertical layout */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 portrait:hidden landscape:block">
+              <div className="flex flex-col space-y-2 bg-black/50 p-2 rounded-lg max-h-96 overflow-y-auto">
+                {photos.map((photo, index) => (
+                  <button
+                    key={photo.id}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`flex-shrink-0 w-12 h-12 rounded overflow-hidden border-2 transition-colors ${
+                      index === currentIndex
+                        ? 'border-white'
+                        : 'border-transparent hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={photo.url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
