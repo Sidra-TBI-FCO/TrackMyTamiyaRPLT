@@ -104,14 +104,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createModel(model: InsertModel): Promise<Model> {
-    const [newModel] = await db.insert(models).values(model).returning();
+    const [newModel] = await db.insert(models).values({
+      ...model,
+      totalCost: model.totalCost?.toString()
+    }).returning();
     return newModel;
   }
 
   async updateModel(id: number, userId: number, model: Partial<InsertModel>): Promise<Model | undefined> {
     const [updated] = await db
       .update(models)
-      .set({ ...model, updatedAt: new Date() })
+      .set({ 
+        ...model, 
+        totalCost: model.totalCost?.toString(),
+        updatedAt: new Date() 
+      })
       .where(and(eq(models.id, id), eq(models.userId, userId)))
       .returning();
     return updated || undefined;
@@ -121,7 +128,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(models)
       .where(and(eq(models.id, id), eq(models.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getPhotos(modelId: number, userId: number): Promise<Photo[]> {
@@ -177,7 +184,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const result = await db.delete(photos).where(eq(photos.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async clearModelBoxArt(modelId: number, userId: number): Promise<void> {
@@ -271,7 +278,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const result = await db.delete(buildLogEntries).where(eq(buildLogEntries.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async addPhotosToEntry(entryId: number, photoIds: number[]): Promise<BuildLogPhoto[]> {
@@ -293,7 +300,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createHopUpPart(part: InsertHopUpPart): Promise<HopUpPart> {
-    const [newPart] = await db.insert(hopUpParts).values(part).returning();
+    const [newPart] = await db.insert(hopUpParts).values({
+      ...part,
+      cost: part.cost?.toString()
+    }).returning();
     return newPart;
   }
 
@@ -312,7 +322,10 @@ export class DatabaseStorage implements IStorage {
 
     const [updated] = await db
       .update(hopUpParts)
-      .set(part)
+      .set({
+        ...part,
+        cost: part.cost?.toString()
+      })
       .where(eq(hopUpParts.id, id))
       .returning();
     return updated || undefined;
@@ -332,7 +345,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const result = await db.delete(hopUpParts).where(eq(hopUpParts.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getCollectionStats(userId: number): Promise<{

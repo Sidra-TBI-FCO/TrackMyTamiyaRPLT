@@ -59,10 +59,6 @@ const upload = multer({
     fileSize: 15 * 1024 * 1024, // Increased to 15MB for HEIC and high-quality mobile photos
     files: 10, // Allow up to 10 files per upload
     fieldSize: 2 * 1024 * 1024, // 2MB field size
-  },
-  onError: (err, next) => {
-    console.error('Multer error:', err);
-    next(err);
   }
 });
 

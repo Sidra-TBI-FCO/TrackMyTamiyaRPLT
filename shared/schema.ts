@@ -69,6 +69,12 @@ export const hopUpParts = pgTable("hop_up_parts", {
   installationDate: timestamp("installation_date"),
   notes: text("notes"),
   photoId: integer("photo_id").references(() => photos.id),
+  isTamiyaBrand: boolean("is_tamiya_brand").default(false),
+  productUrl: text("product_url"),
+  tamiyaBaseUrl: text("tamiya_base_url"), // Link to TamiyaBase part page
+  compatibility: text("compatibility").array().default(sql`'{}'::text[]`), // Compatible chassis types
+  color: text("color"),
+  material: text("material"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -151,7 +157,9 @@ export const insertBuildLogEntrySchema = createInsertSchema(buildLogEntries).omi
   createdAt: true,
 });
 
-export const insertHopUpPartSchema = createInsertSchema(hopUpParts).omit({
+export const insertHopUpPartSchema = createInsertSchema(hopUpParts, {
+  cost: z.coerce.number().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
