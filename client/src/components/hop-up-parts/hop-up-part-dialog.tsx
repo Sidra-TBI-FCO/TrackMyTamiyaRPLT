@@ -223,7 +223,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       // Detect brand/manufacturer from URL path
       const brandPatterns = [
         { pattern: /xtra-speed/i, brand: 'Xtra Speed', code: 'XS' },
-        { pattern: /yeah-racing/i, brand: 'Yeah Racing', code: 'YR' },
+        { pattern: /yeah-racing/i, brand: 'Yeah Racing', code: 'YBS' }, // YBS is Yeah Racing's part code
         { pattern: /gpm-racing/i, brand: 'GPM Racing', code: 'GPM' },
         { pattern: /hot-racing/i, brand: 'Hot Racing', code: 'HR' },
         { pattern: /3racing/i, brand: '3Racing', code: '3R' },
@@ -272,15 +272,34 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
       }
       
-      // Fallback to generic 5+ digit pattern if no brand-specific number found
+      // Fallback to manufacturer part number patterns if no brand-specific number found
       if (!partNumberFound) {
-        const partNumberMatches = url.match(/(\d{5,})/g);
-        if (partNumberMatches && !form.getValues('itemNumber')) {
-          const partNumber = partNumberMatches[0];
-          form.setValue('itemNumber', partNumber);
-          parseLog.push(`✅ Generic part number extracted: ${partNumber}`);
-        } else {
-          parseLog.push("⚠️ No part number found in URL");
+        // Look for manufacturer part numbers like YBS-0048, MST-310xxx
+        const manufacturerPartPatterns = [
+          /([a-z]{2,4}-\d{4}[a-z]{0,2})/i,  // YBS-0048, MST-310xxx format
+          /([a-z]{3,4}\d{4,6})/i,           // YBS0048 format without dash
+        ];
+        
+        for (const pattern of manufacturerPartPatterns) {
+          const match = url.match(pattern);
+          if (match) {
+            form.setValue('itemNumber', match[1].toUpperCase());
+            parseLog.push(`✅ Manufacturer part number extracted: ${match[1].toUpperCase()}`);
+            partNumberFound = true;
+            break;
+          }
+        }
+        
+        // Final fallback to store SKU if no manufacturer number found
+        if (!partNumberFound) {
+          const partNumberMatches = url.match(/(\d{5,})/g);
+          if (partNumberMatches && !form.getValues('itemNumber')) {
+            const partNumber = partNumberMatches[0];
+            form.setValue('itemNumber', partNumber);
+            parseLog.push(`✅ Store SKU extracted: ${partNumber} (no manufacturer part number found)`);
+          } else {
+            parseLog.push("⚠️ No part number found in URL");
+          }
         }
       }
       
