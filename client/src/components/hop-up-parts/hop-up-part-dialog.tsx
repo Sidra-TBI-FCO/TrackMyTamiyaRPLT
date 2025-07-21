@@ -297,10 +297,14 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       };
 
       let categoryFound = false;
-      // Check for steering-specific parts first
+      // Check for specific part types first
       if (urlLower.includes('steering')) {
         form.setValue('category', 'Suspension');
         parseLog.push("✅ Category detected: Suspension (steering component)");
+        categoryFound = true;
+      } else if (urlLower.includes('drive-shaft') || urlLower.includes('driveshaft')) {
+        form.setValue('category', 'Drivetrain');
+        parseLog.push("✅ Category detected: Drivetrain (drive shaft)");
         categoryFound = true;
       } else {
         for (const [category, keywords] of Object.entries(categoryKeywords)) {
@@ -520,7 +524,13 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                     <FormItem>
                       <FormLabel>Cost ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -535,10 +545,10 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -560,10 +570,10 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Supplier</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Select supplier" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
