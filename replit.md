@@ -87,13 +87,13 @@ The application uses a relational PostgreSQL schema with the following main enti
 - Foreign key relationships maintain data integrity
 
 ### File Storage
-- **Development**: Local file system storage for uploaded images, audio, and documents
-- **Production**: Replit Object Storage integration with bucket "MyTamTrackPhotos" for persistent storage
-- Supports multiple file types: images (JPG, PNG, GIF, WebP), audio (MP3, WAV), documents (PDF, DOC)
+- **Unified Storage**: Replit Object Storage integration with bucket "MyTamTrackPhotos" for persistent storage across all environments
+- Supports multiple file types: images (JPG, PNG, GIF, WebP, HEIC, HEIF), audio (MP3, WAV, AAC), documents (PDF, DOC)
+- Enhanced mobile compatibility with flexible file type detection
 - Unique filename generation to prevent conflicts
-- File type validation and size limits (10MB max)
-- Static serving through Express middleware with proper MIME type detection
-- Graceful fallback system for missing files in deployment environments
+- File type validation and size limits (15MB max for high-quality mobile photos)
+- Direct file serving through optimized API endpoints with proper MIME type detection
+- Comprehensive CORS support for mobile browsers and production deployments
 
 ## External Dependencies
 
