@@ -190,89 +190,139 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         return;
       }
 
-      // Detect suppliers from URL
-      if (urlLower.includes('rcmart')) {
-        form.setValue('supplier', 'RC Mart');
-        parseLog.push("✅ Supplier detected: RC Mart");
-      } else if (urlLower.includes('amain')) {
-        form.setValue('supplier', 'AMain Hobbies');
-        parseLog.push("✅ Supplier detected: AMain Hobbies");
-      } else if (urlLower.includes('tower')) {
-        form.setValue('supplier', 'Tower Hobbies');
-        parseLog.push("✅ Supplier detected: Tower Hobbies");
-      } else if (urlLower.includes('horizonhobby')) {
-        form.setValue('supplier', 'Horizon Hobby');
-        parseLog.push("✅ Supplier detected: Horizon Hobby");
-      } else {
-        parseLog.push("⚠️ Supplier not auto-detected");
-      }
-      
-      // Detect Tamiya parts from official sources or part numbers
-      if (urlLower.includes('tamiya') || urlLower.includes('47') || urlLower.includes('54')) {
-        form.setValue('isTamiyaBrand', true);
-        form.setValue('supplier', 'Tamiya');
-        parseLog.push("✅ Official Tamiya part detected");
-      }
-      
-      // Extract potential part numbers from URL (5+ digits)
-      const partNumberMatches = url.match(/(\d{5,})/g);
-      if (partNumberMatches && !form.getValues('itemNumber')) {
-        const partNumber = partNumberMatches[0];
-        form.setValue('itemNumber', partNumber);
-        parseLog.push(`✅ Part number extracted: ${partNumber}`);
-      } else if (!partNumberMatches) {
-        parseLog.push("⚠️ No part number found in URL");
-      }
-      
-      // Extract part name from URL path
-      const pathParts = url.split('/').pop()?.split('-') || [];
-      if (pathParts.length > 2) {
-        const potentialName = pathParts
-          .filter(part => !part.match(/^\d+$/) && part.length > 2)
-          .join(' ')
-          .replace(/[^a-zA-Z0-9\s]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        if (potentialName && !form.getValues('name')) {
-          form.setValue('name', potentialName.charAt(0).toUpperCase() + potentialName.slice(1));
-          parseLog.push(`✅ Part name extracted: ${potentialName}`);
+      // Detect brand/manufacturer from URL path (before detecting Tamiya)
+      const brandPatterns = [
+        { pattern: /xtra-speed/i, brand: 'Xtra Speed', code: 'XS' },
+        { pattern: /yeah-racing/i, brand: 'Yeah Racing', code: 'YR' },
+        { pattern: /gpm-racing/i, brand: 'GPM Racing', code: 'GPM' },
+        { pattern: /hot-racing/i, brand: 'Hot Racing', code: 'HR' },
+        { pattern: /3racing/i, brand: '3Racing', code: '3R' },
+        { pattern: /mst/i, brand: 'MST', code: 'MST' },
+      ];
+
+      let detectedBrand = null;
+      for (const { pattern, brand, code } of brandPatterns) {
+        if (pattern.test(url)) {
+          form.setValue('supplier', brand);
+          detectedBrand = { brand, code };
+          parseLog.push(`✅ Brand detected: ${brand}`);
+          break;
         }
       }
 
-      // Auto-categorize based on URL keywords
+      // Only detect Tamiya if no other brand was found and it's actually a Tamiya part
+      if (!detectedBrand && (urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54') || urlLower.includes('/tamiya/47') || urlLower.includes('/tamiya/54'))) {
+        form.setValue('isTamiyaBrand', true);
+        form.setValue('supplier', 'Tamiya');
+        parseLog.push("✅ Official Tamiya part detected");
+      } else if (detectedBrand) {
+        form.setValue('isTamiyaBrand', false);
+        parseLog.push("✅ Marked as aftermarket part");
+      }
+      
+      // Extract part numbers - look for brand-specific patterns first
+      let partNumberFound = false;
+      
+      if (detectedBrand) {
+        // Look for brand-specific part number patterns
+        const brandPartPatterns = [
+          new RegExp(`${detectedBrand.code.toLowerCase()}-([a-z0-9]+)`, 'i'), // XS-TA29181RD
+          new RegExp(`${detectedBrand.code.toLowerCase()}([a-z0-9]+)`, 'i'),  // XSTA29181RD
+        ];
+        
+        for (const pattern of brandPartPatterns) {
+          const match = url.match(pattern);
+          if (match) {
+            const fullPartNumber = `${detectedBrand.code}-${match[1].toUpperCase()}`;
+            form.setValue('itemNumber', fullPartNumber);
+            parseLog.push(`✅ Brand part number extracted: ${fullPartNumber}`);
+            partNumberFound = true;
+            break;
+          }
+        }
+      }
+      
+      // Fallback to generic 5+ digit pattern if no brand-specific number found
+      if (!partNumberFound) {
+        const partNumberMatches = url.match(/(\d{5,})/g);
+        if (partNumberMatches && !form.getValues('itemNumber')) {
+          const partNumber = partNumberMatches[0];
+          form.setValue('itemNumber', partNumber);
+          parseLog.push(`✅ Generic part number extracted: ${partNumber}`);
+        } else {
+          parseLog.push("⚠️ No part number found in URL");
+        }
+      }
+      
+      // Extract part name from URL path - improved logic
+      const pathParts = url.split('/').pop()?.split('-') || [];
+      if (pathParts.length > 2) {
+        // Remove brand name, model numbers, and store-specific codes
+        const filteredParts = pathParts
+          .filter(part => 
+            !part.match(/^\d+$/) && // Remove pure numbers
+            part.length > 1 && // Remove single characters
+            !part.match(/^(xs|yr|gpm|hr|3r|mst)$/i) && // Remove brand codes
+            !part.match(/^(ta|tb|tt|df|m|tc|xv)\d+/i) && // Remove chassis codes
+            !part.match(/^\d{8,}$/) // Remove long product codes
+          );
+          
+        // Take meaningful parts and clean them up
+        const meaningfulParts = filteredParts.slice(0, 8); // Limit length
+        const potentialName = meaningfulParts
+          .join(' ')
+          .replace(/[^a-zA-Z0-9\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .replace(/\b(for|tamiya|w|with)\b/gi, '') // Remove common filler words
+          .trim();
+        
+        if (potentialName && !form.getValues('name')) {
+          const cleanName = potentialName.charAt(0).toUpperCase() + potentialName.slice(1);
+          form.setValue('name', cleanName);
+          parseLog.push(`✅ Part name extracted: ${cleanName}`);
+        }
+      }
+
+      // Auto-categorize based on URL keywords - more specific patterns
       const categoryKeywords = {
+        'Suspension': ['damper', 'shock', 'spring', 'suspension', 'steering-set', 'steering-linkage'],
+        'Drivetrain': ['gear', 'differential', 'driveshaft', 'belt', 'bearing', 'steering-set'],
+        'Chassis': ['main-frame', 'chassis-conversion', 'chassis-plate'],
         'Motor': ['motor', 'brushless', 'brushed'],
-        'Chassis': ['chassis', 'frame', 'main-frame'],
-        'Suspension': ['damper', 'shock', 'spring', 'suspension'],
         'Wheels': ['wheel', 'rim', 'hub'],
         'Tires': ['tire', 'tyre', 'rubber'],
         'Body': ['body', 'shell', 'lexan'],
-        'Drivetrain': ['gear', 'differential', 'driveshaft', 'belt'],
         'Electronics': ['esc', 'servo', 'receiver', 'transmitter'],
         'Tools': ['tool', 'wrench', 'hex', 'driver']
       };
 
       let categoryFound = false;
-      for (const [category, keywords] of Object.entries(categoryKeywords)) {
-        if (keywords.some(keyword => urlLower.includes(keyword))) {
-          form.setValue('category', category);
-          parseLog.push(`✅ Category detected: ${category}`);
-          categoryFound = true;
-          break;
+      // Check for steering-specific parts first
+      if (urlLower.includes('steering')) {
+        form.setValue('category', 'Suspension');
+        parseLog.push("✅ Category detected: Suspension (steering component)");
+        categoryFound = true;
+      } else {
+        for (const [category, keywords] of Object.entries(categoryKeywords)) {
+          if (keywords.some(keyword => urlLower.includes(keyword))) {
+            form.setValue('category', category);
+            parseLog.push(`✅ Category detected: ${category}`);
+            categoryFound = true;
+            break;
+          }
         }
       }
       if (!categoryFound) {
-        parseLog.push("⚠️ Category not auto-detected");
+        parseLog.push("⚠️ Category not auto-detected - leave blank for manual selection");
       }
 
-      // Detect materials from URL
+      // Detect materials from URL - prioritize the actual part material over context
       const materialKeywords = {
-        'Carbon Fiber': ['carbon', 'cf'],
-        'Aluminum': ['aluminum', 'aluminium', 'alu'],
-        'Steel': ['steel', 'hardened'],
-        'Plastic': ['plastic', 'abs'],
-        'Titanium': ['titanium', 'ti']
+        'Aluminum': ['aluminum-', 'aluminium-', '-aluminum', '-aluminium'], // More specific patterns
+        'Carbon Fiber': ['carbon-fiber', '-carbon-', 'cf-'],
+        'Steel': ['steel-', '-steel', 'hardened-steel'],
+        'Plastic': ['plastic-', '-plastic', 'abs-'],
+        'Titanium': ['titanium-', '-titanium', 'ti-']
       };
 
       let materialFound = false;
@@ -284,6 +334,14 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
           break;
         }
       }
+      
+      // Special case: if we see "carbon chassis" but the part itself is aluminum
+      if (!materialFound && urlLower.includes('aluminum')) {
+        form.setValue('material', 'Aluminum');
+        parseLog.push("✅ Material detected: Aluminum (from part description)");
+        materialFound = true;
+      }
+      
       if (!materialFound) {
         parseLog.push("⚠️ Material not auto-detected");
       }
