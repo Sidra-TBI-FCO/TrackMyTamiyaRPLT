@@ -19,10 +19,10 @@ export default function Navigation() {
       isActive: location === "/build-logs" 
     },
     { 
-      path: "/hop-up-parts", 
+      path: "/parts", 
       label: "Hop-Up Parts", 
       icon: Cog,
-      isActive: location === "/hop-up-parts" 
+      isActive: location === "/parts" 
     },
     { 
       path: "/photos", 
