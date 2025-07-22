@@ -101,73 +101,157 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-      <CardContent className="p-3">
-        {/* Compact Header Row */}
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="text-lg flex-shrink-0">{getCategoryIcon(part.category)}</div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-mono font-medium text-sm text-gray-900 dark:text-white truncate">
-                {part.name}
-              </h3>
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-500 dark:text-gray-400">
-                {part.itemNumber && <span>#{part.itemNumber}</span>}
-                {part.manufacturer && <span>• {part.manufacturer}</span>}
-                {formatCurrency(part.cost) && <span className="text-green-600 dark:text-green-400">• {formatCurrency(part.cost)}</span>}
+    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+      <CardContent className="p-4">
+        {/* Mobile: Full detailed layout */}
+        <div className="block lg:hidden">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-start space-x-2 flex-1">
+              <div className="text-2xl">{getCategoryIcon(part.category)}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2">
+                  {part.name}
+                </h3>
+                {part.itemNumber && (
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
+                    Item #{part.itemNumber}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge className={`text-xs font-mono px-2 py-0 ${getStatusColor(part.installationStatus)}`}>
-              {part.installationStatus === "installed" ? "✓" : part.installationStatus === "planned" ? "○" : "◦"}
+            
+            <Badge className={`text-xs font-mono ${getStatusColor(part.installationStatus)}`}>
+              {part.installationStatus.charAt(0).toUpperCase() + part.installationStatus.slice(1)}
             </Badge>
+          </div>
+
+          {/* Category and Details */}
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center space-x-4 text-sm font-mono text-gray-600 dark:text-gray-400">
+              <span className="capitalize">{part.category}</span>
+              {part.manufacturer && <span>• {part.manufacturer}</span>}
+              {part.supplier && <span>• {part.supplier}</span>}
+            </div>
+
+            {/* Cost and additional info */}
+            <div className="flex items-center justify-between text-sm font-mono text-gray-600 dark:text-gray-400">
+              {formatCurrency(part.cost) && (
+                <span className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(part.cost)}</span>
+              )}
+              {(part.color || part.material) && (
+                <span>{[part.material, part.color].filter(Boolean).join(" / ")}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
+          {part.notes && (
+            <div className="mb-4">
+              <p className="text-sm font-mono text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 rounded p-2 line-clamp-3">
+                {part.notes}
+              </p>
+            </div>
+          )}
+
+          {/* Store links and Actions */}
+          <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
             {renderStoreLinks()}
+            <div className="flex items-center gap-2">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(part)}
+                  className="font-mono text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(part.id)}
+                  className="font-mono text-red-600 hover:text-red-700 dark:text-red-400"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Delete
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Compact Details Row */}
-        <div className="flex items-center justify-between text-xs font-mono text-gray-500 dark:text-gray-400">
-          <div className="flex items-center gap-3">
-            <span className="capitalize">{part.category}</span>
-            {part.color && <span>• {part.color}</span>}
-            {part.material && <span>• {part.material}</span>}
+        {/* Desktop: Compact layout */}
+        <div className="hidden lg:block">
+          {/* Compact Header Row */}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="text-lg flex-shrink-0">{getCategoryIcon(part.category)}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-mono font-medium text-sm text-gray-900 dark:text-white truncate">
+                  {part.name}
+                </h3>
+                <div className="flex items-center gap-2 text-xs font-mono text-gray-500 dark:text-gray-400">
+                  {part.itemNumber && <span>#{part.itemNumber}</span>}
+                  {part.manufacturer && <span>• {part.manufacturer}</span>}
+                  {formatCurrency(part.cost) && <span className="text-green-600 dark:text-green-400">• {formatCurrency(part.cost)}</span>}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge className={`text-xs font-mono px-2 py-0 ${getStatusColor(part.installationStatus)}`}>
+                {part.installationStatus === "installed" ? "✓" : part.installationStatus === "planned" ? "○" : "◦"}
+              </Badge>
+              {renderStoreLinks()}
+            </div>
           </div>
-          
-          {/* Action buttons - much smaller */}
-          <div className="flex items-center gap-1">
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(part)}
-                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                title="Edit part"
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete(part.id)}
-                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
-                title="Delete part"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-        </div>
 
-        {/* Optional Notes - Only if they exist and are short */}
-        {part.notes && part.notes.length < 100 && (
-          <p className="text-xs font-mono text-gray-600 dark:text-gray-400 mt-2 line-clamp-1">
-            {part.notes}
-          </p>
-        )}
+          {/* Compact Details Row */}
+          <div className="flex items-center justify-between text-xs font-mono text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-3">
+              <span className="capitalize">{part.category}</span>
+              {part.color && <span>• {part.color}</span>}
+              {part.material && <span>• {part.material}</span>}
+            </div>
+            
+            {/* Action buttons - much smaller */}
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(part)}
+                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  title="Edit part"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(part.id)}
+                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
+                  title="Delete part"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Optional Notes - Only if they exist and are short */}
+          {part.notes && part.notes.length < 100 && (
+            <p className="text-xs font-mono text-gray-600 dark:text-gray-400 mt-2 line-clamp-1">
+              {part.notes}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
