@@ -17,7 +17,8 @@ interface PhotoWithModel {
   url: string;
   caption?: string;
   isBoxArt: boolean;
-  uploadedAt: string;
+  uploadedAt?: string;
+  createdAt?: Date;
   fileSize?: string;
   model: {
     id: number;
@@ -40,6 +41,11 @@ export default function PhotoGallery() {
   const allPhotos: PhotoWithModel[] = models.flatMap(model => 
     (model.photos || []).map(photo => ({
       ...photo,
+      uploadedAt: typeof photo.createdAt === 'string' 
+        ? photo.createdAt 
+        : photo.createdAt instanceof Date 
+          ? photo.createdAt.toISOString() 
+          : new Date().toISOString(),
       model: {
         id: model.id,
         name: model.name,
@@ -76,6 +82,20 @@ export default function PhotoGallery() {
     if (size < 1024) return `${size} B`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Safe date formatting
+  const formatDate = (dateStr: string, formatStr: string) => {
+    try {
+      if (!dateStr) return 'Unknown';
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        return 'Unknown';
+      }
+      return format(date, formatStr);
+    } catch {
+      return 'Unknown';
+    }
   };
 
   if (isLoading) {
@@ -265,7 +285,7 @@ export default function PhotoGallery() {
                         </td>
                         <td className="p-3">
                           <span className="font-mono text-sm text-gray-600 dark:text-gray-400">
-                            {format(new Date(photo.uploadedAt), 'MMM d, yyyy')}
+                            {formatDate(photo.uploadedAt, 'MMM d, yyyy')}
                           </span>
                         </td>
                         <td className="p-3">
@@ -325,7 +345,7 @@ export default function PhotoGallery() {
                         </Button>
                         <div className="flex items-center justify-between mt-2">
                           <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
-                            {formatFileSize(photo.fileSize)} • {format(new Date(photo.uploadedAt), 'MMM d')}
+                            {formatFileSize(photo.fileSize)} • {formatDate(photo.uploadedAt, 'MMM d')}
                           </span>
                           <Button
                             size="sm"

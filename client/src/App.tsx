@@ -30,7 +30,7 @@ function Router() {
       <Route path="/build-logs" component={BuildLogs} />
       <Route path="/hop-up-parts" component={HopUpParts} />
       <Route path="/parts" component={Parts} />
-      <Route path="/photos" component={PhotoGallery} />
+      <Route path="/photo-gallery" component={PhotoGallery} />
       <Route path="/photo-frame" component={PhotoFrame} />
       <Route path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
