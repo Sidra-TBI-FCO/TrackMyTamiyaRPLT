@@ -244,7 +244,7 @@ export default function ModelDetail() {
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0 mr-3">
               <h1 className="text-xl font-mono font-bold text-gray-900 dark:text-white leading-tight">
-                {model.name}
+                {model.buildType === 'custom' && model.bodyName ? model.bodyName : model.name}
               </h1>
               <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mt-1">
                 Item #{model.itemNumber}
@@ -269,7 +269,7 @@ export default function ModelDetail() {
             </Button>
             <div>
               <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
-                {model.name}
+                {model.buildType === 'custom' && model.bodyName ? model.bodyName : model.name}
               </h1>
               <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
                 Item #{model.itemNumber}

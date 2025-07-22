@@ -100,7 +100,7 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
         {/* Header section - fixed height */}
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2 min-h-[2.5rem] leading-tight">
-            {model.name}
+            {model.buildType === 'custom' && model.bodyName ? model.bodyName : model.name}
           </h3>
           <Badge className={`text-xs font-mono flex-shrink-0 ${getStatusColor(model.buildStatus)}`}>
             {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
