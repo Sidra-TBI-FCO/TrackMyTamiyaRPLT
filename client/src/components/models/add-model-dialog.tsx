@@ -578,7 +578,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-dashlane-autofill="false">
             {/* URL Parsing Section */}
             <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
               <div className="flex items-center gap-2">
