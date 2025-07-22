@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Tag, Link, Loader2, Globe } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, X, Tag, Link, Loader2, Globe, ExternalLink } from "lucide-react";
 import { insertModelSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +42,7 @@ const formSchema = insertModelSchema.extend({
   name: z.string().min(1, "Model name is required"),
   tags: z.array(z.string()).default([]),
   totalCost: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? (val === '' ? 0 : parseFloat(val)) : val).default(0),
+  buildType: z.enum(["kit", "custom"]).default("kit"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -70,6 +72,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [textParseLog, setTextParseLog] = useState<string[]>([]);
   const [chassisSuggestions, setChassisSuggestions] = useState<string[]>([]);
   const [showChassisSuggestions, setShowChassisSuggestions] = useState(false);
+  const [buildType, setBuildType] = useState<"kit" | "custom">("kit");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { scrapeModelData, isLoading: isScraping } = useTamiyaScraper();
@@ -94,6 +97,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       chassis: "",
       releaseYear: undefined,
       buildStatus: "planning",
+      buildType: "kit",
       totalCost: 0,
       notes: "",
       scale: "",
@@ -102,6 +106,11 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       differentialType: "",
       motorSize: "",
       batteryType: "",
+      bodyName: "",
+      bodyItemNumber: "",
+      bodyManufacturer: "",
+      tamiyaUrl: "",
+      tamiyaBaseUrl: "",
       tags: [],
       userId: 2, // Mock user ID
     },
@@ -819,6 +828,119 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                       </FormItem>
                     )}
                   />
+                  {/* Build Type Slider */}
+                  <div className="space-y-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-mono text-sm text-gray-700 dark:text-gray-300">Build Type:</span>
+                        <div className="flex items-center space-x-3">
+                          <span className={`font-mono text-sm transition-colors ${buildType === 'kit' ? 'text-orange-600 dark:text-orange-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                            Kit
+                          </span>
+                          <FormField
+                            control={form.control}
+                            name="buildType"
+                            render={({ field }) => (
+                              <FormControl>
+                                <Switch
+                                  checked={field.value === "custom"}
+                                  onCheckedChange={(checked) => {
+                                    const newBuildType = checked ? "custom" : "kit";
+                                    field.onChange(newBuildType);
+                                    setBuildType(newBuildType);
+                                  }}
+                                  className="data-[state=checked]:bg-orange-600"
+                                />
+                              </FormControl>
+                            )}
+                          />
+                          <span className={`font-mono text-sm transition-colors ${buildType === 'custom' ? 'text-orange-600 dark:text-orange-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                            Custom
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                      {buildType === 'kit' ? 'Complete kit with body included' : 'Separate chassis and body selection'}
+                    </p>
+                  </div>
+
+                  {/* Custom Build - Body Section */}
+                  {buildType === 'custom' && (
+                    <div className="space-y-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Tag className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span className="font-mono text-sm font-semibold text-green-800 dark:text-green-200">Body Details</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="bodyItemNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-mono text-sm">Body Item Number</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ""}
+                                  placeholder="e.g. 51589"
+                                  className="font-mono"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="bodyManufacturer"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-mono text-sm">Body Manufacturer</FormLabel>
+                              <FormControl>
+                                <Select value={field.value || ""} onValueChange={field.onChange}>
+                                  <SelectTrigger className="font-mono">
+                                    <SelectValue placeholder="Select manufacturer" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Tamiya">Tamiya</SelectItem>
+                                    <SelectItem value="Killerbody">Killerbody</SelectItem>
+                                    <SelectItem value="Pro-Line">Pro-Line</SelectItem>
+                                    <SelectItem value="JConcepts">JConcepts</SelectItem>
+                                    <SelectItem value="HPI Racing">HPI Racing</SelectItem>
+                                    <SelectItem value="Associated">Associated</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="bodyName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-mono text-sm">Body Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ""}
+                                  placeholder="e.g. Subaru BRZ Street-Custom"
+                                  className="font-mono"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Technical Specifications */}
@@ -1054,6 +1176,54 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 </FormItem>
               )}
             />
+
+            {/* Reference Links */}
+            <div className="space-y-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center space-x-2 mb-3">
+                <ExternalLink className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <span className="font-mono text-sm font-semibold text-purple-800 dark:text-purple-200">Reference Links</span>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <FormField
+                  control={form.control}
+                  name="tamiyaUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono text-sm">Official Tamiya URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ""}
+                          placeholder="https://www.tamiya.com/english/products/..."
+                          className="font-mono text-xs"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tamiyaBaseUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono text-sm">TamiyaBase URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ""}
+                          placeholder="https://www.tamiyabase.com/database/item/..."
+                          className="font-mono text-xs"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <FormField
               control={form.control}

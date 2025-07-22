@@ -18,6 +18,7 @@ export const models = pgTable("models", {
   chassis: text("chassis"),
   releaseYear: integer("release_year"),
   buildStatus: text("build_status").notNull().default("planning"), // planning, building, built, maintenance
+  buildType: text("build_type").notNull().default("kit"), // kit, custom
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }).default("0"),
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
@@ -28,6 +29,11 @@ export const models = pgTable("models", {
   differentialType: text("differential_type"), // Gears, Oil, Ball Diff, etc.
   motorSize: text("motor_size"), // 540, 380, brushless specifications
   batteryType: text("battery_type"), // NiMH, LiPo, battery specifications
+  bodyName: text("body_name"), // For custom builds - separate body
+  bodyItemNumber: text("body_item_number"), // For custom builds - body item number
+  bodyManufacturer: text("body_manufacturer"), // For custom builds - body manufacturer
+  tamiyaUrl: text("tamiya_url"), // Link to official Tamiya page
+  tamiyaBaseUrl: text("tamiya_base_url"), // Link to TamiyaBase page
   tags: text("tags").array().default(sql`'{}'::text[]`), // Array of tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
