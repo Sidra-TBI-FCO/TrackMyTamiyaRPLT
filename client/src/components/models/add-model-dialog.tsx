@@ -115,12 +115,23 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const createModelMutation = useMutation({
     mutationFn: async (data: FormData) => {
       console.log("Mutation function called with data:", data);
+      // Show debugging toast for mobile
+      toast({
+        title: "API Request Started",
+        description: "Sending data to server...",
+      });
+      
       try {
         const response = await apiRequest("POST", "/api/models", data);
         console.log("API response:", response);
         return response;
       } catch (error) {
         console.error("API request failed:", error);
+        toast({
+          title: "API Error",
+          description: `Request failed: ${error.message}`,
+          variant: "destructive",
+        });
         throw error;
       }
     },
@@ -558,6 +569,12 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const onSubmit = (data: FormData) => {
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
+    
+    // Show toast for debugging on mobile
+    toast({
+      title: "Form Submission Started",
+      description: `Submitting model: ${data.name}`,
+    });
     
     const submissionData = {
       ...data,
