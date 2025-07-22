@@ -129,7 +129,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         console.error("API request failed:", error);
         toast({
           title: "API Error",
-          description: `Request failed: ${error.message}`,
+          description: `Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive",
         });
         throw error;
@@ -1152,6 +1152,29 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 type="submit"
                 disabled={createModelMutation.isPending || isScraping}
                 className="bg-red-600 hover:bg-red-700 font-mono"
+                onClick={(e) => {
+                  console.log("Submit button clicked");
+                  toast({
+                    title: "Submit Button Clicked",
+                    description: "Form submission initiated",
+                  });
+                  
+                  // Check form validation
+                  const formValues = form.getValues();
+                  const formErrors = form.formState.errors;
+                  console.log("Form values:", formValues);
+                  console.log("Form errors:", formErrors);
+                  
+                  // Show validation errors via toast for mobile debugging
+                  if (Object.keys(formErrors).length > 0) {
+                    toast({
+                      title: "Form Validation Failed",
+                      description: `Missing: ${Object.keys(formErrors).join(', ')}`,
+                      variant: "destructive",
+                    });
+                    e.preventDefault(); // Prevent form submission if there are errors
+                  }
+                }}
               >
                 {createModelMutation.isPending || isScraping ? "Adding..." : "Add Model"}
               </Button>
