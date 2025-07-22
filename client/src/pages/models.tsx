@@ -4,6 +4,7 @@ import { LayoutGrid, List, Filter, Tag, Search, Play } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
+import AddModelDialogDesktop from "@/components/models/add-model-dialog-desktop";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -266,6 +267,18 @@ export default function Models() {
             <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
               My Collection ({filteredModels.length})
             </h1>
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => setIsSlideshowOpen(true)}
+                variant="outline"
+                size="sm"
+                className="font-mono"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Slideshow
+              </Button>
+              <AddModelDialogDesktop />
+            </div>
           </div>
 
           {/* Active Filters Display */}
@@ -352,8 +365,8 @@ export default function Models() {
                       />
                     ))}
                     
-                    {/* Add New Model Card */}
-                    <Card className="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
+                    {/* Add New Model Card - Mobile Only */}
+                    <Card className="lg:hidden bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
                       <CardContent className="flex items-center justify-center h-80 p-6">
                         <AddModelDialog
                           trigger={
@@ -386,7 +399,16 @@ export default function Models() {
                           }
                         </p>
                       </div>
-                      {filterStatus === "all" && <AddModelDialog />}
+                      {filterStatus === "all" && (
+                        <>
+                          <div className="lg:hidden">
+                            <AddModelDialog />
+                          </div>
+                          <div className="hidden lg:block">
+                            <AddModelDialogDesktop />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </Card>
                 )}

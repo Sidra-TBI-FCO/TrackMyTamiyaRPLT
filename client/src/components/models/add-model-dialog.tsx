@@ -593,7 +593,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] lg:max-w-[1200px] xl:max-w-[1400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-mono">Add New Tamiya Model</DialogTitle>
           <p id="dialog-description" className="text-sm text-gray-600 dark:text-gray-400 font-mono">
@@ -602,311 +602,336 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-dashlane-autofill="false">
-            {/* URL Parsing Section */}
-            <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-              <div className="flex items-center gap-2">
-                <Link className="h-4 w-4 text-blue-600" />
-                <h3 className="font-mono text-sm font-semibold">Parse from URL</h3>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://www.rcmart.com/tamiya-1-10-xv-02-pro-4wd-chassis-kit-ep-58707-00117470"
-                  value={productUrl}
-                  onChange={(e) => setProductUrl(e.target.value)}
-                  className="font-mono text-sm"
-                  disabled={isParsingUrl}
-                />
-                <Button 
-                  type="button"
-                  onClick={() => parseProductUrl(productUrl)}
-                  disabled={isParsingUrl || !productUrl.trim()}
-                  size="sm"
-                >
-                  {isParsingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
-                  Parse
-                </Button>
-              </div>
-              
-              {urlParseLog.length > 0 && (
-                <div className="text-xs font-mono space-y-1 max-h-20 overflow-y-auto">
-                  {urlParseLog.map((log, index) => (
-                    <div key={index} className="text-gray-600 dark:text-gray-300">{log}</div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Text Parsing Section */}
-            <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-              <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-green-600" />
-                <h3 className="font-mono text-sm font-semibold">Parse Product Description</h3>
-              </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
-                Copy and paste product description text to extract model details automatically.
-              </p>
-              
-              <div className="space-y-2">
-                <Textarea
-                  value={productText}
-                  onChange={(e) => setProductText(e.target.value)}
-                  placeholder="Paste product description here (e.g., from Tamiya website, manual, or retailer)..."
-                  className="min-h-[100px] font-mono text-sm"
-                  disabled={isParsingText}
-                />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-dashlane-autofill="false">
+            {/* Desktop Layout with Columns */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-8 space-y-6 lg:space-y-0">
+              {/* Left Column - Auto-fill Tools */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-mono font-semibold text-gray-900 dark:text-white">Auto-Fill Tools</h3>
                 
-                <Button
-                  type="button"
-                  onClick={() => parseProductText(productText)}
-                  disabled={!productText.trim() || isParsingText}
-                  size="sm"
-                  className="w-full bg-green-600 hover:bg-green-700 font-mono"
-                >
-                  {isParsingText ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Parsing...
-                    </>
-                  ) : (
-                    <>
-                      <Tag className="mr-2 h-4 w-4" />
-                      Parse Description
-                    </>
-                  )}
-                </Button>
-              </div>
-              
-              {/* Parse log display for text parsing */}
-              {textParseLog.length > 0 && (
-                <div className="space-y-1">
-                  <h4 className="text-sm font-medium font-mono">Parse Results:</h4>
-                  <div className="bg-white dark:bg-gray-900 border rounded p-3 space-y-1 max-h-32 overflow-y-auto">
-                    {textParseLog.map((log, index) => (
-                      <div key={index} className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                        {log}
-                      </div>
-                    ))}
+                {/* URL Parsing Section */}
+                <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Link className="h-4 w-4 text-blue-600" />
+                    <h4 className="font-mono text-sm font-semibold">Parse from URL</h4>
                   </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="https://www.rcmart.com/tamiya-1-10-xv-02-pro-4wd-chassis-kit-ep-58707-00117470"
+                      value={productUrl}
+                      onChange={(e) => setProductUrl(e.target.value)}
+                      className="font-mono text-sm"
+                      disabled={isParsingUrl}
+                    />
+                    <Button 
+                      type="button"
+                      onClick={() => parseProductUrl(productUrl)}
+                      disabled={isParsingUrl || !productUrl.trim()}
+                      size="sm"
+                    >
+                      {isParsingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                      Parse
+                    </Button>
+                  </div>
+                  
+                  {urlParseLog.length > 0 && (
+                    <div className="text-xs font-mono space-y-1 max-h-20 overflow-y-auto">
+                      {urlParseLog.map((log, index) => (
+                        <div key={index} className="text-gray-600 dark:text-gray-300">{log}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <FormField
-              control={form.control}
-              name="itemNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Item Number *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. 58679"
-                      className="font-mono"
-                      onBlur={handleItemNumberBlur}
+                {/* Text Parsing Section */}
+                <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-green-600" />
+                    <h4 className="font-mono text-sm font-semibold">Parse Product Description</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                    Copy and paste product description text to extract model details automatically.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <Textarea
+                      value={productText}
+                      onChange={(e) => setProductText(e.target.value)}
+                      placeholder="Paste product description here (e.g., from Tamiya website, manual, or retailer)..."
+                      className="min-h-[120px] font-mono text-sm"
+                      disabled={isParsingText}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Model Name *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g. TT-02 Subaru BRZ"
-                      className="font-mono"
-                      disabled={isScraping}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="chassis"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Chassis</FormLabel>
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value || ""}
-                        placeholder="e.g. TT-02"
-                        className="font-mono"
-                        disabled={isScraping}
-                        onFocus={() => {
-                          if (!field.value) {
-                            setChassisSuggestions(popularChassis.slice(0, 8));
-                            setShowChassisSuggestions(true);
-                          }
-                        }}
-                        onBlur={(e) => {
-                          // Delay hiding suggestions to allow clicking on them
-                          setTimeout(() => setShowChassisSuggestions(false), 150);
-                        }}
-                      />
-                    </FormControl>
                     
-                    {/* Chassis suggestions dropdown */}
-                    {showChassisSuggestions && chassisSuggestions.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                        {chassisSuggestions.map((chassis) => (
-                          <button
-                            key={chassis}
-                            type="button"
-                            className="w-full px-3 py-2 text-left text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
-                            onClick={() => {
-                              field.onChange(chassis);
-                              setShowChassisSuggestions(false);
-                            }}
-                          >
-                            {chassis}
-                          </button>
+                    <Button
+                      type="button"
+                      onClick={() => parseProductText(productText)}
+                      disabled={!productText.trim() || isParsingText}
+                      size="sm"
+                      className="w-full bg-green-600 hover:bg-green-700 font-mono"
+                    >
+                      {isParsingText ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Parsing...
+                        </>
+                      ) : (
+                        <>
+                          <Tag className="mr-2 h-4 w-4" />
+                          Parse Description
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Parse log display for text parsing */}
+                  {textParseLog.length > 0 && (
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium font-mono">Parse Results:</h5>
+                      <div className="bg-white dark:bg-gray-900 border rounded p-3 space-y-1 max-h-32 overflow-y-auto">
+                        {textParseLog.map((log, index) => (
+                          <div key={index} className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                            {log}
+                          </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            <FormField
-              control={form.control}
-              name="releaseYear"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Release Year</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value || ""}
-                      type="number"
-                      placeholder="e.g. 2023"
-                      className="font-mono"
-                      disabled={isScraping}
-                      min={1960}
-                      max={new Date().getFullYear() + 1}
-                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+              {/* Right Column - Manual Entry */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-mono font-semibold text-gray-900 dark:text-white">Model Details</h3>
+                
+                {/* Basic Information */}
+                <div className="space-y-4 p-4 border rounded-lg bg-white dark:bg-gray-900">
+                  <h4 className="font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">Basic Information</h4>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="itemNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Item Number *</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="e.g. 58679"
+                              className="font-mono"
+                              onBlur={handleItemNumberBlur}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="scale"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Scale</FormLabel>
-                  <FormControl>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="font-mono">
-                        <SelectValue placeholder="Select scale" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1/10">1/10</SelectItem>
-                        <SelectItem value="1/12">1/12</SelectItem>
-                        <SelectItem value="1/8">1/8</SelectItem>
-                        <SelectItem value="1/14">1/14</SelectItem>
-                        <SelectItem value="1/16">1/16</SelectItem>
-                        <SelectItem value="1/18">1/18</SelectItem>
-                        <SelectItem value="1/24">1/24</SelectItem>
-                        <SelectItem value="1/32">1/32</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormField
+                      control={form.control}
+                      name="releaseYear"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Release Year</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              type="number"
+                              placeholder="e.g. 2023"
+                              className="font-mono"
+                              disabled={isScraping}
+                              min={1960}
+                              max={new Date().getFullYear() + 1}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-            <FormField
-              control={form.control}
-              name="driveType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Drive Type</FormLabel>
-                  <FormControl>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="font-mono">
-                        <SelectValue placeholder="Select drive type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="4WD">4WD (Four Wheel Drive)</SelectItem>
-                        <SelectItem value="RWD">RWD (Rear Wheel Drive)</SelectItem>
-                        <SelectItem value="FWD">FWD (Front Wheel Drive)</SelectItem>
-                        <SelectItem value="AWD">AWD (All Wheel Drive)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-mono">Model Name *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="e.g. TT-02 Subaru BRZ"
+                            className="font-mono"
+                            disabled={isScraping}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="chassisMaterial"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Chassis Material</FormLabel>
-                  <FormControl>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="font-mono">
-                        <SelectValue placeholder="Select chassis material" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Plastic">Plastic</SelectItem>
-                        <SelectItem value="Carbon">Carbon Fiber</SelectItem>
-                        <SelectItem value="Aluminium">Aluminium</SelectItem>
-                        <SelectItem value="Carbon/Alu">Carbon & Aluminium</SelectItem>
-                        <SelectItem value="FRP">FRP (Fiber Reinforced Plastic)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="chassis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-mono">Chassis</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              placeholder="e.g. TT-02"
+                              className="font-mono"
+                              disabled={isScraping}
+                              onFocus={() => {
+                                if (!field.value) {
+                                  setChassisSuggestions(popularChassis.slice(0, 8));
+                                  setShowChassisSuggestions(true);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                setTimeout(() => setShowChassisSuggestions(false), 150);
+                              }}
+                            />
+                          </FormControl>
+                          
+                          {showChassisSuggestions && chassisSuggestions.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {chassisSuggestions.map((chassis) => (
+                                <button
+                                  key={chassis}
+                                  type="button"
+                                  className="w-full px-3 py-2 text-left text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
+                                  onClick={() => {
+                                    field.onChange(chassis);
+                                    setShowChassisSuggestions(false);
+                                  }}
+                                >
+                                  {chassis}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            <FormField
-              control={form.control}
-              name="differentialType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Differential Type</FormLabel>
-                  <FormControl>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="font-mono">
-                        <SelectValue placeholder="Select differential type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Gears">Gear Differential</SelectItem>
-                        <SelectItem value="Oil">Oil Differential</SelectItem>
-                        <SelectItem value="Ball Diff">Ball Differential</SelectItem>
-                        <SelectItem value="One-way">One-way Differential</SelectItem>
-                        <SelectItem value="Limited Slip">Limited Slip Differential</SelectItem>
-                        <SelectItem value="Spool">Spool (Locked)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                {/* Technical Specifications */}
+                <div className="space-y-4 p-4 border rounded-lg bg-white dark:bg-gray-900">
+                  <h4 className="font-mono text-sm font-semibold text-gray-700 dark:text-gray-300">Technical Specifications</h4>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="scale"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Scale</FormLabel>
+                          <FormControl>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger className="font-mono">
+                                <SelectValue placeholder="Select scale" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1/10">1/10</SelectItem>
+                                <SelectItem value="1/12">1/12</SelectItem>
+                                <SelectItem value="1/8">1/8</SelectItem>
+                                <SelectItem value="1/14">1/14</SelectItem>
+                                <SelectItem value="1/16">1/16</SelectItem>
+                                <SelectItem value="1/18">1/18</SelectItem>
+                                <SelectItem value="1/24">1/24</SelectItem>
+                                <SelectItem value="1/32">1/32</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="driveType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Drive Type</FormLabel>
+                          <FormControl>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger className="font-mono">
+                                <SelectValue placeholder="Select drive type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="4WD">4WD (Four Wheel Drive)</SelectItem>
+                                <SelectItem value="RWD">RWD (Rear Wheel Drive)</SelectItem>
+                                <SelectItem value="FWD">FWD (Front Wheel Drive)</SelectItem>
+                                <SelectItem value="AWD">AWD (All Wheel Drive)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="chassisMaterial"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Chassis Material</FormLabel>
+                          <FormControl>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger className="font-mono">
+                                <SelectValue placeholder="Select chassis material" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Plastic">Plastic</SelectItem>
+                                <SelectItem value="Carbon">Carbon Fiber</SelectItem>
+                                <SelectItem value="Aluminium">Aluminium</SelectItem>
+                                <SelectItem value="Carbon/Alu">Carbon & Aluminium</SelectItem>
+                                <SelectItem value="FRP">FRP (Fiber Reinforced Plastic)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="differentialType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Differential Type</FormLabel>
+                          <FormControl>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger className="font-mono">
+                                <SelectValue placeholder="Select differential type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Gears">Gear Differential</SelectItem>
+                                <SelectItem value="Oil">Oil Differential</SelectItem>
+                                <SelectItem value="Ball Diff">Ball Differential</SelectItem>
+                                <SelectItem value="One-way">One-way Differential</SelectItem>
+                                <SelectItem value="Limited Slip">Limited Slip Differential</SelectItem>
+                                <SelectItem value="Spool">Spool (Locked)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <FormField
               control={form.control}
