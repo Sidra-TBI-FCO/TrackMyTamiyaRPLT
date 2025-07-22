@@ -39,7 +39,8 @@ import { z } from "zod";
 const formSchema = insertModelSchema.extend({
   itemNumber: z.string().min(1, "Item number is required"),
   name: z.string().min(1, "Model name is required"),
-  tags: z.array(z.string()).optional().default([]),
+  tags: z.array(z.string()).default([]),
+  totalCost: z.union([z.string(), z.number()]).transform(val => typeof val === 'string' ? (val === '' ? 0 : parseFloat(val)) : val).default(0),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -520,11 +521,12 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                   <FormControl>
                     <Input
                       {...field}
-                      value={field.value || ""}
+                      value={field.value?.toString() || ""}
                       type="number"
                       step="0.01"
                       placeholder="0.00"
                       className="font-mono"
+                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -672,7 +674,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 type="submit"
                 disabled={createModelMutation.isPending || isScraping}
                 className="bg-red-600 hover:bg-red-700 font-mono"
-
               >
                 {createModelMutation.isPending || isScraping ? "Adding..." : "Add Model"}
               </Button>
