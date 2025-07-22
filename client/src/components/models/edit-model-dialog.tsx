@@ -77,6 +77,12 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
       buildStatus: model.buildStatus,
       totalCost: parseFloat(model.totalCost || "0"),
       notes: model.notes || "",
+      scale: model.scale || "",
+      driveType: model.driveType || "",
+      chassisMaterial: model.chassisMaterial || "",
+      differentialType: model.differentialType || "",
+      motorSize: model.motorSize || "",
+      batteryType: model.batteryType || "",
       tags: model.tags || [],
     },
   });
@@ -273,6 +279,172 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                 </FormItem>
               )}
             />
+
+            {/* Technical Specifications */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-mono font-semibold text-gray-900 dark:text-white">Technical Specifications</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="scale"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono">Scale</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue placeholder="Select scale" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1/10">1/10</SelectItem>
+                            <SelectItem value="1/12">1/12</SelectItem>
+                            <SelectItem value="1/8">1/8</SelectItem>
+                            <SelectItem value="1/16">1/16</SelectItem>
+                            <SelectItem value="1/18">1/18</SelectItem>
+                            <SelectItem value="1/24">1/24</SelectItem>
+                            <SelectItem value="Mini-Z">Mini-Z</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="driveType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono">Drive Type</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue placeholder="Select drive type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="4WD">4WD (All-Wheel Drive)</SelectItem>
+                            <SelectItem value="2WD">2WD (Two-Wheel Drive)</SelectItem>
+                            <SelectItem value="RWD">RWD (Rear-Wheel Drive)</SelectItem>
+                            <SelectItem value="FWD">FWD (Front-Wheel Drive)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="chassisMaterial"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono">Chassis Material</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue placeholder="Select material" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Carbon Fiber">Carbon Fiber</SelectItem>
+                            <SelectItem value="Aluminum">Aluminum</SelectItem>
+                            <SelectItem value="Plastic">Plastic/ABS</SelectItem>
+                            <SelectItem value="Glass Fiber">Glass Fiber</SelectItem>
+                            <SelectItem value="Steel">Steel</SelectItem>
+                            <SelectItem value="Composite">Composite</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="differentialType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono">Differential Type</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue placeholder="Select differential type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Gears">Gear Differential</SelectItem>
+                            <SelectItem value="Oil">Oil Differential</SelectItem>
+                            <SelectItem value="Ball Diff">Ball Differential</SelectItem>
+                            <SelectItem value="One-way">One-way Differential</SelectItem>
+                            <SelectItem value="Limited Slip">Limited Slip Differential</SelectItem>
+                            <SelectItem value="Spool">Spool (Locked)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="motorSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono">Motor Size</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue placeholder="Select motor size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="540">540 Motor</SelectItem>
+                            <SelectItem value="380">380 Motor</SelectItem>
+                            <SelectItem value="Brushless">Brushless Motor</SelectItem>
+                            <SelectItem value="13.5T">13.5T Brushless</SelectItem>
+                            <SelectItem value="17.5T">17.5T Brushless</SelectItem>
+                            <SelectItem value="21.5T">21.5T Brushless</SelectItem>
+                            <SelectItem value="25.5T">25.5T Brushless</SelectItem>
+                            <SelectItem value="Custom">Custom/Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="batteryType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-mono">Battery Type</FormLabel>
+                      <FormControl>
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger className="font-mono">
+                            <SelectValue placeholder="Select battery type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7.2V NiMH">7.2V NiMH</SelectItem>
+                            <SelectItem value="7.4V LiPo 2S">7.4V LiPo (2S)</SelectItem>
+                            <SelectItem value="11.1V LiPo 3S">11.1V LiPo (3S)</SelectItem>
+                            <SelectItem value="14.8V LiPo 4S">14.8V LiPo (4S)</SelectItem>
+                            <SelectItem value="6V NiMH">6V NiMH</SelectItem>
+                            <SelectItem value="8.4V NiMH">8.4V NiMH</SelectItem>
+                            <SelectItem value="LiFe">LiFe (Lithium Iron)</SelectItem>
+                            <SelectItem value="Custom">Custom/Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <FormField
               control={form.control}
