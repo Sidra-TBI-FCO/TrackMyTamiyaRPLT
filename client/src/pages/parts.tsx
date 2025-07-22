@@ -96,7 +96,7 @@ export default function Parts() {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div>

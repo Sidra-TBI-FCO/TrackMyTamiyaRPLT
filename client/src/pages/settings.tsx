@@ -25,9 +25,49 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-3 mb-8">
+    <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
+      <div className="lg:flex lg:gap-8">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
+          <Card className="mb-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-mono">Quick Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between">
+                <span className="font-mono text-sm">Theme:</span>
+                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">Auto</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono text-sm">Language:</span>
+                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">English</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono text-sm">Slideshow:</span>
+                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{settings.duration}s</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-mono">About</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
+                TrackMyTamiya v1.0
+              </p>
+              <p className="font-mono text-xs text-gray-500 dark:text-gray-500">
+                Built with React & Express
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Header */}
+          <div className="flex items-center space-x-3 mb-6">
         <div className="bg-red-600 text-white p-3 rounded-lg">
           <Settings className="h-6 w-6" />
         </div>
@@ -174,6 +214,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }

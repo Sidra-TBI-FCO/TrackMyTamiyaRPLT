@@ -127,7 +127,7 @@ export default function ModelDetail() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
         <div className="mb-6 flex items-center space-x-4">
           <Skeleton className="h-10 w-20" />
           <Skeleton className="h-8 w-64" />
@@ -163,7 +163,7 @@ export default function ModelDetail() {
 
   if (!model) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
         <Card className="p-12">
           <div className="text-center">
             <h2 className="text-xl font-mono font-semibold text-gray-900 dark:text-white mb-2">
@@ -203,7 +203,7 @@ export default function ModelDetail() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
       {/* Header */}
       <div className="mb-6">
         {/* Mobile Layout */}
