@@ -291,6 +291,9 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     setTextParseLog(["🔄 Parsing product description..."]);
 
     try {
+      // Convert text to lowercase for case-insensitive matching
+      const textLower = text.toLowerCase();
+      
       // Extract chassis information
       const chassisPatterns = [
         /XV-(\d+)/gi,
@@ -348,7 +351,10 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       if (textLower.includes('540') && textLower.includes('motor')) foundMotorSize = "540";
       else if (textLower.includes('380') && textLower.includes('motor')) foundMotorSize = "380";
       else if (textLower.includes('brushless')) foundMotorSize = "Brushless";
-      else if (textLower.match(/(\d+\.?\d*)\s*t\s*(brushless|motor)/)) foundMotorSize = `${textLower.match(/(\d+\.?\d*)\s*t/)[1]}T Brushless`;
+      else {
+        const motorMatch = textLower.match(/(\d+\.?\d*)\s*t\s*(brushless|motor)/);
+        if (motorMatch) foundMotorSize = `${motorMatch[1]}T Brushless`;
+      }
 
       // Extract battery type
       let foundBatteryType = "";
@@ -444,7 +450,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
       // Auto-detect tags based on content
       const detectedTags = [];
-      const textLower = text.toLowerCase();
       
       if (textLower.includes('touring') || textLower.includes('on-road')) detectedTags.push('Touring');
       if (textLower.includes('rally')) detectedTags.push('Rally');
