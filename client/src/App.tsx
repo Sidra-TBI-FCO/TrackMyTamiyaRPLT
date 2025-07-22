@@ -9,7 +9,7 @@ import { useState } from "react";
 import Home from "@/pages/home";
 import Models from "@/pages/models";
 import BuildLogs from "@/pages/build-logs";
-import HopUpParts from "@/pages/hop-up-parts";
+
 import Parts from "@/pages/parts";
 import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
@@ -28,7 +28,7 @@ function Router() {
       <Route path="/models" component={Models} />
       <Route path="/models/:id" component={ModelDetail} />
       <Route path="/build-logs" component={BuildLogs} />
-      <Route path="/hop-up-parts" component={HopUpParts} />
+
       <Route path="/parts" component={Parts} />
       <Route path="/photo-gallery" component={PhotoGallery} />
       <Route path="/photo-frame" component={PhotoFrame} />

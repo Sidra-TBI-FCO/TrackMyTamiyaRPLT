@@ -25,10 +25,10 @@ export default function Navigation() {
       isActive: location === "/parts" 
     },
     { 
-      path: "/photos", 
+      path: "/photo-gallery", 
       label: "Photo Gallery", 
       icon: Camera,
-      isActive: location === "/photos" 
+      isActive: location === "/photo-gallery" 
     },
     { 
       path: "/settings", 
