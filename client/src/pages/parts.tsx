@@ -258,13 +258,34 @@ export default function Parts() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredParts.map((part) => (
-              <HopUpCard
-                key={`${part.modelId}-${part.id}`}
-                part={{
-                  ...part,
-                  storeUrls: part.storeUrls || {}
-                }}
-              />
+              <div key={`${part.modelId}-${part.id}`} className="space-y-2">
+                {/* Model Name Header */}
+                <div className="flex items-center justify-between">
+                  <Link href={`/models/${part.model.id}`}>
+                    <Button variant="ghost" size="sm" className="font-mono text-blue-600 hover:text-blue-700 dark:text-blue-400 p-0 h-auto">
+                      <span className="truncate">For: {part.model.name}</span>
+                      <ExternalLink className="h-3 w-3 ml-1 flex-shrink-0" />
+                    </Button>
+                  </Link>
+                </div>
+                
+                <HopUpCard
+                  part={{
+                    ...part,
+                    storeUrls: part.storeUrls || {}
+                  }}
+                  onEdit={(editPart) => {
+                    // Navigate to the model detail page and open the hop-up edit dialog
+                    window.location.href = `/models/${part.model.id}#edit-hopup-${editPart.id}`;
+                  }}
+                  onDelete={(partId) => {
+                    // For now, redirect to model page - in the future we could add global delete
+                    if (confirm(`Delete this hop-up part? This action cannot be undone.`)) {
+                      window.location.href = `/models/${part.model.id}#hopups`;
+                    }
+                  }}
+                />
+              </div>
             ))}
           </div>
         )}
