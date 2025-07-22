@@ -278,6 +278,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                   <FormControl>
                     <Input
                       {...field}
+                      value={field.value || ""}
                       placeholder="e.g. TT-02"
                       className="font-mono"
                       disabled={isScraping}
@@ -321,6 +322,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                   <FormControl>
                     <Input
                       {...field}
+                      value={field.value || ""}
                       type="number"
                       step="0.01"
                       placeholder="0.00"
@@ -341,6 +343,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                   <FormControl>
                     <Textarea
                       {...field}
+                      value={field.value || ""}
                       placeholder="Additional notes about this model..."
                       className="font-mono"
                       rows={3}
