@@ -33,6 +33,7 @@ import { insertModelSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ModelWithRelations } from "@/types";
+import { useTamiyaScraper } from "@/hooks/use-tamiya-scraper";
 import { z } from "zod";
 
 const formSchema = insertModelSchema.extend({
@@ -59,8 +60,12 @@ const popularChassis = [
 export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [open, setOpen] = useState(false);
   const [newTag, setNewTag] = useState("");
+  const [isParsingUrl, setIsParsingUrl] = useState(false);
+  const [urlParseLog, setUrlParseLog] = useState<string[]>([]);
+  const [productUrl, setProductUrl] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { scrapeModelData, isLoading: isScraping } = useTamiyaScraper();
 
   // Get all models to extract existing tags
   const { data: models } = useQuery<ModelWithRelations[]>({
@@ -99,7 +104,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       const response = await apiRequest("POST", "/api/models", data);
       return response;
     },
-    onSuccess: (newModel) => {
+    onSuccess: (newModel: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/models"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
@@ -129,6 +134,147 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const removeTag = (tagToRemove: string) => {
     const currentTags = form.getValues("tags") || [];
     form.setValue("tags", currentTags.filter(tag => tag !== tagToRemove));
+  };
+
+  // Auto-populate from item number
+  const handleItemNumberBlur = async () => {
+    const itemNumber = form.getValues("itemNumber");
+    if (itemNumber && !form.getValues("name")) {
+      try {
+        const scrapedData = await scrapeModelData(itemNumber);
+        if (scrapedData) {
+          form.setValue("name", scrapedData.name);
+          if (scrapedData.chassis) form.setValue("chassis", scrapedData.chassis);
+          if (scrapedData.releaseYear) form.setValue("releaseYear", scrapedData.releaseYear);
+        }
+      } catch (error) {
+        console.log("Auto-population failed, user can enter data manually");
+      }
+    }
+  };
+
+  // URL parsing function
+  const parseProductUrl = async (url: string) => {
+    if (!url.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a product URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsParsingUrl(true);
+    setUrlParseLog(["🔄 Parsing product URL..."]);
+    
+    try {
+      // Extract item number from URL first
+      const tamiyaItemMatch = url.match(/(\d{5})/);
+      let extractedItemNumber = "";
+      
+      if (tamiyaItemMatch) {
+        extractedItemNumber = tamiyaItemMatch[1];
+        form.setValue('itemNumber', extractedItemNumber);
+        setUrlParseLog(prev => [...prev, `✅ Item number: ${extractedItemNumber}`]);
+      }
+
+      // Try web scraping first
+      try {
+        const response = await fetch('/api/scrape-product', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+        
+        if (response.ok) {
+          const scrapedData = await response.json();
+          const newLog = [...urlParseLog, "✅ Successfully scraped product page!"];
+          
+          if (scrapedData.name) {
+            form.setValue('name', scrapedData.name);
+            newLog.push(`✅ Model name: ${scrapedData.name}`);
+          }
+          
+          if (scrapedData.chassis) {
+            form.setValue('chassis', scrapedData.chassis);
+            newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
+          }
+
+          if (scrapedData.totalCost) {
+            form.setValue('totalCost', scrapedData.totalCost.toString());
+            newLog.push(`✅ Price: $${scrapedData.totalCost}`);
+          }
+
+          if (scrapedData.releaseYear) {
+            form.setValue('releaseYear', scrapedData.releaseYear);
+            newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
+          }
+          
+          setUrlParseLog(newLog);
+          
+          toast({
+            title: "Product scraped successfully!",
+            description: `Found ${newLog.length - 1} product details`,
+          });
+        } else {
+          throw new Error('Scraping failed');
+        }
+      } catch (scrapeError) {
+        console.log("Web scraping failed:", scrapeError);
+        setUrlParseLog(prev => [...prev, "❌ Web scraping failed"]);
+        
+        // Fallback to item number-based scraping if we have it
+        if (extractedItemNumber) {
+          setUrlParseLog(prev => [...prev, "⚠️ Trying Tamiya database..."]);
+          try {
+            const scrapedData = await scrapeModelData(extractedItemNumber);
+            if (scrapedData) {
+              const newLog = [...urlParseLog, "✅ Found data from Tamiya database!"];
+              
+              if (scrapedData.name) {
+                form.setValue("name", scrapedData.name);
+                newLog.push(`✅ Model name: ${scrapedData.name}`);
+              }
+              if (scrapedData.chassis) {
+                form.setValue("chassis", scrapedData.chassis);
+                newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
+              }
+              if (scrapedData.releaseYear) {
+                form.setValue("releaseYear", scrapedData.releaseYear);
+                newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
+              }
+              
+              setUrlParseLog(newLog);
+              toast({
+                title: "Tamiya data found!",
+                description: "Found model details from Tamiya database",
+              });
+            } else {
+              setUrlParseLog(prev => [...prev, "⚠️ No data found in Tamiya database"]);
+            }
+          } catch (tamiyaError) {
+            setUrlParseLog(prev => [...prev, "❌ Tamiya database lookup failed"]);
+          }
+        }
+        
+        toast({
+          title: "Auto-population failed",
+          description: "Please enter model details manually",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setUrlParseLog(prev => [...prev, "❌ Parsing failed completely"]);
+      toast({
+        title: "Error",
+        description: "Failed to parse URL",
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingUrl(false);
+    }
   };
 
   const onSubmit = (data: FormData) => {
@@ -162,6 +308,39 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 <div className="space-y-4 p-4 border rounded-lg bg-white dark:bg-gray-900">
                   <h3 className="text-lg font-mono font-semibold text-gray-900 dark:text-white">Basic Information</h3>
                   
+                  {/* URL Parsing Section */}
+                  <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="font-mono text-sm text-blue-800 dark:text-blue-200">Quick Add from URL</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Input
+                        value={productUrl}
+                        onChange={(e) => setProductUrl(e.target.value)}
+                        placeholder="Paste Amazon, eBay, or Tamiya product URL..."
+                        className="font-mono flex-1"
+                        disabled={isParsingUrl}
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => parseProductUrl(productUrl)}
+                        disabled={isParsingUrl || !productUrl}
+                        className="bg-blue-600 hover:bg-blue-700 font-mono whitespace-nowrap"
+                      >
+                        {isParsingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link className="h-4 w-4" />}
+                        {isParsingUrl ? "Parsing..." : "Parse"}
+                      </Button>
+                    </div>
+                    {urlParseLog.length > 0 && (
+                      <div className="text-xs font-mono bg-white dark:bg-gray-800 p-2 rounded border max-h-20 overflow-y-auto">
+                        {urlParseLog.map((log, index) => (
+                          <div key={index} className="text-gray-700 dark:text-gray-300">{log}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -174,6 +353,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                               {...field}
                               placeholder="e.g. 58679"
                               className="font-mono"
+                              onBlur={handleItemNumberBlur}
                             />
                           </FormControl>
                           <FormMessage />
