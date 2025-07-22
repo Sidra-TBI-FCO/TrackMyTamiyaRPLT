@@ -64,9 +64,10 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [productUrl, setProductUrl] = useState("");
   const [isParsingUrl, setIsParsingUrl] = useState(false);
-  const [parseLog, setParseLog] = useState<string[]>([]);
+  const [urlParseLog, setUrlParseLog] = useState<string[]>([]);
   const [productText, setProductText] = useState("");
   const [isParsingText, setIsParsingText] = useState(false);
+  const [textParseLog, setTextParseLog] = useState<string[]>([]);
   const [chassisSuggestions, setChassisSuggestions] = useState<string[]>([]);
   const [showChassisSuggestions, setShowChassisSuggestions] = useState(false);
   const { toast } = useToast();
@@ -159,7 +160,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     }
 
     setIsParsingUrl(true);
-    setParseLog(["🔄 Parsing product URL..."]);
+    setUrlParseLog(["🔄 Parsing product URL..."]);
     
     try {
       // Extract item number from URL first
@@ -169,7 +170,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       if (tamiyaItemMatch) {
         extractedItemNumber = tamiyaItemMatch[1];
         form.setValue('itemNumber', extractedItemNumber);
-        setParseLog(prev => [...prev, `✅ Item number: ${extractedItemNumber}`]);
+        setUrlParseLog(prev => [...prev, `✅ Item number: ${extractedItemNumber}`]);
       }
 
       // Try web scraping (optional - fails gracefully)
@@ -184,7 +185,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         
         if (response.ok) {
           const scrapedData = await response.json();
-          const newLog = [...parseLog, "✅ Successfully scraped product page!"];
+          const newLog = [...urlParseLog, "✅ Successfully scraped product page!"];
           
           if (scrapedData.name) {
             form.setValue('name', scrapedData.name);
@@ -206,7 +207,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
             newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
           }
           
-          setParseLog(newLog);
+          setUrlParseLog(newLog);
           
           toast({
             title: "Product scraped successfully!",
@@ -217,15 +218,15 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         }
       } catch (scrapeError) {
         console.log("Web scraping failed:", scrapeError);
-        setParseLog(prev => [...prev, "❌ Web scraping failed"]);
+        setUrlParseLog(prev => [...prev, "❌ Web scraping failed"]);
         
         // Fallback to item number-based scraping if we have it
         if (extractedItemNumber) {
-          setParseLog(prev => [...prev, "⚠️ Trying Tamiya database..."]);
+          setUrlParseLog(prev => [...prev, "⚠️ Trying Tamiya database..."]);
           try {
             const scrapedData = await scrapeModelData(extractedItemNumber);
             if (scrapedData) {
-              const newLog = [...parseLog, "✅ Found data from Tamiya database!"];
+              const newLog = [...urlParseLog, "✅ Found data from Tamiya database!"];
               
               if (scrapedData.name) {
                 form.setValue("name", scrapedData.name);
@@ -240,25 +241,25 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
               }
               
-              setParseLog(newLog);
+              setUrlParseLog(newLog);
               toast({
                 title: "Tamiya data found!",
                 description: "Found model details from Tamiya database",
               });
             } else {
-              setParseLog(prev => [...prev, "⚠️ No data found in Tamiya database"]);
+              setUrlParseLog(prev => [...prev, "⚠️ No data found in Tamiya database"]);
             }
           } catch (tamiyaError) {
             console.log("Tamiya scraping also failed:", tamiyaError);
-            setParseLog(prev => [...prev, "❌ Tamiya database lookup failed"]);
+            setUrlParseLog(prev => [...prev, "❌ Tamiya database lookup failed"]);
           }
         } else {
-          setParseLog(prev => [...prev, "❌ Could not extract item number"]);
+          setUrlParseLog(prev => [...prev, "❌ Could not extract item number"]);
         }
       }
     } catch (error) {
       console.error("Error parsing URL:", error);
-      setParseLog(prev => [...prev, "❌ Error occurred while parsing URL"]);
+      setUrlParseLog(prev => [...prev, "❌ Error occurred while parsing URL"]);
       toast({
         title: "Error",
         description: "Failed to parse product URL",
@@ -281,7 +282,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     }
 
     setIsParsingText(true);
-    setParseLog(["🔄 Parsing product description..."]);
+    setTextParseLog(["🔄 Parsing product description..."]);
 
     try {
       // Extract chassis information
@@ -388,7 +389,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         foundData = true;
       }
 
-      setParseLog(newLog);
+      setTextParseLog(newLog);
 
       if (foundData) {
         toast({
@@ -396,7 +397,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
           description: `Extracted ${newLog.length - 1} details from description`,
         });
       } else {
-        setParseLog(prev => [...prev, "⚠️ No recognizable data found in description"]);
+        setTextParseLog(prev => [...prev, "⚠️ No recognizable data found in description"]);
         toast({
           title: "Parsing completed",
           description: "No extractable data found in the description",
@@ -406,7 +407,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
     } catch (error) {
       console.error("Error parsing text:", error);
-      setParseLog(prev => [...prev, "❌ Error occurred while parsing text"]);
+      setTextParseLog(prev => [...prev, "❌ Error occurred while parsing text"]);
       toast({
         title: "Error",
         description: "Failed to parse product description",
@@ -524,9 +525,9 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 </Button>
               </div>
               
-              {parseLog.length > 0 && (
+              {urlParseLog.length > 0 && (
                 <div className="text-xs font-mono space-y-1 max-h-20 overflow-y-auto">
-                  {parseLog.map((log, index) => (
+                  {urlParseLog.map((log, index) => (
                     <div key={index} className="text-gray-600 dark:text-gray-300">{log}</div>
                   ))}
                 </div>
@@ -572,6 +573,20 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                   )}
                 </Button>
               </div>
+              
+              {/* Parse log display for text parsing */}
+              {textParseLog.length > 0 && (
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium font-mono">Parse Results:</h4>
+                  <div className="bg-white dark:bg-gray-900 border rounded p-3 space-y-1 max-h-32 overflow-y-auto">
+                    {textParseLog.map((log, index) => (
+                      <div key={index} className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                        {log}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <FormField
