@@ -96,6 +96,12 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       buildStatus: "planning",
       totalCost: 0,
       notes: "",
+      scale: "",
+      driveType: "",
+      chassisMaterial: "",
+      differentialType: "",
+      motorSize: "",
+      batteryType: "",
       tags: [],
     },
   });
@@ -316,6 +322,43 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         foundScale = `1/${scaleMatch[1]}`;
       }
 
+      // Extract drive type
+      let foundDriveType = "";
+      if (textLower.includes('4wd') || textLower.includes('four wheel')) foundDriveType = "4WD";
+      else if (textLower.includes('rwd') || textLower.includes('rear wheel')) foundDriveType = "RWD";
+      else if (textLower.includes('fwd') || textLower.includes('front wheel')) foundDriveType = "FWD";
+      else if (textLower.includes('awd') || textLower.includes('all wheel')) foundDriveType = "AWD";
+
+      // Extract chassis material
+      let foundChassisMaterial = "";
+      if (textLower.includes('carbon fiber') || textLower.includes('carbon-fiber')) foundChassisMaterial = "Carbon";
+      else if (textLower.includes('aluminum') || textLower.includes('aluminium')) foundChassisMaterial = "Aluminium";
+      else if (textLower.includes('plastic') || textLower.includes('resin')) foundChassisMaterial = "Plastic";
+      else if (textLower.includes('frp') || textLower.includes('fiber reinforced')) foundChassisMaterial = "FRP";
+
+      // Extract differential type
+      let foundDifferentialType = "";
+      if (textLower.includes('ball diff') || textLower.includes('ball differential')) foundDifferentialType = "Ball Diff";
+      else if (textLower.includes('oil diff') || textLower.includes('oil differential')) foundDifferentialType = "Oil";
+      else if (textLower.includes('gear diff') || textLower.includes('gear differential')) foundDifferentialType = "Gears";
+      else if (textLower.includes('one-way') || textLower.includes('oneway')) foundDifferentialType = "One-way";
+
+      // Extract motor size
+      let foundMotorSize = "";
+      if (textLower.includes('540') && textLower.includes('motor')) foundMotorSize = "540";
+      else if (textLower.includes('380') && textLower.includes('motor')) foundMotorSize = "380";
+      else if (textLower.includes('brushless')) foundMotorSize = "Brushless";
+      else if (textLower.match(/(\d+\.?\d*)\s*t\s*(brushless|motor)/)) foundMotorSize = `${textLower.match(/(\d+\.?\d*)\s*t/)[1]}T Brushless`;
+
+      // Extract battery type
+      let foundBatteryType = "";
+      if (textLower.includes('7.2v') && textLower.includes('nimh')) foundBatteryType = "7.2V NiMH";
+      else if (textLower.includes('7.4v') && textLower.includes('lipo')) foundBatteryType = "7.4V LiPo 2S";
+      else if (textLower.includes('11.1v') && textLower.includes('lipo')) foundBatteryType = "11.1V LiPo 3S";
+      else if (textLower.includes('14.8v') && textLower.includes('lipo')) foundBatteryType = "14.8V LiPo 4S";
+      else if (textLower.includes('nimh')) foundBatteryType = "7.2V NiMH";
+      else if (textLower.includes('lipo')) foundBatteryType = "7.4V LiPo 2S";
+
       // Extract item numbers (5-digit codes)
       const itemNumberMatch = text.match(/\b(\d{5})\b/);
       let foundItemNumber = "";
@@ -364,7 +407,38 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       }
 
       if (foundScale) {
-        newLog.push(`✅ Scale: ${foundScale} (informational)`);
+        form.setValue('scale', foundScale);
+        newLog.push(`✅ Scale: ${foundScale}`);
+        foundData = true;
+      }
+
+      if (foundDriveType) {
+        form.setValue('driveType', foundDriveType);
+        newLog.push(`✅ Drive type: ${foundDriveType}`);
+        foundData = true;
+      }
+
+      if (foundChassisMaterial) {
+        form.setValue('chassisMaterial', foundChassisMaterial);
+        newLog.push(`✅ Chassis material: ${foundChassisMaterial}`);
+        foundData = true;
+      }
+
+      if (foundDifferentialType) {
+        form.setValue('differentialType', foundDifferentialType);
+        newLog.push(`✅ Differential: ${foundDifferentialType}`);
+        foundData = true;
+      }
+
+      if (foundMotorSize) {
+        form.setValue('motorSize', foundMotorSize);
+        newLog.push(`✅ Motor: ${foundMotorSize}`);
+        foundData = true;
+      }
+
+      if (foundBatteryType) {
+        form.setValue('batteryType', foundBatteryType);
+        newLog.push(`✅ Battery: ${foundBatteryType}`);
         foundData = true;
       }
 
@@ -696,6 +770,165 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                       max={new Date().getFullYear() + 1}
                       onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="scale"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Scale</FormLabel>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select scale" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1/10">1/10</SelectItem>
+                        <SelectItem value="1/12">1/12</SelectItem>
+                        <SelectItem value="1/8">1/8</SelectItem>
+                        <SelectItem value="1/14">1/14</SelectItem>
+                        <SelectItem value="1/16">1/16</SelectItem>
+                        <SelectItem value="1/18">1/18</SelectItem>
+                        <SelectItem value="1/24">1/24</SelectItem>
+                        <SelectItem value="1/32">1/32</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="driveType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Drive Type</FormLabel>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select drive type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="4WD">4WD (Four Wheel Drive)</SelectItem>
+                        <SelectItem value="RWD">RWD (Rear Wheel Drive)</SelectItem>
+                        <SelectItem value="FWD">FWD (Front Wheel Drive)</SelectItem>
+                        <SelectItem value="AWD">AWD (All Wheel Drive)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="chassisMaterial"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Chassis Material</FormLabel>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select chassis material" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Plastic">Plastic</SelectItem>
+                        <SelectItem value="Carbon">Carbon Fiber</SelectItem>
+                        <SelectItem value="Aluminium">Aluminium</SelectItem>
+                        <SelectItem value="Carbon/Alu">Carbon & Aluminium</SelectItem>
+                        <SelectItem value="FRP">FRP (Fiber Reinforced Plastic)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="differentialType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Differential Type</FormLabel>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select differential type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Gears">Gear Differential</SelectItem>
+                        <SelectItem value="Oil">Oil Differential</SelectItem>
+                        <SelectItem value="Ball Diff">Ball Differential</SelectItem>
+                        <SelectItem value="One-way">One-way Differential</SelectItem>
+                        <SelectItem value="Limited Slip">Limited Slip Differential</SelectItem>
+                        <SelectItem value="Spool">Spool (Locked)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="motorSize"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Motor Size</FormLabel>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select motor size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="540">540 Motor</SelectItem>
+                        <SelectItem value="380">380 Motor</SelectItem>
+                        <SelectItem value="Brushless">Brushless Motor</SelectItem>
+                        <SelectItem value="13.5T">13.5T Brushless</SelectItem>
+                        <SelectItem value="17.5T">17.5T Brushless</SelectItem>
+                        <SelectItem value="21.5T">21.5T Brushless</SelectItem>
+                        <SelectItem value="25.5T">25.5T Brushless</SelectItem>
+                        <SelectItem value="Custom">Custom/Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="batteryType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-mono">Battery Type</FormLabel>
+                  <FormControl>
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select battery type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7.2V NiMH">7.2V NiMH</SelectItem>
+                        <SelectItem value="7.4V LiPo 2S">7.4V LiPo (2S)</SelectItem>
+                        <SelectItem value="11.1V LiPo 3S">11.1V LiPo (3S)</SelectItem>
+                        <SelectItem value="14.8V LiPo 4S">14.8V LiPo (4S)</SelectItem>
+                        <SelectItem value="6V NiMH">6V NiMH</SelectItem>
+                        <SelectItem value="8.4V NiMH">8.4V NiMH</SelectItem>
+                        <SelectItem value="LiFe">LiFe (Lithium Iron)</SelectItem>
+                        <SelectItem value="Custom">Custom/Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

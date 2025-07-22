@@ -22,6 +22,12 @@ export const models = pgTable("models", {
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
   notes: text("notes"),
+  scale: text("scale"), // 1/10, 1/12, 1/8, etc.
+  driveType: text("drive_type"), // RWD, FWD, 4WD
+  chassisMaterial: text("chassis_material"), // Plastic, Carbon, Aluminium
+  differentialType: text("differential_type"), // Gears, Oil, Ball Diff, etc.
+  motorSize: text("motor_size"), // 540, 380, brushless specifications
+  batteryType: text("battery_type"), // NiMH, LiPo, battery specifications
   tags: text("tags").array().default(sql`'{}'::text[]`), // Array of tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -146,6 +152,13 @@ export const insertModelSchema = createInsertSchema(models, {
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  scale: z.string().optional(),
+  driveType: z.string().optional(),
+  chassisMaterial: z.string().optional(),
+  differentialType: z.string().optional(),
+  motorSize: z.string().optional(),
+  batteryType: z.string().optional(),
 });
 
 export const insertPhotoSchema = createInsertSchema(photos).omit({
