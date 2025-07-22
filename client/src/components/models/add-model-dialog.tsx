@@ -139,6 +139,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
           if (scrapedData.releaseYear) form.setValue("releaseYear", scrapedData.releaseYear);
         }
       } catch (error) {
+        console.log("Auto-population failed, user can enter data manually");
         // Silently fail - user can still enter data manually
       }
     }
@@ -169,86 +170,92 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
         setParseLog(prev => [...prev, `✅ Item number: ${extractedItemNumber}`]);
       }
 
-      // Try web scraping
-      const response = await fetch('/api/scrape-product', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url }),
-      });
-      
-      if (response.ok) {
-        const scrapedData = await response.json();
-        const newLog = [...parseLog, "✅ Successfully scraped product page!"];
-        
-        if (scrapedData.name) {
-          form.setValue('name', scrapedData.name);
-          newLog.push(`✅ Model name: ${scrapedData.name}`);
-        }
-        
-        if (scrapedData.chassis) {
-          form.setValue('chassis', scrapedData.chassis);
-          newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
-        }
-
-        // Note: scale, type, and driveType are not in the current model schema
-
-        if (scrapedData.totalCost) {
-          form.setValue('totalCost', scrapedData.totalCost.toString());
-          newLog.push(`✅ Price: $${scrapedData.totalCost}`);
-        }
-
-        if (scrapedData.releaseYear) {
-          form.setValue('releaseYear', scrapedData.releaseYear);
-          newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
-        }
-        
-        setParseLog(newLog);
-        
-        toast({
-          title: "Product scraped successfully!",
-          description: `Found ${newLog.length - 2} product details`,
+      // Try web scraping (optional - fails gracefully)
+      try {
+        const response = await fetch('/api/scrape-product', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
         });
-      } else {
+        
+        if (response.ok) {
+          const scrapedData = await response.json();
+          const newLog = [...parseLog, "✅ Successfully scraped product page!"];
+          
+          if (scrapedData.name) {
+            form.setValue('name', scrapedData.name);
+            newLog.push(`✅ Model name: ${scrapedData.name}`);
+          }
+          
+          if (scrapedData.chassis) {
+            form.setValue('chassis', scrapedData.chassis);
+            newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
+          }
+
+          if (scrapedData.totalCost) {
+            form.setValue('totalCost', scrapedData.totalCost.toString());
+            newLog.push(`✅ Price: $${scrapedData.totalCost}`);
+          }
+
+          if (scrapedData.releaseYear) {
+            form.setValue('releaseYear', scrapedData.releaseYear);
+            newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
+          }
+          
+          setParseLog(newLog);
+          
+          toast({
+            title: "Product scraped successfully!",
+            description: `Found ${newLog.length - 1} product details`,
+          });
+        } else {
+          throw new Error('Scraping failed');
+        }
+      } catch (scrapeError) {
+        console.log("Web scraping failed:", scrapeError);
+        setParseLog(prev => [...prev, "❌ Web scraping failed"]);
+        
         // Fallback to item number-based scraping if we have it
         if (extractedItemNumber) {
-          setParseLog(prev => [...prev, "⚠️ Web scraping failed, trying Tamiya database..."]);
-          const scrapedData = await scrapeModelData(extractedItemNumber);
-          if (scrapedData) {
-            const newLog = [...parseLog, "✅ Found data from Tamiya database!"];
-            
-            if (scrapedData.name) {
-              form.setValue("name", scrapedData.name);
-              newLog.push(`✅ Model name: ${scrapedData.name}`);
+          setParseLog(prev => [...prev, "⚠️ Trying Tamiya database..."]);
+          try {
+            const scrapedData = await scrapeModelData(extractedItemNumber);
+            if (scrapedData) {
+              const newLog = [...parseLog, "✅ Found data from Tamiya database!"];
+              
+              if (scrapedData.name) {
+                form.setValue("name", scrapedData.name);
+                newLog.push(`✅ Model name: ${scrapedData.name}`);
+              }
+              if (scrapedData.chassis) {
+                form.setValue("chassis", scrapedData.chassis);
+                newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
+              }
+              if (scrapedData.releaseYear) {
+                form.setValue("releaseYear", scrapedData.releaseYear);
+                newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
+              }
+              
+              setParseLog(newLog);
+              toast({
+                title: "Tamiya data found!",
+                description: "Found model details from Tamiya database",
+              });
+            } else {
+              setParseLog(prev => [...prev, "⚠️ No data found in Tamiya database"]);
             }
-            if (scrapedData.chassis) {
-              form.setValue("chassis", scrapedData.chassis);
-              newLog.push(`✅ Chassis: ${scrapedData.chassis}`);
-            }
-            if (scrapedData.releaseYear) {
-              form.setValue("releaseYear", scrapedData.releaseYear);
-              newLog.push(`✅ Release year: ${scrapedData.releaseYear}`);
-            }
-            
-            setParseLog(newLog);
-            toast({
-              title: "Tamiya data found!",
-              description: `Found model details from Tamiya database`,
-            });
-          } else {
-            setParseLog(prev => [...prev, "⚠️ No additional data found in Tamiya database"]);
+          } catch (tamiyaError) {
+            console.log("Tamiya scraping also failed:", tamiyaError);
+            setParseLog(prev => [...prev, "❌ Tamiya database lookup failed"]);
           }
         } else {
-          setParseLog(prev => [...prev, "❌ Could not extract item number or scrape page"]);
-          toast({
-            title: "Parsing failed",
-            description: "Could not extract model details from URL",
-            variant: "destructive",
-          });
+          setParseLog(prev => [...prev, "❌ Could not extract item number"]);
         }
       }
     } catch (error) {
+      console.error("Error parsing URL:", error);
       setParseLog(prev => [...prev, "❌ Error occurred while parsing URL"]);
       toast({
         title: "Error",

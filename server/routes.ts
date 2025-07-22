@@ -665,6 +665,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tamiya database scraping endpoint
+  app.post('/api/scrape-tamiya', async (req, res) => {
+    try {
+      const { itemNumber } = req.body;
+      
+      if (!itemNumber) {
+        return res.status(400).json({ message: 'Item number is required' });
+      }
+
+      // For now, return null to indicate no data found
+      // This prevents the JSON parsing error and allows form to work without scraping
+      console.log(`Tamiya scraping requested for item ${itemNumber} - not implemented yet`);
+      res.json(null);
+      
+    } catch (error: any) {
+      console.error('Tamiya scraping error:', error);
+      res.status(500).json({ message: `Tamiya scraping failed: ${error.message}` });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
