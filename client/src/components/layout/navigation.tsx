@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Wrench, Cog, Camera, Settings } from "lucide-react";
+import { LayoutGrid, Wrench, Cog, Camera } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -19,22 +19,16 @@ export default function Navigation() {
       isActive: location === "/build-logs" 
     },
     { 
-      path: "/parts", 
+      path: "/hop-up-parts", 
       label: "Hop-Up Parts", 
       icon: Cog,
-      isActive: location === "/parts" 
+      isActive: location === "/hop-up-parts" 
     },
     { 
       path: "/photos", 
       label: "Photo Gallery", 
       icon: Camera,
       isActive: location === "/photos" 
-    },
-    { 
-      path: "/settings", 
-      label: "Settings", 
-      icon: Settings,
-      isActive: location === "/settings" 
     },
   ];
 

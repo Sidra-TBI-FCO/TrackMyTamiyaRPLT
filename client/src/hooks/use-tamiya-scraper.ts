@@ -16,8 +16,7 @@ export function useTamiyaScraper() {
       });
 
       if (!response.ok) {
-        console.log("Scraper response not ok:", response.status);
-        return null;
+        throw new Error("Failed to scrape model data");
       }
 
       const data = await response.json();

@@ -3,18 +3,15 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SlideshowProvider } from "@/lib/slideshow-context";
 import { useState } from "react";
 
 import Home from "@/pages/home";
 import Models from "@/pages/models";
 import BuildLogs from "@/pages/build-logs";
 import HopUpParts from "@/pages/hop-up-parts";
-import Parts from "@/pages/parts";
 import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
-import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 import Header from "@/components/layout/header";
@@ -29,10 +26,8 @@ function Router() {
       <Route path="/models/:id" component={ModelDetail} />
       <Route path="/build-logs" component={BuildLogs} />
       <Route path="/hop-up-parts" component={HopUpParts} />
-      <Route path="/parts" component={Parts} />
       <Route path="/photos" component={PhotoGallery} />
       <Route path="/photo-frame" component={PhotoFrame} />
-      <Route path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -49,17 +44,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SlideshowProvider>
-          <div className={`min-h-screen bg-background overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
-            <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
-            <Navigation />
-            <main className="pb-16 lg:pb-0 max-w-full">
-              <Router />
-            </main>
-            <MobileNav />
-            <Toaster />
-          </div>
-        </SlideshowProvider>
+        <div className={`min-h-screen bg-background overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+          <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
+          <Navigation />
+          <main className="pb-16 lg:pb-0 max-w-full">
+            <Router />
+          </main>
+          <MobileNav />
+          <Toaster />
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit2, Trash2, Star } from "lucide-react";
 import { Photo } from "@/types";
-import ImageFallback from "@/components/ui/image-fallback";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +43,7 @@ export default function PhotoGallery({
     }
   };
 
-  const gridCols: Record<number, string> = {
+  const gridCols = {
     2: "grid-cols-2",
     3: "grid-cols-2 md:grid-cols-3",
     4: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
@@ -56,22 +55,19 @@ export default function PhotoGallery({
       <div className={`grid ${gridCols[columns]} gap-4`}>
         {photos.map((photo) => (
           <Card key={photo.id} className="overflow-hidden group relative">
-            <div onClick={() => setSelectedPhoto(photo)}>
-              <ImageFallback
-                src={photo.url}
-                alt={photo.caption || "RC model photo"}
-                className="w-full aspect-square object-cover cursor-pointer"
-                fallbackText="Photo not available in this environment"
-              />
-            </div>
+            <img
+              src={photo.url}
+              alt={photo.caption || "RC model photo"}
+              className="w-full aspect-square object-cover cursor-pointer"
+              onClick={() => setSelectedPhoto(photo)}
+            />
             
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 opacity-0 group-hover:opacity-100">
-              {/* Action buttons positioned on the right side vertically for better mobile landscape view */}
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col space-y-2">
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="flex space-x-2">
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="h-8 w-8 shadow-lg"
+                  className="h-8 w-8"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditPhoto(photo);
@@ -83,7 +79,7 @@ export default function PhotoGallery({
                   <Button
                     size="icon"
                     variant="destructive"
-                    className="h-8 w-8 shadow-lg"
+                    className="h-8 w-8"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeletePhoto(photo.id);
@@ -112,64 +108,27 @@ export default function PhotoGallery({
         ))}
       </div>
 
-      {/* Photo Detail Dialog with Thumbnail Navigation */}
+      {/* Photo Detail Dialog */}
       <Dialog open={!!selectedPhoto && !isEditing} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="max-w-6xl h-[90vh] p-0">
+        <DialogContent className="max-w-4xl">
           {selectedPhoto && (
-            <div className="flex h-full">
-              {/* Main photo area */}
-              <div className="flex-1 flex flex-col">
-                <DialogHeader className="p-4 pb-2">
-                  <DialogTitle className="font-mono">Photo Detail</DialogTitle>
-                </DialogHeader>
-                
-                <div className="flex-1 flex items-center justify-center p-4">
-                  <img
-                    src={selectedPhoto.url}
-                    alt={selectedPhoto.caption || "RC model photo"}
-                    className="max-w-full max-h-full object-contain rounded"
-                  />
-                </div>
-                
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-mono">Photo Detail</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <img
+                  src={selectedPhoto.url}
+                  alt={selectedPhoto.caption || "RC model photo"}
+                  className="w-full max-h-96 object-contain rounded"
+                />
                 {selectedPhoto.caption && (
-                  <div className="p-4 pt-2">
-                    <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
-                      {selectedPhoto.caption}
-                    </p>
-                  </div>
+                  <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
+                    {selectedPhoto.caption}
+                  </p>
                 )}
               </div>
-              
-              {/* Thumbnail navigation on the right */}
-              <div className="w-20 md:w-24 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
-                <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-xs font-mono text-gray-500 dark:text-gray-400 text-center">
-                    {photos.findIndex(p => p.id === selectedPhoto.id) + 1}/{photos.length}
-                  </p>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                  {photos.map((photo) => (
-                    <button
-                      key={photo.id}
-                      onClick={() => setSelectedPhoto(photo)}
-                      className={`w-full aspect-square rounded overflow-hidden border-2 transition-all ${
-                        photo.id === selectedPhoto.id 
-                          ? 'border-blue-500 ring-1 ring-blue-500' 
-                          : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
-                    >
-                      <ImageFallback
-                        src={photo.url}
-                        alt={photo.caption || "RC model photo"}
-                        className="w-full h-full object-cover"
-                        fallbackText="N/A"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

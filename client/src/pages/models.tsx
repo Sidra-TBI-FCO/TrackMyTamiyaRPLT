@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutGrid, List, Filter, Tag, Search, Play } from "lucide-react";
+import { LayoutGrid, List, Filter, Tag, Search } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
-import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +21,6 @@ export default function Models() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterTag, setFilterTag] = useState<string>("all");
-  const [isAddModelOpen, setIsAddModelOpen] = useState(false);
-  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
@@ -182,100 +179,59 @@ export default function Models() {
         </div>
       )}
 
-      {/* Get all photos from all filtered models for slideshow */}
-      {(() => {
-        const allPhotos = filteredModels.flatMap(model => 
-          model.photos.map(photo => ({
-            ...photo,
-            isBoxArt: photo.isBoxArt || false,
-            model: {
-              id: model.id,
-              name: model.name,
-              chassisType: model.chassis,
-              tags: model.tags || []
-            }
-          }))
-        );
-
-        return (
-          <>
-            {/* Add slideshow button if there are photos */}
-            {allPhotos.length > 0 && (
-              <div className="mb-6">
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsSlideshowOpen(true)} 
-                  className="font-mono"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Photo Slideshow ({allPhotos.length} photos)
-                </Button>
-              </div>
-            )}
-
-            {/* Models Grid/List */}
-            {filteredModels.length > 0 ? (
-              <div className={`grid gap-6 ${
-                viewMode === "grid" 
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
-                  : "grid-cols-1"
-              }`}>
-                {filteredModels.map((model) => (
-                  <ModelCard
-                    key={model.id}
-                    model={model}
-                    onAddPhoto={handleAddPhoto}
-                  />
-                ))}
-                
-                {/* Add New Model Card */}
-                <Card className="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
-                  <CardContent className="flex items-center justify-center h-80 p-6">
-                    <AddModelDialog
-                      trigger={
-                        <div className="text-center cursor-pointer">
-                          <div className="text-4xl mb-4 text-gray-400 dark:text-gray-500">➕</div>
-                          <p className="font-mono font-semibold text-gray-600 dark:text-gray-300">
-                            Add New Model
-                          </p>
-                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mt-1">
-                            Enter Tamiya item number
-                          </p>
-                        </div>
-                      }
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <Card className="p-12">
-                <div className="text-center">
-                  <div className="text-gray-400 dark:text-gray-500 mb-6">
-                    <Filter className="h-16 w-16 mx-auto mb-4" />
-                    <h2 className="text-xl font-mono font-semibold text-gray-900 dark:text-white mb-2">
-                      {filterStatus === "all" ? "No models yet" : `No ${filterStatus} models`}
-                    </h2>
-                    <p className="font-mono text-gray-500 dark:text-gray-400">
-                      {filterStatus === "all" 
-                        ? "Add your first Tamiya model to get started" 
-                        : `You don't have any models with status: ${filterStatus}`
-                      }
+      {/* Models Grid/List */}
+      {filteredModels.length > 0 ? (
+        <div className={`grid gap-6 ${
+          viewMode === "grid" 
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+            : "grid-cols-1"
+        }`}>
+          {filteredModels.map((model) => (
+            <ModelCard
+              key={model.id}
+              model={model}
+              onAddPhoto={handleAddPhoto}
+            />
+          ))}
+          
+          {/* Add New Model Card */}
+          <Card className="bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
+            <CardContent className="flex items-center justify-center h-80 p-6">
+              <AddModelDialog
+                trigger={
+                  <div className="text-center cursor-pointer">
+                    <div className="text-4xl mb-4 text-gray-400 dark:text-gray-500">➕</div>
+                    <p className="font-mono font-semibold text-gray-600 dark:text-gray-300">
+                      Add New Model
+                    </p>
+                    <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mt-1">
+                      Enter Tamiya item number
                     </p>
                   </div>
-                  {filterStatus === "all" && <AddModelDialog />}
-                </div>
-              </Card>
-            )}
-
-            {/* Photo Slideshow */}
-            <PhotoSlideshow
-              photos={allPhotos}
-              isOpen={isSlideshowOpen}
-              onClose={() => setIsSlideshowOpen(false)}
-            />
-          </>
-        );
-      })()}
+                }
+              />
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <Card className="p-12">
+          <div className="text-center">
+            <div className="text-gray-400 dark:text-gray-500 mb-6">
+              <Filter className="h-16 w-16 mx-auto mb-4" />
+              <h2 className="text-xl font-mono font-semibold text-gray-900 dark:text-white mb-2">
+                {filterStatus === "all" ? "No models yet" : `No ${filterStatus} models`}
+              </h2>
+              <p className="font-mono text-gray-500 dark:text-gray-400">
+                {filterStatus === "all" 
+                  ? "Add your first Tamiya model to get started" 
+                  : `You don't have any models with status: ${filterStatus}`
+                }
+              </p>
+            </div>
+            {filterStatus === "all" && <AddModelDialog />}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
