@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ExternalLink, CheckCircle2, Clock, X, Search, Filter, Package, DollarSign } from "lucide-react";
 import type { HopUpPart } from "@shared/schema";
 import { ModelWithRelations } from "@/types";
+import HopUpCard from "@/components/hop-ups/hop-up-card";
 
 interface PartWithModel extends HopUpPart {
   model: {
@@ -244,8 +245,8 @@ export default function Parts() {
         </CardContent>
       </Card>
 
-      {/* Parts List */}
-      <div className="space-y-4">
+      {/* Parts List - Compact Grid Layout */}
+      <div className="space-y-6">
         {filteredParts.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
@@ -255,108 +256,17 @@ export default function Parts() {
             </CardContent>
           </Card>
         ) : (
-          filteredParts.map((part) => (
-            <Card key={`${part.modelId}-${part.id}`} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                      <h3 className="font-mono font-semibold text-lg">{part.name}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {getStatusBadge(part.installationStatus)}
-                        {part.isTamiyaBrand ? (
-                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Tamiya</Badge>
-                        ) : (
-                          <Badge variant="outline">Aftermarket</Badge>
-                        )}
-                        {part.category && (
-                          <Badge variant="secondary">{part.category}</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 font-mono">Model</p>
-                        <Link href={`/models/${part.model.id}`}>
-                          <Button variant="link" className="p-0 h-auto font-mono text-blue-600 hover:text-blue-800">
-                            {part.model.name}
-                          </Button>
-                        </Link>
-                      </div>
-
-                      {part.itemNumber && (
-                        <div>
-                          <p className="text-gray-500 dark:text-gray-400 font-mono">Item Number</p>
-                          <p className="font-mono">{part.itemNumber}</p>
-                        </div>
-                      )}
-
-                      {part.manufacturer && (
-                        <div>
-                          <p className="text-gray-500 dark:text-gray-400 font-mono">Manufacturer</p>
-                          <p className="font-mono">{part.manufacturer}</p>
-                        </div>
-                      )}
-
-                      {part.supplier && (
-                        <div>
-                          <p className="text-gray-500 dark:text-gray-400 font-mono">Supplier</p>
-                          <p className="font-mono">{part.supplier}</p>
-                        </div>
-                      )}
-
-                      {part.cost && (
-                        <div>
-                          <p className="text-gray-500 dark:text-gray-400 font-mono">Cost</p>
-                          <p className="font-mono font-semibold text-green-600">${parseFloat(part.cost).toFixed(2)}</p>
-                        </div>
-                      )}
-
-                      {(part.material || part.color) && (
-                        <div>
-                          <p className="text-gray-500 dark:text-gray-400 font-mono">Material/Color</p>
-                          <p className="font-mono">
-                            {[part.material, part.color].filter(Boolean).join(" / ")}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {part.compatibility && part.compatibility.length > 0 && (
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 font-mono text-sm">Compatibility</p>
-                        <div className="flex flex-wrap gap-1">
-                          {part.compatibility.map((chassis) => (
-                            <Badge key={chassis} variant="outline" className="text-xs">
-                              {chassis}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col lg:flex-row gap-2">
-                    {part.productUrl && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={part.productUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View Product
-                        </a>
-                      </Button>
-                    )}
-                    
-                    <Link href={`/models/${part.model.id}`}>
-                      <Button variant="outline" size="sm">
-                        View Model
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+            {filteredParts.map((part) => (
+              <HopUpCard
+                key={`${part.modelId}-${part.id}`}
+                part={{
+                  ...part,
+                  storeUrls: part.storeUrls || {}
+                }}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

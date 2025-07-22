@@ -79,6 +79,7 @@ export const hopUpParts = pgTable("hop_up_parts", {
   isTamiyaBrand: boolean("is_tamiya_brand").default(false),
   productUrl: text("product_url"),
   tamiyaBaseUrl: text("tamiya_base_url"), // Link to TamiyaBase part page
+  storeUrls: jsonb("store_urls").default(sql`'{}'::jsonb`), // Object with store names as keys and URLs as values
   compatibility: text("compatibility").array().default(sql`'{}'::text[]`), // Compatible chassis types
   color: text("color"),
   material: text("material"),

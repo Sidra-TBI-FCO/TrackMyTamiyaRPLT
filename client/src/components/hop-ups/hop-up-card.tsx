@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Calendar, DollarSign, Package } from "lucide-react";
+import { Edit, Trash2, ExternalLink } from "lucide-react";
 import { HopUpPart } from "@/types";
-import { format } from "date-fns";
+import { SiAmazon, SiEbay } from "react-icons/si";
+import { Globe } from "lucide-react";
 
 interface HopUpCardProps {
   part: HopUpPart;
@@ -51,108 +52,122 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
     return isNaN(num) ? null : `$${num.toFixed(2)}`;
   };
 
+  const getStoreLogo = (storeName: string) => {
+    const name = storeName.toLowerCase();
+    if (name.includes('amazon')) return <SiAmazon className="h-4 w-4 text-orange-600" />;
+    if (name.includes('ebay')) return <SiEbay className="h-4 w-4 text-blue-600" />;
+    if (name.includes('tamiya')) return <span className="text-red-600 font-bold text-xs">田</span>;
+    if (name.includes('tamiyabase')) return <span className="text-blue-600 font-bold text-xs">TB</span>;
+    return <Globe className="h-4 w-4 text-gray-600" />;
+  };
+
+  const renderStoreLinks = () => {
+    const storeUrls = part.storeUrls || {};
+    const links = [];
+    
+    // Add legacy productUrl and tamiyaBaseUrl if they exist
+    if (part.productUrl) {
+      links.push({ name: part.supplier || 'Store', url: part.productUrl });
+    }
+    if (part.tamiyaBaseUrl) {
+      links.push({ name: 'TamiyaBase', url: part.tamiyaBaseUrl });
+    }
+    
+    // Add new storeUrls
+    Object.entries(storeUrls).forEach(([storeName, url]) => {
+      if (url && typeof url === 'string') {
+        links.push({ name: storeName, url });
+      }
+    });
+
+    return (
+      <div className="flex items-center gap-1">
+        {links.map(({ name, url }, index) => (
+          <Button
+            key={index}
+            variant="ghost"
+            size="sm"
+            asChild
+            className="p-1 h-6 hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={`View on ${name}`}
+          >
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              {getStoreLogo(name)}
+            </a>
+          </Button>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-      <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-start space-x-2 flex-1">
-            <div className="text-2xl">{getCategoryIcon(part.category)}</div>
+    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+      <CardContent className="p-3">
+        {/* Compact Header Row */}
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="text-lg flex-shrink-0">{getCategoryIcon(part.category)}</div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2">
+              <h3 className="font-mono font-medium text-sm text-gray-900 dark:text-white truncate">
                 {part.name}
               </h3>
-              {part.itemNumber && (
-                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
-                  Item #{part.itemNumber}
-                </p>
-              )}
+              <div className="flex items-center gap-2 text-xs font-mono text-gray-500 dark:text-gray-400">
+                {part.itemNumber && <span>#{part.itemNumber}</span>}
+                {part.manufacturer && <span>• {part.manufacturer}</span>}
+                {formatCurrency(part.cost) && <span className="text-green-600 dark:text-green-400">• {formatCurrency(part.cost)}</span>}
+              </div>
             </div>
           </div>
           
-          <Badge className={`text-xs font-mono ${getStatusColor(part.installationStatus)}`}>
-            {part.installationStatus.charAt(0).toUpperCase() + part.installationStatus.slice(1)}
-          </Badge>
-        </div>
-
-        {/* Category and Supplier */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center space-x-4 text-sm font-mono text-gray-600 dark:text-gray-400">
-            <div className="flex items-center space-x-1">
-              <Package className="h-3 w-3" />
-              <span className="capitalize">{part.category}</span>
-            </div>
-            {part.supplier && (
-              <span>• {part.supplier}</span>
-            )}
-          </div>
-
-          {/* Cost and Installation Date */}
-          <div className="flex items-center justify-between text-sm font-mono text-gray-600 dark:text-gray-400">
-            {formatCurrency(part.cost) && (
-              <div className="flex items-center space-x-1">
-                <DollarSign className="h-3 w-3" />
-                <span>{formatCurrency(part.cost)}</span>
-              </div>
-            )}
-            
-            {part.installationDate && part.installationStatus === "installed" && (
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-3 w-3" />
-                <span>{format(new Date(part.installationDate), "MMM dd, yyyy")}</span>
-              </div>
-            )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge className={`text-xs font-mono px-2 py-0 ${getStatusColor(part.installationStatus)}`}>
+              {part.installationStatus === "installed" ? "✓" : part.installationStatus === "planned" ? "○" : "◦"}
+            </Badge>
+            {renderStoreLinks()}
           </div>
         </div>
 
-        {/* Photo */}
-        {part.photoId && (
-          <div className="mb-4">
-            <div 
-              className="w-full h-24 bg-gray-200 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 cursor-pointer hover:opacity-75 transition-opacity flex items-center justify-center"
-              onClick={() => onImageClick?.(part)}
-            >
-              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                📷 Part Photo
-              </span>
-            </div>
+        {/* Compact Details Row */}
+        <div className="flex items-center justify-between text-xs font-mono text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-3">
+            <span className="capitalize">{part.category}</span>
+            {part.color && <span>• {part.color}</span>}
+            {part.material && <span>• {part.material}</span>}
           </div>
+          
+          {/* Action buttons - much smaller */}
+          <div className="flex items-center gap-1">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(part)}
+                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                title="Edit part"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(part.id)}
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
+                title="Delete part"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Optional Notes - Only if they exist and are short */}
+        {part.notes && part.notes.length < 100 && (
+          <p className="text-xs font-mono text-gray-600 dark:text-gray-400 mt-2 line-clamp-1">
+            {part.notes}
+          </p>
         )}
-
-        {/* Notes */}
-        {part.notes && (
-          <div className="mb-4">
-            <p className="text-sm font-mono text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 rounded p-2 line-clamp-3">
-              {part.notes}
-            </p>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(part)}
-              className="font-mono text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              <Edit className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(part.id)}
-              className="font-mono text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <Trash2 className="h-3 w-3 mr-1" />
-              Delete
-            </Button>
-          )}
-        </div>
       </CardContent>
     </Card>
   );
