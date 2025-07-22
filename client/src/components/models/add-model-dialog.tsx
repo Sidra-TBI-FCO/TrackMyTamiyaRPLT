@@ -103,6 +103,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       motorSize: "",
       batteryType: "",
       tags: [],
+      userId: 2, // Mock user ID
     },
   });
 
@@ -576,13 +577,10 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       description: `Submitting model: ${data.name}`,
     });
     
-    const submissionData = {
-      ...data,
-      userId: 2, // Mock user ID - should be from auth in production
-    };
+    // Data already includes userId from default values
     
-    console.log("Submitting to API:", submissionData);
-    createModelMutation.mutate(submissionData);
+    console.log("Submitting to API:", data);
+    createModelMutation.mutate(data);
   };
 
   return (
