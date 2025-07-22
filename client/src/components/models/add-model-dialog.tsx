@@ -114,10 +114,18 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
   const createModelMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest("POST", "/api/models", data);
-      return response;
+      console.log("Mutation function called with data:", data);
+      try {
+        const response = await apiRequest("POST", "/api/models", data);
+        console.log("API response:", response);
+        return response;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Mutation successful:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/models"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
@@ -129,6 +137,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     },
     onError: (error) => {
       console.error("Mutation error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       toast({
         title: "Error",
         description: error.message || "Failed to add model",
@@ -569,7 +578,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto" aria-describedby="dialog-description">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-mono">Add New Tamiya Model</DialogTitle>
           <p id="dialog-description" className="text-sm text-gray-600 dark:text-gray-400 font-mono">
