@@ -459,6 +459,61 @@ export default function ModelDetail() {
                   {model.releaseYear || "Unknown"}
                 </p>
               </div>
+
+              {/* Technical Specifications */}
+              {model.scale && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Scale</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.scale}
+                  </p>
+                </div>
+              )}
+              
+              {model.driveType && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Drive Type</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.driveType}
+                  </p>
+                </div>
+              )}
+              
+              {model.chassisMaterial && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis Material</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.chassisMaterial}
+                  </p>
+                </div>
+              )}
+              
+              {model.differentialType && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Differential Type</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.differentialType}
+                  </p>
+                </div>
+              )}
+              
+              {model.motorSize && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Motor Size</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.motorSize}
+                  </p>
+                </div>
+              )}
+              
+              {model.batteryType && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Battery Type</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.batteryType}
+                  </p>
+                </div>
+              )}
               
               <div>
                 <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Total Investment</p>
