@@ -1,8 +1,11 @@
-import { Search, Images, Moon, Sun, Settings } from "lucide-react";
+import { Search, Images, Moon, Sun, Settings, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useSlideshow } from "@/lib/slideshow-context";
+import { useQuery } from "@tanstack/react-query";
+import { ModelWithRelations } from "@/types";
 
 interface HeaderProps {
   onToggleDarkMode: () => void;
@@ -11,10 +14,31 @@ interface HeaderProps {
 
 export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { openSlideshow } = useSlideshow();
+
+  // Get all models for global slideshow
+  const { data: models } = useQuery<ModelWithRelations[]>({
+    queryKey: ["/api/models"],
+  });
 
   const handlePhotoFrameClick = () => {
-    setLocation("/photo-frame");
+    // Check if we're on a model detail page
+    const modelMatch = location.match(/^\/models\/(\d+)$/);
+    if (modelMatch && models) {
+      const modelId = parseInt(modelMatch[1]);
+      const currentModel = models.find(m => m.id === modelId);
+      if (currentModel && currentModel.photos.length > 0) {
+        // Trigger slideshow for current model's photos
+        // This will need to be handled by the model detail page itself
+        const event = new CustomEvent('triggerModelSlideshow');
+        document.dispatchEvent(event);
+        return;
+      }
+    }
+    
+    // Default: open global slideshow
+    openSlideshow();
   };
 
   return (
@@ -24,12 +48,22 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-tamiya-red rounded-lg flex items-center justify-center">
-                <div className="text-white text-lg font-bold">🏎️</div>
+              <div className="w-10 h-10 bg-tamiya-red dark:bg-tamiya-blue flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'}}>
+                {/* Angular star similar to Tamiya style */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div 
+                    className="w-6 h-6 bg-white"
+                    style={{
+                      clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'
+                    }}
+                  />
+                </div>
               </div>
               <div>
-                <h1 className="text-xl font-mono font-bold text-gray-900 dark:text-white">
-                  TrackMyTamiya
+                <h1 className="text-xl font-bold tracking-wide" style={{fontFamily: 'Bebas Neue, Arial, sans-serif'}}>
+                  <span style={{color: isDarkMode ? 'hsl(207, 90%, 54%)' : 'hsl(0, 84%, 60%)'}}>TRACK</span>
+                  <span style={{color: isDarkMode ? 'hsl(0, 84%, 60%)' : 'hsl(207, 90%, 54%)'}}>MY</span>
+                  <span style={{color: isDarkMode ? 'hsl(207, 90%, 54%)' : 'hsl(0, 84%, 60%)'}}>TAMIYA</span>
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   RC Collection Manager
@@ -73,6 +107,14 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => {
+                // Toggle settings: if on settings page, go back to home; otherwise go to settings
+                if (location === "/settings") {
+                  setLocation("/");
+                } else {
+                  setLocation("/settings");
+                }
+              }}
               className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
             >
               <Settings className="h-5 w-5" />

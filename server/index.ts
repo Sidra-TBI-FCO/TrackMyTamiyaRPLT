@@ -1,10 +1,44 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { seedDemoData } from "./demo-data";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Add CORS support for mobile and production deployments
+app.use((req, res, next) => {
+  // Allow all origins for development, specific domains for production
+  const allowedOrigins = [
+    'http://localhost:5000',
+    'https://localhost:5000',
+    process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.replit.app` : null,
+    process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.replit.app` : null
+  ].filter(Boolean);
+  
+  const origin = req.headers.origin;
+  if (origin && (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development')) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    // Allow same-origin requests
+    res.header('Access-Control-Allow-Origin', req.headers.host ? `https://${req.headers.host}` : '*');
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).send();
+    return;
+  }
+  
+  next();
+});
+
+app.use(express.json({ limit: '10mb' })); // Increase limit for base64 uploads
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -38,6 +72,9 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+  
+  // Seed demo data if database is empty
+  await seedDemoData();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

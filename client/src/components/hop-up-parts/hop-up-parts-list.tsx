@@ -1,0 +1,312 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import HopUpPartDialog from "./hop-up-part-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, ExternalLink, CheckCircle2, Clock, X, Filter } from "lucide-react";
+import type { HopUpPart } from "@shared/schema";
+
+interface HopUpPartsListProps {
+  modelId: number;
+}
+
+export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPart, setEditingPart] = useState<HopUpPart | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterBrand, setFilterBrand] = useState("all");
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: parts = [], isLoading } = useQuery({
+    queryKey: ["/api/models", modelId, "hop-up-parts"],
+    queryFn: async (): Promise<HopUpPart[]> => {
+      const response = await fetch(`/api/models/${modelId}/hop-up-parts`);
+      if (!response.ok) throw new Error("Failed to fetch hop-up parts");
+      return response.json();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (partId: number) => apiRequest("DELETE", `/api/hop-up-parts/${partId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", modelId, "hop-up-parts"] });
+      toast({ title: "Part deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete part", variant: "destructive" });
+    },
+  });
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: ({ partId, newStatus }: { partId: number; newStatus: string }) => 
+      apiRequest("PUT", `/api/hop-up-parts/${partId}`, { 
+        installationStatus: newStatus,
+        installationDate: newStatus === "installed" ? new Date().toISOString() : null
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", modelId, "hop-up-parts"] });
+      toast({ title: "Installation status updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update status", variant: "destructive" });
+    },
+  });
+
+  // Filter parts based on search and filters
+  const filteredParts = parts.filter(part => {
+    const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         part.itemNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         part.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         part.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === "all" || part.category === filterCategory;
+    const matchesStatus = filterStatus === "all" || part.installationStatus === filterStatus;
+    const matchesBrand = filterBrand === "all" || 
+                        (filterBrand === "tamiya" && part.isTamiyaBrand) ||
+                        (filterBrand === "aftermarket" && !part.isTamiyaBrand);
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesBrand;
+  });
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "installed":
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+      case "planned":
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case "removed":
+        return <X className="h-4 w-4 text-red-600" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "installed":
+        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+      case "planned":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+      case "removed":
+        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+    }
+  };
+
+  const categories = Array.from(new Set(parts.map(p => p.category)));
+  const totalInvestment = parts.reduce((sum, part) => 
+    sum + (part.installationStatus === "installed" ? parseFloat(part.cost || "0") : 0), 0
+  );
+
+  if (isLoading) {
+    return <div className="p-6">Loading hop-up parts...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with stats */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold">Hop-Up Parts ({filteredParts.length})</h3>
+          <p className="text-sm text-muted-foreground">
+            Total Investment: ${totalInvestment.toFixed(2)} | 
+            Installed: {parts.filter(p => p.installationStatus === "installed").length} | 
+            Planned: {parts.filter(p => p.installationStatus === "planned").length}
+          </p>
+        </div>
+        <Button onClick={() => {
+          setEditingPart(null);
+          setDialogOpen(true);
+        }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Part
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input
+          placeholder="Search parts..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="sm:max-w-xs"
+        />
+        <Select value={filterBrand} onValueChange={setFilterBrand}>
+          <SelectTrigger className="sm:w-32">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Brands</SelectItem>
+            <SelectItem value="tamiya">Tamiya</SelectItem>
+            <SelectItem value="aftermarket">Aftermarket</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category} value={category}>{category}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="planned">Planned</SelectItem>
+            <SelectItem value="installed">Installed</SelectItem>
+            <SelectItem value="removed">Removed</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Parts Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredParts.map((part) => (
+          <Card key={part.id} className="relative">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-base line-clamp-2 flex items-center gap-2">
+                    {part.isTamiyaBrand && (
+                      <Badge variant="outline" className="text-xs tamiya-red bg-white border-tamiya-red">
+                        TAMIYA
+                      </Badge>
+                    )}
+                    {part.name}
+                  </CardTitle>
+                  {part.itemNumber && (
+                    <CardDescription className="text-xs">#{part.itemNumber}</CardDescription>
+                  )}
+                </div>
+                <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1`}>
+                  {getStatusIcon(part.installationStatus)}
+                  {part.installationStatus}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <div className="text-sm font-medium">{part.category}</div>
+                {part.manufacturer && (
+                  <div className="text-sm text-muted-foreground">by {part.manufacturer}</div>
+                )}
+                {part.supplier && (
+                  <div className="text-xs text-muted-foreground">from {part.supplier}</div>
+                )}
+                {part.cost && (
+                  <div className="text-sm font-medium text-green-600">${parseFloat(part.cost).toFixed(2)}</div>
+                )}
+                {part.material && (
+                  <div className="text-xs text-muted-foreground">Material: {part.material}</div>
+                )}
+                {part.color && (
+                  <div className="text-xs text-muted-foreground">Color: {part.color}</div>
+                )}
+              </div>
+
+              {part.compatibility && part.compatibility.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {part.compatibility.map((chassis) => (
+                    <Badge key={chassis} variant="secondary" className="text-xs">
+                      {chassis}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {part.installationDate && (
+                <div className="text-xs text-muted-foreground">
+                  Installed: {new Date(part.installationDate).toLocaleDateString()}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const newStatus = part.installationStatus === "installed" ? "planned" : "installed";
+                    toggleStatusMutation.mutate({ partId: part.id, newStatus });
+                  }}
+                  disabled={toggleStatusMutation.isPending}
+                >
+                  {part.installationStatus === "installed" ? "Mark Planned" : "Mark Installed"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingPart(part);
+                    setDialogOpen(true);
+                  }}
+                >
+                  Edit
+                </Button>
+                {(part.productUrl || part.tamiyaBaseUrl) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const url = part.tamiyaBaseUrl || part.productUrl;
+                      if (url) window.open(url, '_blank');
+                    }}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => deleteMutation.mutate(part.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredParts.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-muted-foreground">No hop-up parts found</div>
+          <Button
+            onClick={() => {
+              setEditingPart(null);
+              setDialogOpen(true);
+            }}
+            className="mt-4"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Your First Part
+          </Button>
+        </div>
+      )}
+
+      <HopUpPartDialog
+        modelId={modelId}
+        part={editingPart}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
+    </div>
+  );
+}

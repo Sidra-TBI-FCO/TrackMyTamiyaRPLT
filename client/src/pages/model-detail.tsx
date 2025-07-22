@@ -1,20 +1,115 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import EditModelDialog from "@/components/models/edit-model-dialog";
+import AddPhotoDialog from "@/components/photos/add-photo-dialog";
+import PhotoSlideshow from "@/components/photos/photo-slideshow";
+import BoxArtSelector from "@/components/photos/box-art-selector";
+import HopUpPartsList from "@/components/hop-up-parts/hop-up-parts-list";
+import HopUpPartDialog from "@/components/hop-up-parts/hop-up-part-dialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useSlideshow } from "@/lib/slideshow-context";
+import { useState, useEffect } from "react";
 
 export default function ModelDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+  const [slideshowStartIndex, setSlideshowStartIndex] = useState(0);
+  const [isBoxArtSelectorOpen, setIsBoxArtSelectorOpen] = useState(false);
+  const [isAddHopUpOpen, setIsAddHopUpOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { openSlideshow: openGlobalSlideshow } = useSlideshow();
 
   const { data: model, isLoading } = useQuery<ModelWithRelations>({
     queryKey: ["/api/models", id],
     enabled: !!id,
+  });
+
+  // Calculate total investment including hop-up parts
+  const totalInvestment = model 
+    ? (parseFloat(model.totalCost || "0") + 
+       (model.hopUpParts?.reduce((sum, part) => {
+         const partCost = part.cost ? parseFloat(part.cost) : 0;
+         return sum + (isNaN(partCost) ? 0 : partCost);
+       }, 0) || 0))
+    : 0;
+
+  // Listen for header slideshow trigger - must be before any early returns
+  useEffect(() => {
+    const handleHeaderSlideshow = () => {
+      if (model && model.photos.length > 0) {
+        setSlideshowStartIndex(0);
+        setIsSlideshowOpen(true);
+      }
+    };
+
+    document.addEventListener('triggerModelSlideshow', handleHeaderSlideshow);
+    return () => document.removeEventListener('triggerModelSlideshow', handleHeaderSlideshow);
+  }, [model]);
+
+  const deleteModelMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/models/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Model deleted",
+        description: `${model?.name} has been removed from your collection.`,
+      });
+      setLocation("/models");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete model",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (photoId: number) => {
+      await apiRequest("DELETE", `/api/photos/${photoId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      toast({
+        title: "Photo deleted",
+        description: "Photo has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete photo",
+        variant: "destructive",
+      });
+    },
   });
 
   const getStatusColor = (status: string) => {
@@ -86,40 +181,125 @@ export default function ModelDetail() {
     );
   }
 
-  const boxArtPhoto = model.photos.find(p => p.isBoxArt) || model.photos[0];
-  const otherPhotos = model.photos.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id);
+  const boxArtPhoto = model?.photos?.find(p => p.isBoxArt) || model?.photos?.[0];
+  const otherPhotos = model?.photos?.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id) || [];
+  
+  // Prepare photos for slideshow with model data
+  const slideshowPhotos = model?.photos?.map(photo => ({
+    ...photo,
+    isBoxArt: photo.isBoxArt || false,
+    model: {
+      id: model.id,
+      name: model.name,
+      chassisType: model.chassis,
+      tags: model.tags || []
+    }
+  })) || [];
+
+  const handlePhotoClick = (photoId: number) => {
+    const photoIndex = model?.photos.findIndex(p => p.id === photoId) || 0;
+    setSlideshowStartIndex(photoIndex);
+    setIsSlideshowOpen(true);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/models")}
-            className="flex items-center space-x-2 font-mono"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
-              {model.name}
-            </h1>
-            <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
-              Item #{model.itemNumber}
-            </p>
+      <div className="mb-6">
+        {/* Mobile Layout */}
+        <div className="lg:hidden">
+          {/* Top row with back button and actions */}
+          <div className="flex items-center justify-between mb-3">
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/models")}
+              className="flex items-center space-x-1 font-mono p-2"
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="font-mono px-2"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 font-mono px-2"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Model info row */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0 mr-3">
+              <h1 className="text-xl font-mono font-bold text-gray-900 dark:text-white leading-tight">
+                {model.name}
+              </h1>
+              <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mt-1">
+                Item #{model.itemNumber}
+              </p>
+            </div>
+            <Badge className={`font-mono text-xs ${getStatusColor(model.buildStatus)} flex-shrink-0`}>
+              {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+            </Badge>
           </div>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <Badge className={`font-mono ${getStatusColor(model.buildStatus)}`}>
-            {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
-          </Badge>
-          <Button variant="outline" size="sm" className="font-mono">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
+
+        {/* Desktop Layout */}
+        <div className="hidden lg:flex lg:items-center lg:justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/models")}
+              className="flex items-center space-x-2 font-mono"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Button>
+            <div>
+              <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
+                {model.name}
+              </h1>
+              <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
+                Item #{model.itemNumber}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Badge className={`font-mono ${getStatusColor(model.buildStatus)}`}>
+              {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
+            </Badge>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="font-mono"
+              onClick={() => setIsEditMode(true)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 font-mono"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -128,13 +308,44 @@ export default function ModelDetail() {
         <div className="lg:col-span-2">
           {/* Main Photo */}
           <Card className="mb-6">
-            <CardContent className="p-0">
+            <CardContent className="p-0 relative group">
               {boxArtPhoto ? (
-                <img
-                  src={boxArtPhoto.url}
-                  alt={model.name}
-                  className="w-full h-64 lg:h-96 object-cover rounded-lg"
-                />
+                <>
+                  <img
+                    src={boxArtPhoto.url}
+                    alt={model.name}
+                    className="w-full h-64 lg:h-96 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => handlePhotoClick(boxArtPhoto.id)}
+                  />
+                  
+                  {/* Box Art Badge */}
+                  <div className="absolute top-4 left-4">
+                    <Badge 
+                      variant="secondary" 
+                      className="font-mono text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 cursor-pointer hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsBoxArtSelectorOpen(true);
+                      }}
+                      title="Click to change box art"
+                    >
+                      Box Art - Click to Change
+                    </Badge>
+                  </div>
+                  
+                  {/* Delete button for main photo */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deletePhotoMutation.mutate(boxArtPhoto.id);
+                    }}
+                    disabled={deletePhotoMutation.isPending}
+                    className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                    title="Delete photo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
               ) : (
                 <div className="w-full h-64 lg:h-96 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg">
                   <div className="text-center text-gray-400 dark:text-gray-500">
@@ -155,15 +366,43 @@ export default function ModelDetail() {
             </TabsList>
 
             <TabsContent value="photos" className="space-y-4">
+              {/* Slideshow button */}
+              {model.photos.length > 0 && (
+                <div className="mb-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsSlideshowOpen(true)} 
+                    className="font-mono"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Slideshow ({model.photos.length} photos)
+                  </Button>
+                </div>
+              )}
+
               {otherPhotos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {otherPhotos.map((photo) => (
-                    <Card key={photo.id} className="overflow-hidden">
+                    <Card key={photo.id} className="overflow-hidden relative group cursor-pointer">
                       <img
                         src={photo.url}
                         alt={photo.caption || "Model photo"}
-                        className="w-full h-32 object-cover"
+                        className="w-full h-32 object-cover hover:scale-105 transition-transform"
+                        onClick={() => handlePhotoClick(photo.id)}
                       />
+                      
+                      {/* Delete button - always visible on mobile, hover on desktop */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePhotoMutation.mutate(photo.id);
+                        }}
+                        disabled={deletePhotoMutation.isPending}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 md:p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-50 shadow-lg"
+                        title="Delete photo"
+                      >
+                        <X className="h-4 w-4 md:h-3 md:w-3" />
+                      </button>
                       {photo.caption && (
                         <CardContent className="p-2">
                           <p className="text-xs font-mono text-gray-600 dark:text-gray-400 truncate">
@@ -194,12 +433,7 @@ export default function ModelDetail() {
             </TabsContent>
 
             <TabsContent value="parts">
-              <Card className="p-8">
-                <div className="text-center text-gray-500 dark:text-gray-400">
-                  <Cog className="h-8 w-8 mx-auto mb-2" />
-                  <p className="font-mono">Hop-up parts coming soon</p>
-                </div>
-              </Card>
+              <HopUpPartsList modelId={model.id} />
             </TabsContent>
           </Tabs>
         </div>
@@ -225,11 +459,66 @@ export default function ModelDetail() {
                   {model.releaseYear || "Unknown"}
                 </p>
               </div>
+
+              {/* Technical Specifications */}
+              {model.scale && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Scale</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.scale}
+                  </p>
+                </div>
+              )}
+              
+              {model.driveType && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Drive Type</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.driveType}
+                  </p>
+                </div>
+              )}
+              
+              {model.chassisMaterial && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis Material</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.chassisMaterial}
+                  </p>
+                </div>
+              )}
+              
+              {model.differentialType && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Differential Type</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.differentialType}
+                  </p>
+                </div>
+              )}
+              
+              {model.motorSize && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Motor Size</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.motorSize}
+                  </p>
+                </div>
+              )}
+              
+              {model.batteryType && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Battery Type</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.batteryType}
+                  </p>
+                </div>
+              )}
               
               <div>
                 <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Total Investment</p>
                 <p className="font-mono text-gray-900 dark:text-white">
-                  ${parseFloat(model.totalCost || "0").toFixed(2)}
+                  ${totalInvestment.toFixed(2)}
                 </p>
               </div>
               
@@ -241,6 +530,23 @@ export default function ModelDetail() {
                   </p>
                 </div>
               )}
+
+              {model.tags && model.tags.length > 0 && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Tags</p>
+                  <div className="flex flex-wrap gap-1">
+                    {model.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -250,7 +556,10 @@ export default function ModelDetail() {
               <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 font-mono" disabled>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 font-mono"
+                onClick={() => setIsAddPhotoOpen(true)}
+              >
                 <Camera className="mr-2 h-4 w-4" />
                 Add Photo
               </Button>
@@ -258,7 +567,10 @@ export default function ModelDetail() {
                 <Wrench className="mr-2 h-4 w-4" />
                 Log Progress
               </Button>
-              <Button className="w-full bg-orange-600 hover:bg-orange-700 font-mono" disabled>
+              <Button 
+                className="w-full bg-orange-600 hover:bg-orange-700 font-mono"
+                onClick={() => setIsAddHopUpOpen(true)}
+              >
                 <Cog className="mr-2 h-4 w-4" />
                 Add Hop-Up
               </Button>
@@ -266,6 +578,60 @@ export default function ModelDetail() {
           </Card>
         </div>
       </div>
+
+      <EditModelDialog
+        model={model}
+        open={isEditMode}
+        onOpenChange={setIsEditMode}
+      />
+
+      <AddPhotoDialog
+        modelId={model.id}
+        open={isAddPhotoOpen}
+        onOpenChange={setIsAddPhotoOpen}
+      />
+
+      <PhotoSlideshow
+        photos={slideshowPhotos}
+        isOpen={isSlideshowOpen}
+        onClose={() => setIsSlideshowOpen(false)}
+        initialIndex={slideshowStartIndex}
+      />
+
+      <BoxArtSelector
+        modelId={model.id}
+        photos={model.photos}
+        open={isBoxArtSelectorOpen}
+        onOpenChange={setIsBoxArtSelectorOpen}
+      />
+
+      <HopUpPartDialog
+        modelId={model.id}
+        open={isAddHopUpOpen}
+        onOpenChange={setIsAddHopUpOpen}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Model</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{model.name}"? This action cannot be undone.
+              All photos, build logs, and hop-up parts associated with this model will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteModelMutation.mutate()}
+              disabled={deleteModelMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteModelMutation.isPending ? "Deleting..." : "Delete Model"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

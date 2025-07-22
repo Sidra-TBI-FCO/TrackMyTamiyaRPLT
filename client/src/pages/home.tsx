@@ -10,10 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import PhotoSlideshow from "@/components/photos/photo-slideshow";
+import { useSlideshow } from "@/lib/slideshow-context";
+import DeploymentNotice from "@/components/ui/deployment-notice";
+import StorageWarning from "@/components/ui/storage-warning";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [selectedPhotos] = useState<string[]>([]);
+  const { isOpen: isSlideshowOpen, closeSlideshow } = useSlideshow();
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
@@ -29,9 +34,9 @@ export default function Home() {
     console.log("Starting voice recording");
   };
 
-  const handleStartPhotoFrame = () => {
-    setLocation("/photo-frame");
-  };
+
+
+
 
   const handleAddPhoto = (modelId: number) => {
     // This would open photo upload for specific model
@@ -43,6 +48,8 @@ export default function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+      <DeploymentNotice />
+      <StorageWarning />
       {/* Mobile Search Bar */}
       <div className="mb-6 lg:hidden">
         <div className="relative">
@@ -198,58 +205,25 @@ export default function Home() {
         )}
       </div>
 
-      {/* Photo Frame Preview */}
-      <Card className="bg-white dark:bg-gray-800">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-mono font-bold text-gray-900 dark:text-white">
-              Photo Frame Mode
-            </CardTitle>
-            <Button
-              onClick={handleStartPhotoFrame}
-              className="bg-blue-600 text-white font-mono font-medium hover:bg-blue-700"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Start Slideshow
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {allPhotos.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {allPhotos.slice(0, 4).map((photo) => (
-                  <img
-                    key={photo.id}
-                    src={photo.url}
-                    alt={photo.caption || "RC model photo"}
-                    className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
-                  />
-                ))}
-              </div>
-              
-              <div className="flex items-center justify-between text-sm font-mono text-gray-600 dark:text-gray-400">
-                <span>{allPhotos.length} photos ready for slideshow</span>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" defaultChecked />
-                    <span>Shuffle</span>
-                  </label>
-                  <select className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-background">
-                    <option value="5">5s per slide</option>
-                    <option value="10">10s per slide</option>
-                    <option value="15">15s per slide</option>
-                  </select>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center text-gray-500 dark:text-gray-400 font-mono py-8">
-              No photos available for slideshow yet
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+      
+      {/* Photo Slideshow */}
+      <PhotoSlideshow
+        photos={models?.flatMap(model => 
+          model.photos.map(photo => ({
+            ...photo,
+            isBoxArt: photo.isBoxArt || false,
+            model: {
+              id: model.id,
+              name: model.name,
+              chassisType: model.chassis,
+              tags: model.tags || []
+            }
+          }))
+        ) || []}
+        isOpen={isSlideshowOpen}
+        onClose={closeSlideshow}
+      />
     </div>
   );
 }

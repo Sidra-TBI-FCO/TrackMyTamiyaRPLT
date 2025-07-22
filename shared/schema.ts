@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -22,7 +22,13 @@ export const models = pgTable("models", {
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
   notes: text("notes"),
-  tags: text("tags").array().default([]), // Array of tags for organization
+  scale: text("scale"), // 1/10, 1/12, 1/8, etc.
+  driveType: text("drive_type"), // RWD, FWD, 4WD
+  chassisMaterial: text("chassis_material"), // Plastic, Carbon, Aluminium
+  differentialType: text("differential_type"), // Gears, Oil, Ball Diff, etc.
+  motorSize: text("motor_size"), // 540, 380, brushless specifications
+  batteryType: text("battery_type"), // NiMH, LiPo, battery specifications
+  tags: text("tags").array().default(sql`'{}'::text[]`), // Array of tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -63,12 +69,19 @@ export const hopUpParts = pgTable("hop_up_parts", {
   name: text("name").notNull(),
   itemNumber: text("item_number"),
   category: text("category").notNull(), // motor, suspension, tires, body, electronics, etc.
-  supplier: text("supplier"),
+  supplier: text("supplier"), // Store/retailer where purchased
+  manufacturer: text("manufacturer"), // Brand that makes the part
   cost: numeric("cost", { precision: 10, scale: 2 }),
   installationStatus: text("installation_status").notNull().default("planned"), // planned, installed, removed
   installationDate: timestamp("installation_date"),
   notes: text("notes"),
   photoId: integer("photo_id").references(() => photos.id),
+  isTamiyaBrand: boolean("is_tamiya_brand").default(false),
+  productUrl: text("product_url"),
+  tamiyaBaseUrl: text("tamiya_base_url"), // Link to TamiyaBase part page
+  compatibility: text("compatibility").array().default(sql`'{}'::text[]`), // Compatible chassis types
+  color: text("color"),
+  material: text("material"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -132,10 +145,20 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
 });
 
-export const insertModelSchema = createInsertSchema(models).omit({
+export const insertModelSchema = createInsertSchema(models, {
+  releaseYear: z.coerce.number().optional(),
+  totalCost: z.coerce.number().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  scale: z.string().optional(),
+  driveType: z.string().optional(),
+  chassisMaterial: z.string().optional(),
+  differentialType: z.string().optional(),
+  motorSize: z.string().optional(),
+  batteryType: z.string().optional(),
 });
 
 export const insertPhotoSchema = createInsertSchema(photos).omit({
@@ -148,7 +171,9 @@ export const insertBuildLogEntrySchema = createInsertSchema(buildLogEntries).omi
   createdAt: true,
 });
 
-export const insertHopUpPartSchema = createInsertSchema(hopUpParts).omit({
+export const insertHopUpPartSchema = createInsertSchema(hopUpParts, {
+  cost: z.coerce.number().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
