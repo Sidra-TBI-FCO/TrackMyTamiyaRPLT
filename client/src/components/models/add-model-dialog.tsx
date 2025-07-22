@@ -65,6 +65,8 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
   const [productUrl, setProductUrl] = useState("");
   const [isParsingUrl, setIsParsingUrl] = useState(false);
   const [parseLog, setParseLog] = useState<string[]>([]);
+  const [productText, setProductText] = useState("");
+  const [isParsingText, setIsParsingText] = useState(false);
   const [chassisSuggestions, setChassisSuggestions] = useState<string[]>([]);
   const [showChassisSuggestions, setShowChassisSuggestions] = useState(false);
   const { toast } = useToast();
@@ -267,6 +269,154 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     }
   };
 
+  // Text blob parsing function
+  const parseProductText = async (text: string) => {
+    if (!text.trim()) {
+      toast({
+        title: "Error", 
+        description: "Please enter product description text",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsParsingText(true);
+    setParseLog(["🔄 Parsing product description..."]);
+
+    try {
+      // Extract chassis information
+      const chassisPatterns = [
+        /XV-(\d+)/gi,
+        /TT-(\d+)/gi,
+        /TA-(\d+)/gi,
+        /TB-(\d+)/gi,
+        /DF-(\d+)/gi,
+        /M-(\d+)/gi,
+        /CC-(\d+)/gi,
+        /CR-(\d+)/gi,
+        /DT-(\d+)/gi,
+        /FF-(\d+)/gi,
+        /TC-(\d+)/gi,
+      ];
+
+      let foundChassis = "";
+      for (const pattern of chassisPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          foundChassis = match[0].toUpperCase();
+          break;
+        }
+      }
+
+      // Extract scale
+      const scaleMatch = text.match(/1\/(\d+)\s*scale/i);
+      let foundScale = "";
+      if (scaleMatch) {
+        foundScale = `1/${scaleMatch[1]}`;
+      }
+
+      // Extract item numbers (5-digit codes)
+      const itemNumberMatch = text.match(/\b(\d{5})\b/);
+      let foundItemNumber = "";
+      if (itemNumberMatch) {
+        foundItemNumber = itemNumberMatch[1];
+      }
+
+      // Extract model name from title-like patterns
+      const titlePatterns = [
+        /Tamiya\s+[\d\/]+\s+([^(\n]+)/i,
+        /^([^:\n]+(?:chassis|kit|pro))/im,
+        /Include[s]?:\s*([^(\n]+)/i,
+      ];
+
+      let foundName = "";
+      for (const pattern of titlePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          foundName = match[1].trim().replace(/\s+/g, ' ');
+          // Clean up common suffixes
+          foundName = foundName.replace(/(EP|Kit|Chassis|Assembly).*$/i, '').trim();
+          break;
+        }
+      }
+
+      // Apply extracted data
+      const newLog = ["🔄 Parsing product description..."];
+      let foundData = false;
+
+      if (foundItemNumber) {
+        form.setValue('itemNumber', foundItemNumber);
+        newLog.push(`✅ Item number: ${foundItemNumber}`);
+        foundData = true;
+      }
+
+      if (foundName) {
+        form.setValue('name', foundName);
+        newLog.push(`✅ Model name: ${foundName}`);
+        foundData = true;
+      }
+
+      if (foundChassis) {
+        form.setValue('chassis', foundChassis);
+        newLog.push(`✅ Chassis: ${foundChassis}`);
+        foundData = true;
+      }
+
+      if (foundScale) {
+        newLog.push(`✅ Scale: ${foundScale} (informational)`);
+        foundData = true;
+      }
+
+      // Auto-detect tags based on content
+      const detectedTags = [];
+      const textLower = text.toLowerCase();
+      
+      if (textLower.includes('touring') || textLower.includes('on-road')) detectedTags.push('Touring');
+      if (textLower.includes('rally')) detectedTags.push('Rally');
+      if (textLower.includes('drift')) detectedTags.push('Drift');
+      if (textLower.includes('racing')) detectedTags.push('Racing');
+      if (textLower.includes('competition') || textLower.includes('pro')) detectedTags.push('Competition');
+      if (textLower.includes('carbon')) detectedTags.push('Carbon');
+      if (textLower.includes('aluminum') || textLower.includes('aluminium')) detectedTags.push('Aluminum');
+      if (textLower.includes('4wd') || textLower.includes('four wheel')) detectedTags.push('4WD');
+      
+      if (detectedTags.length > 0) {
+        const currentTags = form.getValues("tags") || [];
+        const newTags = [...currentTags, ...detectedTags.filter(tag => !currentTags.includes(tag))];
+        form.setValue("tags", newTags);
+        newLog.push(`✅ Auto-tagged: ${detectedTags.join(', ')}`);
+        foundData = true;
+      }
+
+      setParseLog(newLog);
+
+      if (foundData) {
+        toast({
+          title: "Description parsed successfully!",
+          description: `Extracted ${newLog.length - 1} details from description`,
+        });
+      } else {
+        setParseLog(prev => [...prev, "⚠️ No recognizable data found in description"]);
+        toast({
+          title: "Parsing completed",
+          description: "No extractable data found in the description",
+          variant: "destructive",
+        });
+      }
+
+    } catch (error) {
+      console.error("Error parsing text:", error);
+      setParseLog(prev => [...prev, "❌ Error occurred while parsing text"]);
+      toast({
+        title: "Error",
+        description: "Failed to parse product description",
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingText(false);
+    }
+  };
+
   const addTag = (tag: string) => {
     const currentTags = form.getValues("tags") || [];
     if (tag && !currentTags.includes(tag)) {
@@ -382,6 +532,48 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 </div>
               )}
             </div>
+
+            {/* Text Parsing Section */}
+            <div className="space-y-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-green-600" />
+                <h3 className="font-mono text-sm font-semibold">Parse Product Description</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                Copy and paste product description text to extract model details automatically.
+              </p>
+              
+              <div className="space-y-2">
+                <Textarea
+                  value={productText}
+                  onChange={(e) => setProductText(e.target.value)}
+                  placeholder="Paste product description here (e.g., from Tamiya website, manual, or retailer)..."
+                  className="min-h-[100px] font-mono text-sm"
+                  disabled={isParsingText}
+                />
+                
+                <Button
+                  type="button"
+                  onClick={() => parseProductText(productText)}
+                  disabled={!productText.trim() || isParsingText}
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700 font-mono"
+                >
+                  {isParsingText ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Parsing...
+                    </>
+                  ) : (
+                    <>
+                      <Tag className="mr-2 h-4 w-4" />
+                      Parse Description
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="itemNumber"
