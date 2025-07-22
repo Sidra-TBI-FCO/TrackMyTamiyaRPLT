@@ -38,9 +38,6 @@ import { z } from "zod";
 const formSchema = insertModelSchema.extend({
   itemNumber: z.string().min(1, "Item number is required"),
   tags: z.array(z.string()).optional(),
-  modelType: z.enum(["kit", "chassis_body"]).default("kit"),
-  bodyName: z.string().optional(),
-  bodyItemNumber: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -64,9 +61,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       chassis: "",
       releaseYear: undefined,
       buildStatus: "planning",
-      modelType: "kit",
-      bodyName: "",
-      bodyItemNumber: "",
       totalCost: "0",
       notes: "",
       tags: [],
@@ -143,8 +137,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     const submissionData = {
       ...data,
       userId: 2, // Mock user ID - should be from auth in production
-      // Set display name based on model type
-      name: data.modelType === "chassis_body" && data.bodyName ? data.bodyName : data.name,
     };
     createModelMutation.mutate(submissionData);
   };
@@ -207,67 +199,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="modelType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Model Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="font-mono">
-                        <SelectValue placeholder="Select model type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="kit">Complete Kit</SelectItem>
-                      <SelectItem value="chassis_body">Chassis + Body</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            {form.watch("modelType") === "chassis_body" && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="bodyItemNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-mono">Body Item Number</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g. 51549"
-                          className="font-mono"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="bodyName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-mono">Body Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g. Subaru BRZ"
-                          className="font-mono"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
 
             <FormField
               control={form.control}

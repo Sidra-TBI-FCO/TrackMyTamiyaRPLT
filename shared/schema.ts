@@ -18,9 +18,6 @@ export const models = pgTable("models", {
   chassis: text("chassis"),
   releaseYear: integer("release_year"),
   buildStatus: text("build_status").notNull().default("planning"), // planning, building, built, maintenance
-  modelType: text("model_type").notNull().default("kit"), // 'kit' or 'chassis_body'
-  bodyName: text("body_name"), // Used when modelType is 'chassis_body'
-  bodyItemNumber: text("body_item_number"), // Used when modelType is 'chassis_body'
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }).default("0"),
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
