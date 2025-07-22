@@ -48,7 +48,7 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2">
-            {model.name}
+            {model.modelType === "chassis_body" && model.bodyName ? model.bodyName : model.name}
           </h3>
           <Badge className={`text-xs font-mono ${getStatusColor(model.buildStatus)}`}>
             {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
@@ -56,7 +56,13 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
         </div>
 
         <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-3">
-          Item #{model.itemNumber}
+          {model.modelType === "chassis_body" && model.bodyItemNumber ? (
+            <>
+              Chassis #{model.itemNumber} + Body #{model.bodyItemNumber}
+            </>
+          ) : (
+            <>Item #{model.itemNumber}</>
+          )}
         </p>
 
         {/* Tags */}
