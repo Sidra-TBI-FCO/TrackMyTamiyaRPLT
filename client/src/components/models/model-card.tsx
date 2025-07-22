@@ -77,18 +77,18 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
 
 
   return (
-    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow">
+    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
       {boxArtPhoto ? (
         <img
           src={boxArtPhoto.url}
           alt={model.name}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover flex-shrink-0"
           onError={(e) => {
             console.error(`Failed to load image for ${model.name}:`, boxArtPhoto.url);
           }}
         />
       ) : (
-        <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
           <div className="text-gray-400 dark:text-gray-500 text-center">
             <Camera className="h-8 w-8 mx-auto mb-2" />
             <p className="text-sm font-mono">No photo</p>
@@ -96,22 +96,24 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
         </div>
       )}
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex flex-col flex-grow">
+        {/* Header section - fixed height */}
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2">
+          <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2 min-h-[2.5rem] leading-tight">
             {model.name}
           </h3>
-          <Badge className={`text-xs font-mono ${getStatusColor(model.buildStatus)}`}>
+          <Badge className={`text-xs font-mono flex-shrink-0 ${getStatusColor(model.buildStatus)}`}>
             {model.buildStatus.charAt(0).toUpperCase() + model.buildStatus.slice(1)}
           </Badge>
         </div>
 
+        {/* Item number - fixed height */}
         <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-3">
           Item #{model.itemNumber}
         </p>
 
-        {/* Tags - always reserve space for consistent alignment */}
-        <div className="flex flex-wrap gap-1 mb-3 min-h-[24px]">
+        {/* Tags section - flexible content but consistent spacing */}
+        <div className="flex flex-wrap gap-1 mb-3 min-h-[28px]">
           {model.tags && model.tags.length > 0 ? (
             <>
               {model.tags.slice(0, 3).map((tag) => (
@@ -125,17 +127,17 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
                 </Badge>
               )}
             </>
-          ) : (
-            <div className="h-6"></div> // Invisible spacer to maintain alignment
-          )}
+          ) : null}
         </div>
 
-        <div className="flex items-center justify-between text-sm font-mono text-gray-600 dark:text-gray-400 mb-4">
+        {/* Stats section - grows to fill available space */}
+        <div className="flex items-center justify-between text-sm font-mono text-gray-600 dark:text-gray-400 mb-4 flex-grow items-end">
           <span>{photoCount} photos</span>
           <span>{hopUpCount} hop-ups</span>
         </div>
 
-        <div className="flex space-x-2">
+        {/* Action buttons - always at bottom */}
+        <div className="flex space-x-2 mt-auto">
           <Link href={`/models/${model.id}`} className="flex-1">
             <Button
               size="sm"
