@@ -91,7 +91,16 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
     defaultValues: {
       name: "",
       itemNumber: "", 
+      configurationType: "kit",
       chassis: "",
+      chassisName: "",
+      chassisItemNumber: "",
+      chassisCost: 0,
+      bodyName: "",
+      bodyItemNumber: "",
+      bodyCost: 0,
+      bodyManufacturer: "",
+      bodyScale: "",
       releaseYear: undefined,
       buildStatus: "planning",
       totalCost: 0,
@@ -732,54 +741,277 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
 
             <FormField
               control={form.control}
-              name="chassis"
+              name="configurationType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-mono">Chassis</FormLabel>
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value || ""}
-                        placeholder="e.g. TT-02"
-                        className="font-mono"
-                        disabled={isScraping}
-                        onFocus={() => {
-                          if (!field.value) {
-                            setChassisSuggestions(popularChassis.slice(0, 8));
-                            setShowChassisSuggestions(true);
-                          }
-                        }}
-                        onBlur={(e) => {
-                          // Delay hiding suggestions to allow clicking on them
-                          setTimeout(() => setShowChassisSuggestions(false), 150);
-                        }}
-                      />
-                    </FormControl>
-                    
-                    {/* Chassis suggestions dropdown */}
-                    {showChassisSuggestions && chassisSuggestions.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                        {chassisSuggestions.map((chassis) => (
-                          <button
-                            key={chassis}
-                            type="button"
-                            className="w-full px-3 py-2 text-left text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
-                            onClick={() => {
-                              field.onChange(chassis);
-                              setShowChassisSuggestions(false);
-                            }}
-                          >
-                            {chassis}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <FormLabel className="font-mono">Configuration Type</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="font-mono">
+                        <SelectValue placeholder="Select configuration type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="kit">Complete Kit</SelectItem>
+                        <SelectItem value="chassis_body">Separate Chassis + Body</SelectItem>
+                        <SelectItem value="custom">Custom Build</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
+                  <div className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
+                    {field.value === "kit" && "Single complete kit with everything included"}
+                    {field.value === "chassis_body" && "Separate chassis and body with individual item numbers"}
+                    {field.value === "custom" && "Custom or scratch-built configuration"}
+                  </div>
                 </FormItem>
               )}
             />
+
+            {/* Conditional fields based on configuration type */}
+            {form.watch("configurationType") === "kit" && (
+              <FormField
+                control={form.control}
+                name="chassis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-mono">Chassis</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value || ""}
+                          placeholder="e.g. TT-02"
+                          className="font-mono"
+                          disabled={isScraping}
+                          onFocus={() => {
+                            if (!field.value) {
+                              setChassisSuggestions(popularChassis.slice(0, 8));
+                              setShowChassisSuggestions(true);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            // Delay hiding suggestions to allow clicking on them
+                            setTimeout(() => setShowChassisSuggestions(false), 150);
+                          }}
+                        />
+                      </FormControl>
+                    
+                      {/* Chassis suggestions dropdown */}
+                      {showChassisSuggestions && chassisSuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                          {chassisSuggestions.map((chassis) => (
+                            <button
+                              key={chassis}
+                              type="button"
+                              className="w-full px-3 py-2 text-left text-sm font-mono hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
+                              onClick={() => {
+                                field.onChange(chassis);
+                                setShowChassisSuggestions(false);
+                              }}
+                            >
+                              {chassis}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {form.watch("configurationType") === "chassis_body" && (
+              <>
+                {/* Chassis Information */}
+                <div className="space-y-4 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                  <h3 className="font-mono font-semibold text-blue-900 dark:text-blue-100">Chassis Details</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="chassisName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Chassis Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              placeholder="e.g. TT-02 Chassis"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="chassisItemNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Chassis Item #</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              placeholder="e.g. 46005"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="chassisCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-mono">Chassis Cost</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value || ""}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            className="font-mono"
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Body Information */}
+                <div className="space-y-4 p-4 border rounded-lg bg-green-50 dark:bg-green-950">
+                  <h3 className="font-mono font-semibold text-green-900 dark:text-green-100">Body Details</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="bodyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Body Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              placeholder="e.g. Subaru BRZ Body"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="bodyItemNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Body Item #</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              placeholder="e.g. 51612"
+                              className="font-mono"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="bodyCost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Body Cost</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || ""}
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              className="font-mono"
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="bodyManufacturer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-mono">Body Manufacturer</FormLabel>
+                          <FormControl>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger className="font-mono">
+                                <SelectValue placeholder="Select manufacturer" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Tamiya">Tamiya</SelectItem>
+                                <SelectItem value="HPI Racing">HPI Racing</SelectItem>
+                                <SelectItem value="Protoform">Protoform</SelectItem>
+                                <SelectItem value="Bittydesign">Bittydesign</SelectItem>
+                                <SelectItem value="JConcepts">JConcepts</SelectItem>
+                                <SelectItem value="Custom">Custom/Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="bodyScale"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-mono">Body Scale (if different from chassis)</FormLabel>
+                        <FormControl>
+                          <Select value={field.value || ""} onValueChange={field.onChange}>
+                            <SelectTrigger className="font-mono">
+                              <SelectValue placeholder="Select body scale" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1/10">1/10</SelectItem>
+                              <SelectItem value="1/12">1/12</SelectItem>
+                              <SelectItem value="1/8">1/8</SelectItem>
+                              <SelectItem value="1/14">1/14</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
 
             <FormField
               control={form.control}

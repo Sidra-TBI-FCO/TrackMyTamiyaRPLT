@@ -446,12 +446,107 @@ export default function ModelDetail() {
               <CardTitle className="font-mono text-lg">Model Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis</p>
-                <p className="font-mono text-gray-900 dark:text-white">
-                  {model.chassis || "Not specified"}
-                </p>
+              {/* Configuration Type Badge */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Configuration</p>
+                <Badge variant="outline" className="font-mono text-xs">
+                  {model.configurationType === "kit" && "Complete Kit"}
+                  {model.configurationType === "chassis_body" && "Chassis + Body"}
+                  {model.configurationType === "custom" && "Custom Build"}
+                  {!model.configurationType && "Kit"}
+                </Badge>
               </div>
+
+              {/* Kit Configuration */}
+              {(!model.configurationType || model.configurationType === "kit") && model.chassis && (
+                <div>
+                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis</p>
+                  <p className="font-mono text-gray-900 dark:text-white">
+                    {model.chassis}
+                  </p>
+                </div>
+              )}
+
+              {/* Chassis+Body Configuration */}
+              {model.configurationType === "chassis_body" && (
+                <>
+                  {model.chassisName && (
+                    <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                      <p className="text-sm font-mono text-blue-700 dark:text-blue-300 font-semibold mb-2">Chassis</p>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs font-mono text-blue-600 dark:text-blue-400">Name</p>
+                          <p className="font-mono text-blue-900 dark:text-blue-100 text-sm">
+                            {model.chassisName}
+                          </p>
+                        </div>
+                        {model.chassisItemNumber && (
+                          <div>
+                            <p className="text-xs font-mono text-blue-600 dark:text-blue-400">Item #</p>
+                            <p className="font-mono text-blue-900 dark:text-blue-100 text-sm">
+                              {model.chassisItemNumber}
+                            </p>
+                          </div>
+                        )}
+                        {model.chassisCost && (
+                          <div>
+                            <p className="text-xs font-mono text-blue-600 dark:text-blue-400">Cost</p>
+                            <p className="font-mono text-blue-900 dark:text-blue-100 text-sm">
+                              ${parseFloat(model.chassisCost).toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {model.bodyName && (
+                    <div className="p-3 border rounded-lg bg-green-50 dark:bg-green-950">
+                      <p className="text-sm font-mono text-green-700 dark:text-green-300 font-semibold mb-2">Body</p>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs font-mono text-green-600 dark:text-green-400">Name</p>
+                          <p className="font-mono text-green-900 dark:text-green-100 text-sm">
+                            {model.bodyName}
+                          </p>
+                        </div>
+                        {model.bodyItemNumber && (
+                          <div>
+                            <p className="text-xs font-mono text-green-600 dark:text-green-400">Item #</p>
+                            <p className="font-mono text-green-900 dark:text-green-100 text-sm">
+                              {model.bodyItemNumber}
+                            </p>
+                          </div>
+                        )}
+                        {model.bodyManufacturer && (
+                          <div>
+                            <p className="text-xs font-mono text-green-600 dark:text-green-400">Manufacturer</p>
+                            <p className="font-mono text-green-900 dark:text-green-100 text-sm">
+                              {model.bodyManufacturer}
+                            </p>
+                          </div>
+                        )}
+                        {model.bodyCost && (
+                          <div>
+                            <p className="text-xs font-mono text-green-600 dark:text-green-400">Cost</p>
+                            <p className="font-mono text-green-900 dark:text-green-100 text-sm">
+                              ${parseFloat(model.bodyCost).toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                        {model.bodyScale && model.bodyScale !== model.scale && (
+                          <div>
+                            <p className="text-xs font-mono text-green-600 dark:text-green-400">Scale</p>
+                            <p className="font-mono text-green-900 dark:text-green-100 text-sm">
+                              {model.bodyScale}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
               
               <div>
                 <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Release Year</p>
@@ -600,7 +695,7 @@ export default function ModelDetail() {
 
       <BoxArtSelector
         modelId={model.id}
-        photos={model.photos}
+        photos={model.photos.map(photo => ({...photo, isBoxArt: photo.isBoxArt || false}))}
         open={isBoxArtSelectorOpen}
         onOpenChange={setIsBoxArtSelectorOpen}
       />

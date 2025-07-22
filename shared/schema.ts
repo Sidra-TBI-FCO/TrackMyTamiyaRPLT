@@ -15,19 +15,38 @@ export const models = pgTable("models", {
   userId: integer("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   itemNumber: text("item_number").notNull(),
+  
+  // Configuration type: determines what additional fields are available
+  configurationType: text("configuration_type").notNull().default("kit"), // "kit", "chassis_body", "custom"
+  
+  // Kit configuration (when configurationType = "kit")
   chassis: text("chassis"),
+  
+  // Chassis+Body configuration (when configurationType = "chassis_body")
+  chassisName: text("chassis_name"),
+  chassisItemNumber: text("chassis_item_number"),
+  chassisCost: numeric("chassis_cost", { precision: 10, scale: 2 }),
+  bodyName: text("body_name"),
+  bodyItemNumber: text("body_item_number"),
+  bodyCost: numeric("body_cost", { precision: 10, scale: 2 }),
+  bodyManufacturer: text("body_manufacturer"), // For aftermarket bodies
+  bodyScale: text("body_scale"), // Sometimes different from chassis scale
+  
   releaseYear: integer("release_year"),
   buildStatus: text("build_status").notNull().default("planning"), // planning, building, built, maintenance
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }).default("0"),
   boxArt: text("box_art"),
   manualUrl: text("manual_url"),
   notes: text("notes"),
+  
+  // Technical specifications (apply to both kit and chassis+body)
   scale: text("scale"), // 1/10, 1/12, 1/8, etc.
   driveType: text("drive_type"), // RWD, FWD, 4WD
   chassisMaterial: text("chassis_material"), // Plastic, Carbon, Aluminium
   differentialType: text("differential_type"), // Gears, Oil, Ball Diff, etc.
   motorSize: text("motor_size"), // 540, 380, brushless specifications
   batteryType: text("battery_type"), // NiMH, LiPo, battery specifications
+  
   tags: text("tags").array().default(sql`'{}'::text[]`), // Array of tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -148,17 +167,26 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertModelSchema = createInsertSchema(models, {
   releaseYear: z.coerce.number().optional(),
   totalCost: z.coerce.number().optional(),
+  chassisCost: z.coerce.number().optional(),
+  bodyCost: z.coerce.number().optional(),
 }).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
+  configurationType: z.enum(["kit", "chassis_body", "custom"]).default("kit"),
   scale: z.string().optional(),
   driveType: z.string().optional(),
   chassisMaterial: z.string().optional(),
   differentialType: z.string().optional(),
   motorSize: z.string().optional(),
   batteryType: z.string().optional(),
+  chassisName: z.string().optional(),
+  chassisItemNumber: z.string().optional(),
+  bodyName: z.string().optional(),
+  bodyItemNumber: z.string().optional(),
+  bodyManufacturer: z.string().optional(),
+  bodyScale: z.string().optional(),
 });
 
 export const insertPhotoSchema = createInsertSchema(photos).omit({

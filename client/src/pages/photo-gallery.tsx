@@ -40,6 +40,7 @@ export default function PhotoGallery() {
   const allPhotos: PhotoWithModel[] = models.flatMap(model => 
     (model.photos || []).map(photo => ({
       ...photo,
+      uploadedAt: photo.createdAt.toISOString(), // Map createdAt to uploadedAt
       model: {
         id: model.id,
         name: model.name,
