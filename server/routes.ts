@@ -685,6 +685,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product text parsing endpoint
+  app.post('/api/parse-product-text', async (req, res) => {
+    try {
+      const { text } = req.body;
+      
+      if (!text || !text.trim()) {
+        return res.status(400).json({ message: 'Text is required' });
+      }
+
+      console.log(`Parsing product text: ${text.substring(0, 100)}...`);
+      
+      // Initialize result object
+      const parsedData: any = {
+        name: '',
+        manufacturer: '',
+        category: '',
+        material: '',
+        color: '',
+        compatibility: [],
+        itemNumber: '',
+        cost: null
+      };
+      
+      const textLower = text.toLowerCase();
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      
+      // Extract product name - usually the first substantial line or contains key product terms
+      for (const line of lines) {
+        if (line.length > 10 && (
+          line.toLowerCase().includes('racing') ||
+          line.toLowerCase().includes('aluminum') ||
+          line.toLowerCase().includes('carbon') ||
+          line.toLowerCase().includes('chassis') ||
+          line.toLowerCase().includes('motor') ||
+          line.toLowerCase().includes('part') ||
+          line.toLowerCase().includes('tamiya')
+        )) {
+          parsedData.name = line;
+          break;
+        }
+      }
+      
+      // If no specific product name found, use the first substantial line
+      if (!parsedData.name && lines.length > 0) {
+        parsedData.name = lines.find(line => line.length > 5) || lines[0];
+      }
+      
+      // Extract manufacturer from text
+      if (textLower.includes('xtra speed')) parsedData.manufacturer = 'Xtra Speed';
+      else if (textLower.includes('yeah racing')) parsedData.manufacturer = 'Yeah Racing';
+      else if (textLower.includes('tamiya')) parsedData.manufacturer = 'Tamiya';
+      else if (textLower.includes('mst')) parsedData.manufacturer = 'MST';
+      else if (textLower.includes('3racing')) parsedData.manufacturer = '3Racing';
+      else if (textLower.includes('gpm racing')) parsedData.manufacturer = 'GPM Racing';
+      else if (textLower.includes('hot racing')) parsedData.manufacturer = 'Hot Racing';
+      
+      // Extract category from text
+      if (textLower.includes('chassis')) parsedData.category = 'Chassis';
+      else if (textLower.includes('suspension') || textLower.includes('damper') || textLower.includes('shock')) parsedData.category = 'Suspension';
+      else if (textLower.includes('wheel') || textLower.includes('rim')) parsedData.category = 'Wheels';
+      else if (textLower.includes('tire') || textLower.includes('tyre')) parsedData.category = 'Tires';
+      else if (textLower.includes('motor')) parsedData.category = 'Motor';
+      else if (textLower.includes('esc') || textLower.includes('speed control')) parsedData.category = 'ESC';
+      else if (textLower.includes('servo')) parsedData.category = 'Servo';
+      else if (textLower.includes('battery')) parsedData.category = 'Battery';
+      else if (textLower.includes('body') || textLower.includes('shell')) parsedData.category = 'Body';
+      else if (textLower.includes('wing') || textLower.includes('spoiler')) parsedData.category = 'Wing';
+      else if (textLower.includes('drivetrain') || textLower.includes('drive') || textLower.includes('gear')) parsedData.category = 'Drivetrain';
+      
+      // Extract material from text
+      if (textLower.includes('carbon fiber') || textLower.includes('carbon fibre')) parsedData.material = 'Carbon Fiber';
+      else if (textLower.includes('aluminum') || textLower.includes('aluminium')) parsedData.material = 'Aluminum';
+      else if (textLower.includes('steel')) parsedData.material = 'Steel';
+      else if (textLower.includes('plastic')) parsedData.material = 'Plastic';
+      else if (textLower.includes('titanium')) parsedData.material = 'Titanium';
+      
+      // Extract color from text
+      if (textLower.includes('red')) parsedData.color = 'Red';
+      else if (textLower.includes('blue')) parsedData.color = 'Blue';
+      else if (textLower.includes('black')) parsedData.color = 'Black';
+      else if (textLower.includes('silver')) parsedData.color = 'Silver';
+      else if (textLower.includes('gold')) parsedData.color = 'Gold';
+      else if (textLower.includes('green')) parsedData.color = 'Green';
+      
+      // Extract item number - look for patterns like TA01-123, 47479, etc.
+      const itemNumberPatterns = [
+        /[A-Z]{2,4}-?\d{2,6}/g,  // TA01-123 or TA01123
+        /\b\d{4,6}\b/g,          // 47479
+        /Item\s*#?:?\s*([A-Z0-9-]+)/gi,
+        /Part\s*#?:?\s*([A-Z0-9-]+)/gi,
+        /Model\s*#?:?\s*([A-Z0-9-]+)/gi
+      ];
+      
+      for (const pattern of itemNumberPatterns) {
+        const matches = text.match(pattern);
+        if (matches && matches.length > 0) {
+          parsedData.itemNumber = matches[0].replace(/Item\s*#?:?\s*/gi, '').replace(/Part\s*#?:?\s*/gi, '').replace(/Model\s*#?:?\s*/gi, '').trim();
+          break;
+        }
+      }
+      
+      // Extract price - look for currency symbols and numbers
+      const pricePatterns = [
+        /\$\s*(\d+\.?\d*)/g,
+        /USD\s*(\d+\.?\d*)/gi,
+        /Price\s*:?\s*\$?\s*(\d+\.?\d*)/gi
+      ];
+      
+      for (const pattern of pricePatterns) {
+        const matches = text.match(pattern);
+        if (matches && matches.length > 0) {
+          const priceMatch = matches[0].match(/(\d+\.?\d*)/);
+          if (priceMatch) {
+            parsedData.cost = parseFloat(priceMatch[1]);
+            break;
+          }
+        }
+      }
+      
+      // Extract chassis compatibility from text
+      const chassisTypes = ['TA01', 'TA02', 'TA03', 'TA04', 'TA05', 'TA06', 'TA07', 'TA08', 'TB01', 'TB02', 'TB03', 'TB04', 'TB05', 'TC01', 'TC02', 'TC03', 'TT01', 'TT02', 'TT03', 'DF01', 'DF02', 'DF03', 'DF04', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'XV01', 'XV02'];
+      
+      for (const chassis of chassisTypes) {
+        if (textLower.includes(chassis.toLowerCase())) {
+          parsedData.compatibility.push(chassis);
+        }
+      }
+      
+      console.log('Parsed product text data:', parsedData);
+      res.json(parsedData);
+      
+    } catch (error: any) {
+      console.error('Text parsing error:', error);
+      res.status(500).json({ message: `Text parsing failed: ${error.message}` });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

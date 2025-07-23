@@ -77,6 +77,8 @@ const chassisCompatibility = [
 
 export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: HopUpPartDialogProps) {
   const [isParsingUrl, setIsParsingUrl] = useState(false);
+  const [isParsingText, setIsParsingText] = useState(false);
+  const [productText, setProductText] = useState("");
   const [parseLog, setParseLog] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -246,6 +248,94 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
     }
   };
 
+  // Parse product text function
+  const parseProductText = async (text: string) => {
+    if (!text.trim()) return;
+    
+    setIsParsingText(true);
+    setParseLog(["🔄 Parsing product text..."]);
+    
+    try {
+      const response = await fetch('/api/parse-product-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+      
+      if (response.ok) {
+        const parsedData = await response.json();
+        const newLog = ["✅ Successfully parsed product text!"];
+        
+        // Apply the parsed data to the form
+        if (parsedData.name) {
+          form.setValue('name', parsedData.name);
+          newLog.push(`✅ Product name: ${parsedData.name}`);
+        }
+        
+        if (parsedData.itemNumber) {
+          form.setValue('itemNumber', parsedData.itemNumber);
+          newLog.push(`✅ Item number: ${parsedData.itemNumber}`);
+        }
+        
+        if (parsedData.manufacturer) {
+          form.setValue('manufacturer', parsedData.manufacturer);
+          newLog.push(`✅ Manufacturer: ${parsedData.manufacturer}`);
+        }
+        
+        if (parsedData.category) {
+          form.setValue('category', parsedData.category);
+          newLog.push(`✅ Category: ${parsedData.category}`);
+        }
+        
+        if (parsedData.material) {
+          form.setValue('material', parsedData.material);
+          newLog.push(`✅ Material: ${parsedData.material}`);
+        }
+        
+        if (parsedData.color) {
+          form.setValue('color', parsedData.color);
+          newLog.push(`✅ Color: ${parsedData.color}`);
+        }
+        
+        if (parsedData.cost) {
+          form.setValue('cost', parsedData.cost);
+          newLog.push(`✅ Price: $${parsedData.cost}`);
+        }
+        
+        if (parsedData.compatibility && parsedData.compatibility.length > 0) {
+          const currentCompat = form.getValues('compatibility') || [];
+          const newCompatibility = Array.from(new Set([...currentCompat, ...parsedData.compatibility]));
+          form.setValue('compatibility', newCompatibility);
+          newLog.push(`✅ Chassis compatibility: ${parsedData.compatibility.join(', ')}`);
+        }
+        
+        // Clear the text area after successful parsing
+        setProductText("");
+        setParseLog(newLog);
+        
+        toast({
+          title: "Text parsed successfully!",
+          description: `Found ${newLog.length - 1} product details`,
+        });
+      } else {
+        throw new Error('Failed to parse product text');
+      }
+    } catch (error: any) {
+      console.error('Text parsing error:', error);
+      setParseLog([`❌ Text parsing failed: ${error.message}`]);
+      
+      toast({
+        title: "Text parsing failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingText(false);
+    }
+  };
+
   // Load part data for editing
   useEffect(() => {
     if (part) {
@@ -335,16 +425,17 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* URL Parser - First Section */}
+            {/* Quick Add Section */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Quick Add from Store URL</h4>
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border">
+              <h4 className="font-semibold text-sm">Quick Add from Store</h4>
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border space-y-4">
+                {/* URL Parser */}
                 <FormField
                   control={form.control}
                   name="productUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Paste Store URL</FormLabel>
+                      <FormLabel>Store URL</FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
                           <Input 
@@ -366,33 +457,64 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           {isParsingUrl ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            "Parse"
+                            "Parse URL"
                           )}
                         </Button>
                       </div>
-                      <FormDescription className="text-xs">
-                        <div className="space-y-1">
-                          <div><strong>Parse</strong>: Automatically tries to scrape complete product details from the page, then falls back to URL analysis if blocked</div>
-                          <details className="text-xs">
-                            <summary className="cursor-pointer hover:text-blue-600">Supported stores & example URLs</summary>
-                            <div className="mt-2 space-y-1 pl-4 border-l-2 border-blue-200">
-                              <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
-                                https://www.rcmart.com/yeah-racing-aluminum-3-5mm-carbon-fiber-chassis-for-tamiya-ta07-pro-ta07pro-010
-                              </div>
-                              <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
-                                https://tamiyabase.com/parts/7073-10004432
-                              </div>
-                              <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
-                                https://www.amainhobbies.com/tamiya-54732-ta07-carbon-damper-stay
-                              </div>
-                            </div>
-                          </details>
-                        </div>
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Text Parser */}
+                <div className="space-y-2">
+                  <FormLabel>Product Description (Alternative)</FormLabel>
+                  <div className="flex gap-2">
+                    <textarea
+                      placeholder="Paste product title, description, price, or any product text from the store page..."
+                      className="flex-1 min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                      value={productText}
+                      onChange={(e) => setProductText(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => parseProductText(productText)}
+                      disabled={isParsingText || !productText.trim()}
+                      className="whitespace-nowrap px-3 self-start"
+                    >
+                      {isParsingText ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Parse Text"
+                      )}
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Copy and paste product info from store pages when URL parsing fails
+                  </div>
+                </div>
+
+                <FormDescription className="text-xs">
+                  <div className="space-y-1">
+                    <div><strong>Parse URL</strong>: Extracts details from product page URL</div>
+                    <div><strong>Parse Text</strong>: Extracts details from copied product text/description</div>
+                    <details className="text-xs">
+                      <summary className="cursor-pointer hover:text-blue-600">Supported stores & example URLs</summary>
+                      <div className="mt-2 space-y-1 pl-4 border-l-2 border-blue-200">
+                        <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
+                          https://www.rcmart.com/yeah-racing-aluminum-3-5mm-carbon-fiber-chassis-for-tamiya-ta07-pro-ta07pro-010
+                        </div>
+                        <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
+                          https://tamiyabase.com/parts/7073-10004432
+                        </div>
+                        <div className="font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-xs">
+                          https://www.amainhobbies.com/tamiya-54732-ta07-carbon-damper-stay
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </FormDescription>
               </div>
             </div>
 
