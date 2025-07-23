@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -70,12 +70,35 @@ export default function BuildLogEntryDialog({
     defaultValues: {
       modelId,
       entryNumber: nextEntryNumber,
-      title: existingEntry?.title || "",
-      content: existingEntry?.content || "",
-      entryDate: existingEntry?.entryDate || new Date().toISOString(),
+      title: "",
+      content: "",
+      entryDate: new Date().toISOString(),
       photos: [],
     },
   });
+
+  // Update form values when existingEntry changes
+  useEffect(() => {
+    if (existingEntry) {
+      form.reset({
+        modelId,
+        entryNumber: existingEntry.entryNumber,
+        title: existingEntry.title || "",
+        content: existingEntry.content || "",
+        entryDate: existingEntry.entryDate || new Date().toISOString(),
+        photos: [],
+      });
+    } else {
+      form.reset({
+        modelId,
+        entryNumber: nextEntryNumber,
+        title: "",
+        content: "",
+        entryDate: new Date().toISOString(),
+        photos: [],
+      });
+    }
+  }, [existingEntry, modelId, nextEntryNumber, form]);
 
   const createEntryMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -486,7 +509,10 @@ export default function BuildLogEntryDialog({
                 disabled={createEntryMutation.isPending}
                 className="bg-red-600 hover:bg-red-700 text-white font-mono"
               >
-                {createEntryMutation.isPending ? "Creating..." : "Create Entry"}
+                {createEntryMutation.isPending 
+                  ? (existingEntry ? "Updating..." : "Creating...") 
+                  : (existingEntry ? "Update Entry" : "Create Entry")
+                }
               </Button>
             </div>
           </form>
