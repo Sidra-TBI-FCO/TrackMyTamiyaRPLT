@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import HopUpPartDialog from "./hop-up-part-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, ExternalLink, CheckCircle2, Clock, X, Filter } from "lucide-react";
+import { Plus, ExternalLink, CheckCircle2, Clock, X, Filter, Edit, Trash2 } from "lucide-react";
+import { SiTamiya, SiAmazon, SiEbay } from "react-icons/si";
 import type { HopUpPart } from "@shared/schema";
 
 interface HopUpPartsListProps {
@@ -240,59 +241,94 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const newStatus = part.installationStatus === "installed" ? "planned" : "installed";
-                    toggleStatusMutation.mutate({ partId: part.id, newStatus });
-                  }}
-                  disabled={toggleStatusMutation.isPending}
-                >
-                  {part.installationStatus === "installed" ? "Mark Planned" : "Mark Installed"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setEditingPart(part);
-                    setDialogOpen(true);
-                  }}
-                >
-                  Edit
-                </Button>
-                {(part.productUrl || part.tamiyaBaseUrl) && (
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex gap-1">
+                  {/* Only show Mark Installed for planned parts */}
+                  {part.installationStatus === "planned" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleStatusMutation.mutate({ partId: part.id, newStatus: "installed" });
+                      }}
+                      disabled={toggleStatusMutation.isPending}
+                      className="h-8 w-8 p-0"
+                      title="Mark as Installed"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      const url = part.tamiyaBaseUrl || part.productUrl;
-                      if (url) window.open(url, '_blank');
+                      setEditingPart(part);
+                      setDialogOpen(true);
                     }}
+                    className="h-8 w-8 p-0"
+                    title="Edit Part"
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <Edit className="h-4 w-4" />
                   </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    deleteMutation.mutate(part.id);
-                  }}
-                  disabled={deleteMutation.isPending}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Delete
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      deleteMutation.mutate(part.id);
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    title="Delete Part"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {/* Store links with logos */}
+                <div className="flex gap-1">
+                  {part.tamiyaBaseUrl && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (part.tamiyaBaseUrl) window.open(part.tamiyaBaseUrl, '_blank');
+                      }}
+                      className="h-8 w-8 p-0"
+                      title="View on TamiyaBase"
+                    >
+                      <SiTamiya className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {part.productUrl && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (part.productUrl) window.open(part.productUrl, '_blank');
+                      }}
+                      className="h-8 w-8 p-0"
+                      title="View on Store"
+                    >
+                      {part.productUrl && part.productUrl.includes('amazon') ? (
+                        <SiAmazon className="h-4 w-4" />
+                      ) : part.productUrl && part.productUrl.includes('ebay') ? (
+                        <SiEbay className="h-4 w-4" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
