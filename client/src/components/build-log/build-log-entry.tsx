@@ -89,16 +89,19 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
           )}
 
           {/* Photos Section */}
-          {entry.photos && entry.photos.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Camera className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span className="font-mono text-sm text-gray-500 dark:text-gray-400">
-                  {entry.photos.length} photo{entry.photos.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              
-              {/* Photo Grid - Responsive */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Camera className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <span className="font-mono text-sm text-gray-500 dark:text-gray-400">
+                {entry.photos && entry.photos.length > 0 
+                  ? `${entry.photos.length} photo${entry.photos.length !== 1 ? 's' : ''}`
+                  : 'No photos attached'
+                }
+              </span>
+            </div>
+            
+            {/* Photo Grid - Only show if photos exist */}
+            {entry.photos && entry.photos.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {entry.photos.map((photoWrapper) => (
                   <div
@@ -121,8 +124,8 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Mobile Actions */}
           <div className="sm:hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
