@@ -540,6 +540,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to parse data from URL when scraping fails
+  function parseDataFromUrl(url: string) {
+    const urlParsedData: any = {
+      name: '',
+      manufacturer: '',
+      category: '',
+      supplier: '',
+      material: '',
+      color: '',
+      compatibility: [],
+      itemNumber: '',
+      cost: null
+    };
+
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      const pathname = urlObj.pathname.toLowerCase();
+      
+      // Extract supplier from domain
+      if (hostname.includes('rcmart.com')) {
+        urlParsedData.supplier = 'RC Mart';
+      } else if (hostname.includes('amainhobbies.com')) {
+        urlParsedData.supplier = 'AMain Hobbies';
+      } else if (hostname.includes('towerhobbies.com')) {
+        urlParsedData.supplier = 'Tower Hobbies';
+      } else if (hostname.includes('horizonhobby.com')) {
+        urlParsedData.supplier = 'Horizon Hobby';
+      } else if (hostname.includes('tamiyabase.com')) {
+        urlParsedData.supplier = 'TamiyaBase';
+      } else if (hostname.includes('hlj.com') || hostname.includes('hobbylinkjapan.com')) {
+        urlParsedData.supplier = 'HobbyLink Japan';
+      } else if (hostname.includes('plazajapan.com')) {
+        urlParsedData.supplier = 'Plaza Japan';
+      }
+      
+      // Extract product info from URL path
+      const pathSegments = pathname.split('-').join(' ').split('/').join(' ');
+      const urlText = decodeURIComponent(pathSegments).toLowerCase();
+      
+      // Extract manufacturer from URL
+      if (urlText.includes('xtra-speed') || urlText.includes('xtra_speed')) {
+        urlParsedData.manufacturer = 'Xtra Speed';
+      } else if (urlText.includes('yeah-racing') || urlText.includes('yeah_racing')) {
+        urlParsedData.manufacturer = 'Yeah Racing';
+      } else if (urlText.includes('tamiya')) {
+        urlParsedData.manufacturer = 'Tamiya';
+      } else if (urlText.includes('mst')) {
+        urlParsedData.manufacturer = 'MST';
+      } else if (urlText.includes('3racing')) {
+        urlParsedData.manufacturer = '3Racing';
+      } else if (urlText.includes('gpm-racing') || urlText.includes('gpm_racing')) {
+        urlParsedData.manufacturer = 'GPM Racing';
+      } else if (urlText.includes('hot-racing') || urlText.includes('hot_racing')) {
+        urlParsedData.manufacturer = 'Hot Racing';
+      }
+      
+      // Extract material from URL
+      if (urlText.includes('aluminum') || urlText.includes('aluminium')) {
+        urlParsedData.material = 'Aluminum';
+      } else if (urlText.includes('carbon')) {
+        urlParsedData.material = 'Carbon Fiber';
+      } else if (urlText.includes('steel')) {
+        urlParsedData.material = 'Steel';
+      } else if (urlText.includes('plastic')) {
+        urlParsedData.material = 'Plastic';
+      }
+      
+      // Extract color from URL
+      if (urlText.includes('red')) urlParsedData.color = 'Red';
+      else if (urlText.includes('blue')) urlParsedData.color = 'Blue';
+      else if (urlText.includes('black')) urlParsedData.color = 'Black';
+      else if (urlText.includes('silver')) urlParsedData.color = 'Silver';
+      else if (urlText.includes('gold')) urlParsedData.color = 'Gold';
+      else if (urlText.includes('green')) urlParsedData.color = 'Green';
+      else if (urlText.includes('white')) urlParsedData.color = 'White';
+      else if (urlText.includes('orange')) urlParsedData.color = 'Orange';
+      
+      // Extract category from URL
+      if (urlText.includes('chassis')) urlParsedData.category = 'Chassis';
+      else if (urlText.includes('suspension') || urlText.includes('damper') || urlText.includes('shock')) urlParsedData.category = 'Suspension';
+      else if (urlText.includes('wheel') || urlText.includes('rim')) urlParsedData.category = 'Wheels';
+      else if (urlText.includes('tire') || urlText.includes('tyre')) urlParsedData.category = 'Tires';
+      else if (urlText.includes('motor')) urlParsedData.category = 'Motor';
+      else if (urlText.includes('servo')) urlParsedData.category = 'Servo';
+      else if (urlText.includes('battery')) urlParsedData.category = 'Battery';
+      else if (urlText.includes('body') || urlText.includes('shell')) urlParsedData.category = 'Body';
+      else if (urlText.includes('wing') || urlText.includes('spoiler')) urlParsedData.category = 'Wing';
+      
+      // Extract chassis compatibility from URL
+      const chassisPattern = /(ta0?[0-9]{1,2}(?:sw)?|tb0?[0-9]{1,2}|tt0?[0-9]{1,2}|df0?[0-9]{1,2}|m0?[0-9]{1,2}|tc0?[0-9]{1,2}|xv0?[0-9]{1,2}|cc0?[0-9]{1,2}|ff0?[0-9]{1,2})/gi;
+      const chassisMatches = urlText.match(chassisPattern);
+      if (chassisMatches) {
+        urlParsedData.compatibility = Array.from(new Set(chassisMatches.map((c: string) => c.toUpperCase())));
+      }
+      
+      // Extract item numbers from URL - look for patterns
+      const itemNumberMatches = pathname.match(/(\d{5,6})/g);
+      if (itemNumberMatches && itemNumberMatches.length > 0) {
+        urlParsedData.itemNumber = itemNumberMatches[0];
+      }
+      
+      // Try to extract a reasonable product name from URL path
+      const cleanPath = pathname
+        .split('/')
+        .pop()
+        ?.replace(/-/g, ' ')
+        .replace(/_/g, ' ')
+        .replace(/\d{8,}/g, '') // Remove long numbers that are likely IDs
+        .trim();
+      
+      if (cleanPath && cleanPath.length > 5) {
+        // Capitalize words and clean up
+        urlParsedData.name = cleanPath
+          .split(' ')
+          .filter(word => word.length > 1)
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+      
+    } catch (error) {
+      console.error('URL parsing error:', error);
+    }
+    
+    return urlParsedData;
+  }
+
   // Product page scraping route
   app.post('/api/scrape-product', async (req, res) => {
     try {
@@ -568,11 +695,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!response.ok) {
-        // If scraping fails, provide fallback URL parsing
+        // If scraping fails, do URL parsing to extract what we can
         console.log(`Scraping failed with status ${response.status}, falling back to URL parsing`);
+        
+        const urlParsedData = parseDataFromUrl(url);
+        
         return res.status(200).json({
-          message: `Page scraping blocked (${response.status}), but URL parsing can still extract basic info. Use "URL Only" button instead.`,
-          fallbackSuggested: true
+          message: `Page scraping blocked (${response.status}), extracted what we could from URL`,
+          fallbackSuggested: true,
+          ...urlParsedData
         });
       }
       
@@ -685,6 +816,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // URL-only parsing endpoint (when scraping is not needed)
+  app.post('/api/parse-url-only', async (req, res) => {
+    try {
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ message: 'URL is required' });
+      }
+
+      console.log(`Parsing URL only: ${url}`);
+      const urlParsedData = parseDataFromUrl(url);
+      
+      console.log('URL parsed data:', urlParsedData);
+      res.json(urlParsedData);
+      
+    } catch (error: any) {
+      console.error('URL parsing error:', error);
+      res.status(500).json({ message: `URL parsing failed: ${error.message}` });
+    }
+  });
+
   // Product text parsing endpoint
   app.post('/api/parse-product-text', async (req, res) => {
     try {
@@ -709,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const textLower = text.toLowerCase();
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      const lines = text.split('\n').map((line: string) => line.trim()).filter((line: string) => line);
       
       // Extract product name - usually the first substantial line or contains key product terms
       for (const line of lines) {
@@ -729,7 +880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If no specific product name found, use the first substantial line
       if (!parsedData.name && lines.length > 0) {
-        parsedData.name = lines.find(line => line.length > 5) || lines[0];
+        parsedData.name = lines.find((line: string) => line.length > 5) || lines[0];
       }
       
       // Extract manufacturer from text

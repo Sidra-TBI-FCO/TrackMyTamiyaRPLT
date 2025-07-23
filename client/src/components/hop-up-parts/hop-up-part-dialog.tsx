@@ -250,6 +250,92 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
     }
   };
 
+  // Parse URL only function (without scraping)
+  const parseUrlOnly = async (url: string) => {
+    if (!url.trim()) return;
+    
+    setIsParsingUrl(true);
+    setParseLog(["🔄 Parsing URL structure..."]);
+    
+    try {
+      const response = await fetch('/api/parse-url-only', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      });
+      
+      if (response.ok) {
+        const parsedData = await response.json();
+        const newLog = ["✅ Successfully extracted data from URL!"];
+        
+        // Apply the parsed data to the form (same logic as parseProductUrl)
+        if (parsedData.name && parsedData.name.trim()) {
+          form.setValue('name', parsedData.name);
+          newLog.push(`✅ Product name: ${parsedData.name}`);
+        }
+        
+        if (parsedData.supplier) {
+          form.setValue('supplier', parsedData.supplier);
+          newLog.push(`✅ Supplier: ${parsedData.supplier}`);
+        }
+        
+        if (parsedData.manufacturer) {
+          form.setValue('manufacturer', parsedData.manufacturer);
+          newLog.push(`✅ Manufacturer: ${parsedData.manufacturer}`);
+        }
+        
+        if (parsedData.category) {
+          form.setValue('category', parsedData.category);
+          newLog.push(`✅ Category: ${parsedData.category}`);
+        }
+        
+        if (parsedData.material) {
+          form.setValue('material', parsedData.material);
+          newLog.push(`✅ Material: ${parsedData.material}`);
+        }
+        
+        if (parsedData.color) {
+          form.setValue('color', parsedData.color);
+          newLog.push(`✅ Color: ${parsedData.color}`);
+        }
+        
+        if (parsedData.itemNumber) {
+          form.setValue('itemNumber', parsedData.itemNumber);
+          newLog.push(`✅ Item number: ${parsedData.itemNumber}`);
+        }
+        
+        if (parsedData.compatibility && parsedData.compatibility.length > 0) {
+          const currentCompat = form.getValues('compatibility') || [];
+          const newCompatibility = Array.from(new Set([...currentCompat, ...parsedData.compatibility]));
+          form.setValue('compatibility', newCompatibility);
+          newLog.push(`✅ Chassis compatibility: ${parsedData.compatibility.join(', ')}`);
+        }
+        
+        setParseLog(newLog);
+        
+        toast({
+          title: "URL parsed successfully!",
+          description: `Extracted ${newLog.length - 1} details from URL structure`,
+        });
+      } else {
+        throw new Error('Failed to parse URL');
+      }
+    } catch (error: any) {
+      console.error('URL parsing error:', error);
+      setParseLog([`❌ URL parsing failed: ${error.message}`]);
+      
+      toast({
+        title: "URL parsing failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingUrl(false);
+    }
+  };
+
   // Parse product text function
   const parseProductText = async (text: string) => {
     if (!text.trim()) return;
@@ -465,6 +551,18 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                             "Parse URL"
                           )}
                         </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const url = form.getValues('productUrl');
+                            if (url) parseUrlOnly(url);
+                          }}
+                          disabled={isParsingUrl || !field.value}
+                          className="whitespace-nowrap px-3"
+                        >
+                          URL Only
+                        </Button>
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -502,7 +600,8 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
                 <FormDescription className="text-xs">
                   <div className="space-y-1">
-                    <div><strong>Parse URL</strong>: Extracts details from product page URL</div>
+                    <div><strong>Parse URL</strong>: Scrapes live product page (may be blocked)</div>
+                    <div><strong>URL Only</strong>: Extracts supplier, brand, material from URL structure</div>
                     <div><strong>Parse Text</strong>: Extracts details from copied product text/description</div>
                     <details className="text-xs">
                       <summary className="cursor-pointer hover:text-blue-600">Supported stores & example URLs</summary>
