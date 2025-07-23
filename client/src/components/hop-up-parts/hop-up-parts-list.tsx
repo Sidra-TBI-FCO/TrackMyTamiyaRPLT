@@ -241,8 +241,8 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex gap-1">
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+                <div className="flex items-center gap-1">
                   {/* Only show Mark Installed for planned parts */}
                   {part.installationStatus === "planned" && (
                     <Button
@@ -291,7 +291,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 </div>
                 
                 {/* Store links with logos */}
-                <div className="flex gap-1">
+                <div className="flex items-center gap-1">
                   {part.tamiyaBaseUrl && (
                     <Button
                       size="sm"
