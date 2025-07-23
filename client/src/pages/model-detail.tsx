@@ -41,6 +41,7 @@ export default function ModelDetail() {
   const [isBoxArtSelectorOpen, setIsBoxArtSelectorOpen] = useState(false);
   const [isAddHopUpOpen, setIsAddHopUpOpen] = useState(false);
   const [isAddBuildLogOpen, setIsAddBuildLogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openSlideshow: openGlobalSlideshow } = useSlideshow();
@@ -116,6 +117,27 @@ export default function ModelDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete photo",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteBuildLogEntryMutation = useMutation({
+    mutationFn: async (entryId: number) => {
+      await apiRequest("DELETE", `/api/build-log-entries/${entryId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/models/${id}/build-log-entries`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/models", id] });
+      toast({
+        title: "Build log entry deleted",
+        description: "Entry has been removed successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete build log entry",
         variant: "destructive",
       });
     },
@@ -528,10 +550,10 @@ export default function ModelDetail() {
                         key={entry.id}
                         entry={entry}
                         onEdit={() => {
-                          console.log("Edit entry", entry.id);
+                          setEditingEntry(entry);
                         }}
                         onDelete={() => {
-                          console.log("Delete entry", entry.id);
+                          deleteBuildLogEntryMutation.mutate(entry.id);
                         }}
                       />
                     ))}
@@ -1019,11 +1041,22 @@ export default function ModelDetail() {
 
       <BuildLogEntryDialog
         modelId={model.id}
-        modelName={model.name}
         open={isAddBuildLogOpen}
         onOpenChange={setIsAddBuildLogOpen}
         nextEntryNumber={(buildLogEntries?.length || 0) + 1}
       />
+
+      {editingEntry && (
+        <BuildLogEntryDialog
+          modelId={model.id}
+          open={!!editingEntry}
+          onOpenChange={(open) => {
+            if (!open) setEditingEntry(null);
+          }}
+          existingEntry={editingEntry}
+          nextEntryNumber={editingEntry.entryNumber}
+        />
+      )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
