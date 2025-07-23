@@ -127,13 +127,21 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
           {/* Mobile Actions */}
           <div className="sm:hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={onEdit} className="font-mono">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="h-8 w-8 p-0"
+              >
+                <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={onDelete} className="font-mono text-red-600 dark:text-red-400">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
