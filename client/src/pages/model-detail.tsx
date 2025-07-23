@@ -579,39 +579,64 @@ export default function ModelDetail() {
                 </div>
               )}
 
-              {/* Reference Links - Compact Version */}
-              {(model.tamiyaUrl || model.tamiyaBaseUrl) && (
+              {/* Reference Links and Tags - Side by Side */}
+              {((model.tamiyaUrl || model.tamiyaBaseUrl) || (model.tags && model.tags.length > 0)) && (
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Reference Links</p>
-                  <div className="flex items-center space-x-3">
-                    {model.tamiyaUrl && (
-                      <a 
-                        href={model.tamiyaUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
-                        title="Official Tamiya Product Page"
-                      >
-                        <div className="w-6 h-6 bg-red-600 text-white rounded flex items-center justify-center text-xs font-bold">
-                          T
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Reference Links */}
+                    {(model.tamiyaUrl || model.tamiyaBaseUrl) && (
+                      <div>
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Reference Links</p>
+                        <div className="flex items-center space-x-3">
+                          {model.tamiyaUrl && (
+                            <a 
+                              href={model.tamiyaUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
+                              title="Official Tamiya Product Page"
+                            >
+                              <div className="w-6 h-6 bg-red-600 text-white rounded flex items-center justify-center text-xs font-bold">
+                                T
+                              </div>
+                              <span className="font-mono text-xs">Tamiya</span>
+                            </a>
+                          )}
+                          
+                          {model.tamiyaBaseUrl && (
+                            <a 
+                              href={model.tamiyaBaseUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                              title="TamiyaBase Database Entry"
+                            >
+                              <div className="w-6 h-6 bg-blue-600 text-white rounded flex items-center justify-center text-xs font-bold">
+                                TB
+                              </div>
+                              <span className="font-mono text-xs">TamiyaBase</span>
+                            </a>
+                          )}
                         </div>
-                        <span className="font-mono text-xs">Tamiya</span>
-                      </a>
+                      </div>
                     )}
-                    
-                    {model.tamiyaBaseUrl && (
-                      <a 
-                        href={model.tamiyaBaseUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                        title="TamiyaBase Database Entry"
-                      >
-                        <div className="w-6 h-6 bg-blue-600 text-white rounded flex items-center justify-center text-xs font-bold">
-                          TB
+
+                    {/* Tags */}
+                    {model.tags && model.tags.length > 0 && (
+                      <div>
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Tags</p>
+                        <div className="flex flex-wrap gap-1">
+                          {model.tags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
                         </div>
-                        <span className="font-mono text-xs">TamiyaBase</span>
-                      </a>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -627,22 +652,7 @@ export default function ModelDetail() {
                 </div>
               )}
 
-              {model.tags && model.tags.length > 0 && (
-                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Tags</p>
-                  <div className="flex flex-wrap gap-1">
-                    {model.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+
             </CardContent>
           </Card>
 
