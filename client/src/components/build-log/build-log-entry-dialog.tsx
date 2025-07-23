@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -41,20 +41,29 @@ interface BuildLogEntryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   nextEntryNumber: number;
+  existingEntry?: any;
 }
 
 export default function BuildLogEntryDialog({ 
   modelId, 
   open, 
   onOpenChange, 
-  nextEntryNumber 
+  nextEntryNumber,
+  existingEntry 
 }: BuildLogEntryDialogProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Array<{ file: File; caption: string }>>([]);
+  const [selectedExistingPhotos, setSelectedExistingPhotos] = useState<Array<{ id: number; caption: string }>>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch model data to get existing photos
+  const { data: modelData } = useQuery({
+    queryKey: [`/api/models/${modelId}`],
+    enabled: open,
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -81,7 +90,7 @@ export default function BuildLogEntryDialog({
 
       const response = await apiRequest("POST", `/api/models/${modelId}/build-log-entries`, entryData);
       
-      // Upload photos if any
+      // Upload new photos if any
       if (selectedFiles.length > 0) {
         const formData = new FormData();
         selectedFiles.forEach((item, index) => {
@@ -91,6 +100,16 @@ export default function BuildLogEntryDialog({
         formData.append('buildLogEntryId', response.id.toString());
 
         await apiRequest("POST", `/api/build-log-entries/${response.id}/photos`, formData);
+      }
+
+      // Link existing photos if any
+      if (selectedExistingPhotos.length > 0) {
+        for (const existingPhoto of selectedExistingPhotos) {
+          await apiRequest("POST", `/api/build-log-entries/${response.id}/existing-photos`, {
+            photoId: existingPhoto.id,
+            caption: existingPhoto.caption,
+          });
+        }
       }
 
       return response;
@@ -105,6 +124,7 @@ export default function BuildLogEntryDialog({
       onOpenChange(false);
       form.reset();
       setSelectedFiles([]);
+      setSelectedExistingPhotos([]);
     },
     onError: (error: any) => {
       toast({
@@ -313,7 +333,7 @@ export default function BuildLogEntryDialog({
                   className="font-mono"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Add Photos
+                  Upload New
                 </Button>
               </div>
               
@@ -358,6 +378,93 @@ export default function BuildLogEntryDialog({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Existing Photos Selection */}
+              {modelData?.photos && modelData.photos.length > 0 && (
+                <div className="space-y-3">
+                  <label className="font-mono text-sm font-medium">Or select from existing photos</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                    {modelData.photos.map((photo: any) => {
+                      const isSelected = selectedExistingPhotos.some(p => p.id === photo.id);
+                      return (
+                        <div 
+                          key={photo.id} 
+                          className={`relative cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
+                            isSelected 
+                              ? 'border-red-500 bg-red-50 dark:bg-red-950' 
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedExistingPhotos(prev => prev.filter(p => p.id !== photo.id));
+                            } else {
+                              setSelectedExistingPhotos(prev => [...prev, { id: photo.id, caption: photo.caption || '' }]);
+                            }
+                          }}
+                        >
+                          <img
+                            src={photo.url}
+                            alt={photo.caption || 'Model photo'}
+                            className="w-full h-20 object-cover"
+                          />
+                          {photo.isBoxArt && (
+                            <Badge 
+                              className="absolute top-1 left-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+                            >
+                              Box Art
+                            </Badge>
+                          )}
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-red-500 bg-opacity-20 flex items-center justify-center">
+                              <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
+                                ✓
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {selectedExistingPhotos.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="font-mono text-sm font-medium">Add captions to selected photos</label>
+                      {selectedExistingPhotos.map((selectedPhoto, index) => {
+                        const photo = modelData.photos.find((p: any) => p.id === selectedPhoto.id);
+                        return (
+                          <div key={selectedPhoto.id} className="flex items-center space-x-3 p-2 border rounded">
+                            <img
+                              src={photo?.url}
+                              alt=""
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <Input
+                              placeholder="Photo caption (optional)"
+                              value={selectedPhoto.caption}
+                              onChange={(e) => {
+                                setSelectedExistingPhotos(prev => 
+                                  prev.map((p, i) => i === index ? { ...p, caption: e.target.value } : p)
+                                );
+                              }}
+                              className="font-mono text-sm"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedExistingPhotos(prev => prev.filter(p => p.id !== selectedPhoto.id));
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
