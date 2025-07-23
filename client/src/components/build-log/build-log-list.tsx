@@ -20,9 +20,12 @@ export default function BuildLogList({ modelId, modelName }: BuildLogListProps) 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: entries, isLoading } = useQuery<BuildLogEntryWithPhotos[]>({
-    queryKey: ["/api/models", modelId.toString(), "build-log-entries"],
+  const { data: entries, isLoading, error } = useQuery<BuildLogEntryWithPhotos[]>({
+    queryKey: [`/api/models/${modelId}/build-log-entries`],
   });
+
+  // Debug log to see what's happening
+  console.log("BuildLogList debug:", { entries, isLoading, error, modelId });
 
   const nextEntryNumber = (entries?.length || 0) + 1;
 
