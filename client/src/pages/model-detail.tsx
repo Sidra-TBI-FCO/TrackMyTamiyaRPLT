@@ -368,31 +368,28 @@ export default function ModelDetail() {
 
           {/* Mobile Quick Actions - Show only on mobile, above tabs */}
           <Card className="lg:hidden mb-6">
-            <CardHeader>
-              <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               <div className="grid grid-cols-3 gap-2">
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 font-mono text-xs p-2"
+                  className="bg-blue-600 hover:bg-blue-700 font-mono text-xs p-3 h-10 flex flex-col items-center justify-center"
                   onClick={() => setIsAddPhotoOpen(true)}
                 >
                   <Camera className="h-4 w-4 mb-1" />
-                  <span className="block">Photo</span>
+                  <span className="block text-xs">Photo</span>
                 </Button>
                 <Button 
-                  className="bg-green-600 hover:bg-green-700 font-mono text-xs p-2"
+                  className="bg-green-600 hover:bg-green-700 font-mono text-xs p-3 h-10 flex flex-col items-center justify-center"
                   onClick={() => setIsAddBuildLogOpen(true)}
                 >
                   <Wrench className="h-4 w-4 mb-1" />
-                  <span className="block">Log</span>
+                  <span className="block text-xs">Log</span>
                 </Button>
                 <Button 
-                  className="bg-orange-600 hover:bg-orange-700 font-mono text-xs p-2"
+                  className="bg-orange-600 hover:bg-orange-700 font-mono text-xs p-3 h-10 flex flex-col items-center justify-center"
                   onClick={() => setIsAddHopUpOpen(true)}
                 >
                   <Cog className="h-4 w-4 mb-1" />
-                  <span className="block">Hop-Up</span>
+                  <span className="block text-xs">Hop-Up</span>
                 </Button>
               </div>
             </CardContent>
