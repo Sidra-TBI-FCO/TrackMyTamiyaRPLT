@@ -758,7 +758,10 @@ export default function ModelDetail() {
 
       <BoxArtSelector
         modelId={model.id}
-        photos={model.photos}
+        photos={model.photos.map(photo => ({
+          ...photo,
+          isBoxArt: photo.isBoxArt || false
+        }))}
         open={isBoxArtSelectorOpen}
         onOpenChange={setIsBoxArtSelectorOpen}
       />

@@ -31,7 +31,7 @@ export default function Home() {
 
   const handleVoiceNote = () => {
     // Check if there's an active build (status "building")
-    const activeBuilds = models?.filter(model => model.status === "building");
+    const activeBuilds = models?.filter(model => model.buildStatus === "building");
     
     if (activeBuilds && activeBuilds.length === 1) {
       // If there's exactly one active build, go directly to its build log
