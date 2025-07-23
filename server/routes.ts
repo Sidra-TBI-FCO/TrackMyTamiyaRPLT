@@ -352,7 +352,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req as any).userId;
       const id = parseInt(req.params.id);
-      const entryData = insertBuildLogEntrySchema.partial().parse(req.body);
+      
+      // Custom schema for updates that accepts string dates
+      const updateSchema = insertBuildLogEntrySchema.partial().extend({
+        entryDate: z.string().optional().transform((val) => val ? new Date(val) : undefined)
+      });
+      
+      const entryData = updateSchema.parse(req.body);
       const entry = await storage.updateBuildLogEntry(id, userId, entryData);
       if (!entry) {
         return res.status(404).json({ message: 'Build log entry not found' });
