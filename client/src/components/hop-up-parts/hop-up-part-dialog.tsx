@@ -106,6 +106,18 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
     },
   });
 
+  // Helper function to set manufacturer and handle Tamiya logic
+  const setManufacturerWithTamiyaLogic = (manufacturer: string, log: string[]) => {
+    form.setValue('manufacturer', manufacturer);
+    log.push(`✅ Manufacturer: ${manufacturer}`);
+    
+    // Auto-set Official Tamiya Part slider if manufacturer is Tamiya
+    if (manufacturer.toLowerCase() === 'tamiya') {
+      form.setValue('isTamiyaBrand', true);
+      log.push(`✅ Auto-enabled Official Tamiya Part`);
+    }
+  };
+
   // Combined parse function that tries scraping first, then falls back to URL-only
   const parseProductUrl = async (url: string) => {
     if (!url) return;
@@ -140,8 +152,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
             }
             
             if (scrapedData.manufacturer) {
-              form.setValue('manufacturer', scrapedData.manufacturer);
-              newLog.push(`✅ Manufacturer: ${scrapedData.manufacturer}`);
+              setManufacturerWithTamiyaLogic(scrapedData.manufacturer, newLog);
             }
             
             if (scrapedData.category) {
@@ -282,8 +293,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
         
         if (parsedData.manufacturer) {
-          form.setValue('manufacturer', parsedData.manufacturer);
-          newLog.push(`✅ Manufacturer: ${parsedData.manufacturer}`);
+          setManufacturerWithTamiyaLogic(parsedData.manufacturer, newLog);
         }
         
         if (parsedData.category) {
@@ -368,8 +378,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         }
         
         if (parsedData.manufacturer) {
-          form.setValue('manufacturer', parsedData.manufacturer);
-          newLog.push(`✅ Manufacturer: ${parsedData.manufacturer}`);
+          setManufacturerWithTamiyaLogic(parsedData.manufacturer, newLog);
         }
         
         if (parsedData.category) {
@@ -466,6 +475,25 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       });
     }
   }, [part, modelId, form]);
+
+  // Watch Official Tamiya Part toggle and handle manufacturer logic
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'isTamiyaBrand') {
+        if (value.isTamiyaBrand) {
+          // When toggled ON, set manufacturer to Tamiya
+          form.setValue('manufacturer', 'Tamiya');
+        } else {
+          // When toggled OFF, clear manufacturer if it was Tamiya
+          if (form.getValues('manufacturer') === 'Tamiya') {
+            form.setValue('manufacturer', '');
+          }
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const createMutation = useMutation({
     mutationFn: (data: FormData) => apiRequest("POST", `/api/models/${modelId}/hop-up-parts`, data),
@@ -799,7 +827,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                       <Select 
                         onValueChange={field.onChange} 
                         value={field.value || ""} 
-                        disabled={form.watch('isTamiyaBrand')}
+                        disabled={!!form.watch('isTamiyaBrand')}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -807,14 +835,19 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {manufacturers.map((manufacturer) => (
-                            <SelectItem key={manufacturer} value={manufacturer}>
-                              {manufacturer}
-                            </SelectItem>
-                          ))}
+                          {manufacturers
+                            .filter(manufacturer => 
+                              !!form.watch('isTamiyaBrand') || manufacturer !== 'Tamiya'
+                            )
+                            .map((manufacturer) => (
+                              <SelectItem key={manufacturer} value={manufacturer}>
+                                {manufacturer}
+                              </SelectItem>
+                            ))
+                          }
                         </SelectContent>
                       </Select>
-                      {form.watch('isTamiyaBrand') && (
+                      {!!form.watch('isTamiyaBrand') && (
                         <FormDescription className="text-xs text-muted-foreground">
                           Automatically set to "Tamiya" for official parts
                         </FormDescription>
