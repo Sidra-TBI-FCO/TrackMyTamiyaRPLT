@@ -241,8 +241,8 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
-                <div className="flex items-center gap-1">
+              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-1 h-8">
                   {/* Only show Mark Installed for planned parts */}
                   {part.installationStatus === "planned" && (
                     <Button
@@ -254,7 +254,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                         toggleStatusMutation.mutate({ partId: part.id, newStatus: "installed" });
                       }}
                       disabled={toggleStatusMutation.isPending}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 flex items-center justify-center"
                       title="Mark as Installed"
                     >
                       <CheckCircle2 className="h-4 w-4" />
@@ -269,7 +269,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                       setEditingPart(part);
                       setDialogOpen(true);
                     }}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 flex items-center justify-center"
                     title="Edit Part"
                   >
                     <Edit className="h-4 w-4" />
@@ -283,7 +283,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                       deleteMutation.mutate(part.id);
                     }}
                     disabled={deleteMutation.isPending}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="h-8 w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
                     title="Delete Part"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -291,7 +291,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 </div>
                 
                 {/* Store links with logos */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 h-8">
                   {part.tamiyaBaseUrl && (
                     <Button
                       size="sm"
@@ -301,7 +301,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                         e.stopPropagation();
                         if (part.tamiyaBaseUrl) window.open(part.tamiyaBaseUrl, '_blank');
                       }}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 flex items-center justify-center"
                       title="View on TamiyaBase"
                     >
                       <SiTamiya className="h-4 w-4" />
@@ -316,7 +316,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                         e.stopPropagation();
                         if (part.productUrl) window.open(part.productUrl, '_blank');
                       }}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 flex items-center justify-center"
                       title="View on Store"
                     >
                       {part.productUrl && part.productUrl.includes('amazon') ? (
