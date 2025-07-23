@@ -79,14 +79,16 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
   return (
     <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
       {boxArtPhoto ? (
-        <img
-          src={boxArtPhoto.url}
-          alt={model.name}
-          className="w-full h-48 object-cover flex-shrink-0"
-          onError={(e) => {
-            console.error(`Failed to load image for ${model.name}:`, boxArtPhoto.url);
-          }}
-        />
+        <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+          <img
+            src={boxArtPhoto.url}
+            alt={model.name}
+            className="max-w-full max-h-full object-contain"
+            onError={(e) => {
+              console.error(`Failed to load image for ${model.name}:`, boxArtPhoto.url);
+            }}
+          />
+        </div>
       ) : (
         <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
           <div className="text-gray-400 dark:text-gray-500 text-center">
