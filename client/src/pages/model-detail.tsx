@@ -368,10 +368,11 @@ export default function ModelDetail() {
 
           {/* Tabs for different sections */}
           <Tabs defaultValue="photos" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 font-mono">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-3 font-mono">
               <TabsTrigger value="photos">Photos ({model.photos.length})</TabsTrigger>
-              <TabsTrigger value="builds">Build Log ({model.buildLogEntries.length})</TabsTrigger>
+              <TabsTrigger value="builds">Build Log ({buildLogEntries?.length || 0})</TabsTrigger>
               <TabsTrigger value="parts">Hop-Ups ({model.hopUpParts.length})</TabsTrigger>
+              <TabsTrigger value="details" className="lg:hidden">Details</TabsTrigger>
             </TabsList>
 
             <TabsContent value="photos" className="space-y-4">
@@ -523,11 +524,206 @@ export default function ModelDetail() {
             <TabsContent value="parts">
               <HopUpPartsList modelId={model.id} />
             </TabsContent>
+
+            {/* Mobile-only Details Tab */}
+            <TabsContent value="details" className="lg:hidden">
+              <div className="space-y-6">
+                {/* Model Details Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-mono text-lg">Model Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Build Type - Top Section */}
+                    <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Build Type</p>
+                        <Badge 
+                          className={`font-mono text-xs ${
+                            model.buildType === 'custom' 
+                              ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                              : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                          }`}
+                        >
+                          {model.buildType === 'custom' ? 'Custom Build' : 'Kit Build'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* 2-Column Layout for Model Details */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                      {/* Left Column */}
+                      <div>
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis</p>
+                        <p className="font-mono text-gray-900 dark:text-white text-sm">
+                          {model.chassis || "Not specified"}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Release Year</p>
+                        <p className="font-mono text-gray-900 dark:text-white text-sm">
+                          {model.releaseYear || "Unknown"}
+                        </p>
+                      </div>
+
+                      {model.scale && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Scale</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.scale}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.driveType && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Drive Type</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.driveType}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.chassisMaterial && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Chassis Material</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.chassisMaterial}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.differentialType && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Differential</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.differentialType}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.motorSize && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Motor</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.motorSize}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.batteryType && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Battery</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.batteryType}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Custom Build Fields */}
+                      {model.buildType === 'custom' && model.bodyName && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Body</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.bodyName}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.buildType === 'custom' && model.bodyItemNumber && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Body Item #</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.bodyItemNumber}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.buildType === 'custom' && model.bodyManufacturer && (
+                        <div>
+                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Body Manufacturer</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.bodyManufacturer}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Investment Section */}
+                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-1">Total Investment</p>
+                      <p className="font-mono text-xl font-bold text-green-600 dark:text-green-400">
+                        ${totalInvestment.toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Tags */}
+                    {model.tags && model.tags.length > 0 && (
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">Tags</p>
+                        <div className="flex flex-wrap gap-1">
+                          {model.tags.map((tag, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="font-mono text-xs"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {model.notes && (
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-1">Notes</p>
+                        <p className="font-mono text-gray-900 dark:text-white text-sm">
+                          {model.notes}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions (Mobile) */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700 font-mono"
+                      onClick={() => setIsAddPhotoOpen(true)}
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      Add Photo
+                    </Button>
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700 font-mono"
+                      onClick={() => setLocation(`/models/${model.id}/build-log`)}
+                    >
+                      <Wrench className="mr-2 h-4 w-4" />
+                      Log Progress
+                    </Button>
+                    <Button 
+                      className="w-full bg-orange-600 hover:bg-orange-700 font-mono"
+                      onClick={() => setIsAddHopUpOpen(true)}
+                    >
+                      <Cog className="mr-2 h-4 w-4" />
+                      Add Hop-Up
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+        {/* Desktop Sidebar - Hidden on Mobile */}
+        <div className="hidden lg:block space-y-6">
           {/* Model Info */}
           <Card>
             <CardHeader>
