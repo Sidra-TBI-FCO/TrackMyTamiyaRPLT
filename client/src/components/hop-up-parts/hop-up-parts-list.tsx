@@ -132,20 +132,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
             Add Part
           </Button>
           
-          {/* Debug: Test Edit Dialog Button */}
-          {parts.length > 0 && (
-            <Button 
-              variant="outline"
-              onClick={() => {
-                console.log("Debug: Test edit button clicked");
-                setEditingPart(parts[0]);
-                setDialogOpen(true);
-              }}
-              className="bg-yellow-100 border-yellow-400 text-yellow-800"
-            >
-              🔧 Test Edit
-            </Button>
-          )}
+
         </div>
       </div>
 
@@ -273,10 +260,8 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Edit button clicked for part:", part.id);
                     setEditingPart(part);
                     setDialogOpen(true);
-                    console.log("Dialog state set to open with part:", part);
                   }}
                 >
                   Edit

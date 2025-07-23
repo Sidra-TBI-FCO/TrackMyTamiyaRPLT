@@ -10,6 +10,7 @@ import { ExternalLink, CheckCircle2, Clock, X, Search, Filter, Package, DollarSi
 import type { HopUpPart } from "@shared/schema";
 import { ModelWithRelations } from "@/types";
 import HopUpCard from "@/components/hop-ups/hop-up-card";
+import HopUpPartDialog from "@/components/hop-up-parts/hop-up-part-dialog";
 
 interface PartWithModel extends HopUpPart {
   model: {
@@ -25,6 +26,8 @@ export default function Parts() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterBrand, setFilterBrand] = useState("all");
   const [filterModel, setFilterModel] = useState("all");
+  const [editingPart, setEditingPart] = useState<PartWithModel | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Fetch all models to get their parts
   const { data: models = [], isLoading: modelsLoading } = useQuery<ModelWithRelations[]>({
@@ -275,8 +278,8 @@ export default function Parts() {
                     storeUrls: part.storeUrls || {}
                   }}
                   onEdit={(editPart) => {
-                    // Navigate to the model detail page and open the hop-up edit dialog
-                    window.location.href = `/models/${part.model.id}#edit-hopup-${editPart.id}`;
+                    setEditingPart(part);
+                    setDialogOpen(true);
                   }}
                   onDelete={(partId) => {
                     // For now, redirect to model page - in the future we could add global delete
@@ -290,6 +293,16 @@ export default function Parts() {
           </div>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      {editingPart && (
+        <HopUpPartDialog
+          modelId={editingPart.model.id}
+          part={editingPart}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      )}
     </div>
   );
 }
