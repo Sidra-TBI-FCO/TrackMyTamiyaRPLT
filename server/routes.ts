@@ -272,6 +272,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Build log routes
+  app.get('/api/build-log-entries', async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const entries = await storage.getAllBuildLogEntries(userId);
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get('/api/models/:modelId/build-log-entries', async (req, res) => {
     try {
       const userId = (req as any).userId;

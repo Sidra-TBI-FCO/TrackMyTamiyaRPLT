@@ -8,7 +8,7 @@ import {
   type BuildLogPhoto
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -30,6 +30,7 @@ export interface IStorage {
   deletePhoto(id: number, userId: number): Promise<boolean>;
 
   // Build log methods
+  getAllBuildLogEntries(userId: number): Promise<BuildLogEntryWithPhotos[]>;
   getBuildLogEntries(modelId: number, userId: number): Promise<BuildLogEntryWithPhotos[]>;
   createBuildLogEntry(entry: InsertBuildLogEntry): Promise<BuildLogEntry>;
   updateBuildLogEntry(id: number, userId: number, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined>;
@@ -215,6 +216,36 @@ export class DatabaseStorage implements IStorage {
     }
 
     return photo;
+  }
+
+  async getAllBuildLogEntries(userId: number): Promise<BuildLogEntryWithPhotos[]> {
+    // Get all models for the user first
+    const userModels = await db.query.models.findMany({
+      where: eq(models.userId, userId),
+      columns: { id: true },
+    });
+    
+    if (userModels.length === 0) return [];
+
+    const modelIds = userModels.map(m => m.id);
+
+    return await db.query.buildLogEntries.findMany({
+      where: inArray(buildLogEntries.modelId, modelIds),
+      with: {
+        photos: {
+          with: {
+            photo: true,
+          },
+        },
+        model: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: desc(buildLogEntries.createdAt),
+    });
   }
 
   async getBuildLogEntries(modelId: number, userId: number): Promise<BuildLogEntryWithPhotos[]> {
