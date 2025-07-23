@@ -1,7 +1,7 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink } from "lucide-react";
-import { ModelWithRelations } from "@/types";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus } from "lucide-react";
+import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,8 @@ import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import BoxArtSelector from "@/components/photos/box-art-selector";
 import HopUpPartsList from "@/components/hop-up-parts/hop-up-parts-list";
 import HopUpPartDialog from "@/components/hop-up-parts/hop-up-part-dialog";
+import BuildLogEntry from "@/components/build-log/build-log-entry";
+import BuildLogEntryDialog from "@/components/build-log/build-log-entry-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSlideshow } from "@/lib/slideshow-context";
@@ -38,12 +40,19 @@ export default function ModelDetail() {
   const [slideshowStartIndex, setSlideshowStartIndex] = useState(0);
   const [isBoxArtSelectorOpen, setIsBoxArtSelectorOpen] = useState(false);
   const [isAddHopUpOpen, setIsAddHopUpOpen] = useState(false);
+  const [isAddBuildLogOpen, setIsAddBuildLogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openSlideshow: openGlobalSlideshow } = useSlideshow();
 
   const { data: model, isLoading } = useQuery<ModelWithRelations>({
     queryKey: ["/api/models", id],
+    enabled: !!id,
+  });
+
+  // Fetch build log entries for this model
+  const { data: buildLogEntries, isLoading: isLoadingBuildLog } = useQuery<BuildLogEntryWithPhotos[]>({
+    queryKey: [`/api/models/${id}/build-log-entries`],
     enabled: !!id,
   });
 
@@ -428,56 +437,86 @@ export default function ModelDetail() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h3 className="text-lg font-mono font-semibold text-gray-900 dark:text-white">
-                      Build Progress
+                      Build Log
                     </h3>
                     <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
-                      Document your build journey with photos and notes
+                      {buildLogEntries?.length || 0} entries
                     </p>
                   </div>
                   
-                  <Button
-                    onClick={() => setLocation(`/models/${model.id}/build-log`)}
-                    className="bg-red-600 hover:bg-red-700 text-white font-mono w-full sm:w-auto"
-                  >
-                    <Wrench className="h-4 w-4 mr-2" />
-                    Open Build Log
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setIsAddBuildLogOpen(true)}
+                      className="bg-red-600 hover:bg-red-700 text-white font-mono"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Entry #{(buildLogEntries?.length || 0) + 1}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => setLocation(`/models/${model.id}/build-log`)}
+                      variant="outline"
+                      className="font-mono"
+                    >
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Full View
+                    </Button>
+                  </div>
                 </div>
 
-                <Card className="p-8">
-                  <div className="text-center text-gray-400 dark:text-gray-500">
-                    <Wrench className="h-12 w-12 mx-auto mb-4" />
-                    <h4 className="text-lg font-mono font-semibold text-gray-900 dark:text-white mb-2">
-                      Build Documentation
-                    </h4>
-                    <p className="font-mono text-gray-500 dark:text-gray-400 mb-6">
-                      Track your build progress with sequential entries, voice notes, and photo documentation.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                      <div className="space-y-2">
-                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto">
-                          <span className="font-mono font-bold text-red-600 dark:text-red-400">1</span>
-                        </div>
-                        <p className="font-mono font-medium">Sequential Entries</p>
-                        <p className="font-mono text-gray-500 dark:text-gray-400">Numbered build log entries with timestamps</p>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto">
-                          <span className="font-mono font-bold text-red-600 dark:text-red-400">2</span>
-                        </div>
-                        <p className="font-mono font-medium">Voice-to-Text</p>
-                        <p className="font-mono text-gray-500 dark:text-gray-400">Speak your build notes for easy documentation</p>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto">
-                          <span className="font-mono font-bold text-red-600 dark:text-red-400">3</span>
-                        </div>
-                        <p className="font-mono font-medium">Photo Documentation</p>
-                        <p className="font-mono text-gray-500 dark:text-gray-400">Capture progress with photos and captions</p>
-                      </div>
-                    </div>
+                {/* Build Log Entries */}
+                {isLoadingBuildLog ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i}>
+                        <CardContent className="p-6">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                              <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                            </div>
+                            <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                            <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </Card>
+                ) : buildLogEntries && buildLogEntries.length > 0 ? (
+                  <div className="space-y-4">
+                    {buildLogEntries.map((entry) => (
+                      <BuildLogEntry
+                        key={entry.id}
+                        entry={entry}
+                        onEdit={() => {
+                          console.log("Edit entry", entry.id);
+                        }}
+                        onDelete={() => {
+                          console.log("Delete entry", entry.id);
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="p-8">
+                    <div className="text-center text-gray-400 dark:text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-4" />
+                      <h4 className="text-lg font-mono font-semibold text-gray-900 dark:text-white mb-2">
+                        No Build Log Entries
+                      </h4>
+                      <p className="font-mono text-gray-500 dark:text-gray-400 mb-6">
+                        Start documenting your build progress with photos and notes.
+                      </p>
+                      <Button
+                        onClick={() => setIsAddBuildLogOpen(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white font-mono"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create First Entry
+                      </Button>
+                    </div>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
@@ -770,6 +809,14 @@ export default function ModelDetail() {
         modelId={model.id}
         open={isAddHopUpOpen}
         onOpenChange={setIsAddHopUpOpen}
+      />
+
+      <BuildLogEntryDialog
+        modelId={model.id}
+        modelName={model.name}
+        open={isAddBuildLogOpen}
+        onOpenChange={setIsAddBuildLogOpen}
+        nextEntryNumber={(buildLogEntries?.length || 0) + 1}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
