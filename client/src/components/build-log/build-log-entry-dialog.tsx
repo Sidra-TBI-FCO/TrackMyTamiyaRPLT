@@ -28,6 +28,7 @@ import { z } from "zod";
 
 const formSchema = insertBuildLogEntrySchema.extend({
   title: z.string().min(1, "Title is required"),
+  entryDate: z.string(), // Override to accept string for datetime-local input
   photos: z.array(z.object({
     file: z.any(),
     caption: z.string(),
