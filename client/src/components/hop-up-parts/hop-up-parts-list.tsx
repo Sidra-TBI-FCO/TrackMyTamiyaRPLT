@@ -183,7 +183,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
       {/* Parts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredParts.map((part) => (
-          <Card key={part.id} className="relative">
+          <Card key={part.id} className="relative flex flex-col h-full">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -205,42 +205,45 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1">
-                <div className="text-sm font-medium">{part.category}</div>
-                {part.manufacturer && (
-                  <div className="text-sm text-muted-foreground">by {part.manufacturer}</div>
+            <CardContent className="flex-1 flex flex-col">
+              <div className="flex-1 space-y-3">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">{part.category}</div>
+                  {part.manufacturer && (
+                    <div className="text-sm text-muted-foreground">by {part.manufacturer}</div>
+                  )}
+                  {part.supplier && (
+                    <div className="text-xs text-muted-foreground">from {part.supplier}</div>
+                  )}
+                  {part.cost && (
+                    <div className="text-sm font-medium text-green-600">${parseFloat(part.cost).toFixed(2)}</div>
+                  )}
+                  {part.material && (
+                    <div className="text-xs text-muted-foreground">Material: {part.material}</div>
+                  )}
+                  {part.color && (
+                    <div className="text-xs text-muted-foreground">Color: {part.color}</div>
+                  )}
+                </div>
+
+                {part.compatibility && part.compatibility.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {part.compatibility.map((chassis) => (
+                      <Badge key={chassis} variant="secondary" className="text-xs">
+                        {chassis}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
-                {part.supplier && (
-                  <div className="text-xs text-muted-foreground">from {part.supplier}</div>
-                )}
-                {part.cost && (
-                  <div className="text-sm font-medium text-green-600">${parseFloat(part.cost).toFixed(2)}</div>
-                )}
-                {part.material && (
-                  <div className="text-xs text-muted-foreground">Material: {part.material}</div>
-                )}
-                {part.color && (
-                  <div className="text-xs text-muted-foreground">Color: {part.color}</div>
+
+                {part.installationDate && (
+                  <div className="text-xs text-muted-foreground">
+                    Installed: {new Date(part.installationDate).toLocaleDateString()}
+                  </div>
                 )}
               </div>
 
-              {part.compatibility && part.compatibility.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {part.compatibility.map((chassis) => (
-                    <Badge key={chassis} variant="secondary" className="text-xs">
-                      {chassis}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {part.installationDate && (
-                <div className="text-xs text-muted-foreground">
-                  Installed: {new Date(part.installationDate).toLocaleDateString()}
-                </div>
-              )}
-
+              {/* Button row - always at bottom */}
               <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-1 h-8">
                   {/* Only show Mark Installed for planned parts */}
