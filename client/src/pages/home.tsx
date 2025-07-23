@@ -30,8 +30,19 @@ export default function Home() {
   };
 
   const handleVoiceNote = () => {
-    // This would open voice recording interface
-    console.log("Starting voice recording");
+    // Check if there's an active build (status "building")
+    const activeBuilds = models?.filter(model => model.status === "building");
+    
+    if (activeBuilds && activeBuilds.length === 1) {
+      // If there's exactly one active build, go directly to its build log
+      setLocation(`/models/${activeBuilds[0].id}/build-log`);
+    } else if (activeBuilds && activeBuilds.length > 1) {
+      // If multiple active builds, show general build logs page
+      setLocation("/build-logs");
+    } else {
+      // If no active builds, redirect to models page to select one
+      setLocation("/models");
+    }
   };
 
 
@@ -93,7 +104,7 @@ export default function Home() {
           >
             <Mic className="text-xl" />
             <div className="text-left">
-              <div className="font-mono font-semibold">Voice Note</div>
+              <div className="font-mono font-semibold">Build Log</div>
               <div className="text-sm opacity-90">Record build progress</div>
             </div>
           </Button>
