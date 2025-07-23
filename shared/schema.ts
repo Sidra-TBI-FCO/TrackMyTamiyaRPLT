@@ -55,6 +55,7 @@ export const photos = pgTable("photos", {
 export const buildLogEntries = pgTable("build_log_entries", {
   id: serial("id").primaryKey(),
   modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }).notNull(),
+  entryNumber: integer("entry_number").notNull(),
   title: text("title").notNull(),
   content: text("content"),
   voiceNoteUrl: text("voice_note_url"),
