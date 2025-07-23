@@ -219,33 +219,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBuildLogEntries(userId: number): Promise<BuildLogEntryWithPhotos[]> {
-    // Get all models for the user first
-    const userModels = await db.query.models.findMany({
-      where: eq(models.userId, userId),
-      columns: { id: true },
-    });
-    
-    if (userModels.length === 0) return [];
-
-    const modelIds = userModels.map(m => m.id);
-
-    return await db.query.buildLogEntries.findMany({
-      where: inArray(buildLogEntries.modelId, modelIds),
-      with: {
-        photos: {
-          with: {
-            photo: true,
+    try {
+      // Use a simpler approach: get all models with their build log entries
+      const userModels = await db.query.models.findMany({
+        where: eq(models.userId, userId),
+        with: {
+          buildLogEntries: {
+            with: {
+              photos: {
+                with: {
+                  photo: true,
+                },
+              },
+            },
+            orderBy: desc(buildLogEntries.createdAt),
           },
         },
-        model: {
-          columns: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: desc(buildLogEntries.createdAt),
-    });
+      });
+      
+      // Flatten the build log entries and add model info
+      const allEntries: (BuildLogEntryWithPhotos & { model: { id: number; name: string } })[] = [];
+      
+      for (const model of userModels) {
+        for (const entry of model.buildLogEntries) {
+          allEntries.push({
+            ...entry,
+            model: {
+              id: model.id,
+              name: model.name,
+            },
+          });
+        }
+      }
+      
+      // Sort by creation date
+      return allEntries.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    } catch (error) {
+      console.error('Error in getAllBuildLogEntries:', error);
+      throw error;
+    }
   }
 
   async getBuildLogEntries(modelId: number, userId: number): Promise<BuildLogEntryWithPhotos[]> {
