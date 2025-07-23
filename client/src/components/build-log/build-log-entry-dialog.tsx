@@ -70,16 +70,16 @@ export default function BuildLogEntryDialog({
     defaultValues: {
       modelId,
       entryNumber: nextEntryNumber,
-      title: "",
-      content: "",
-      entryDate: new Date().toISOString(),
+      title: existingEntry?.title || "",
+      content: existingEntry?.content || "",
+      entryDate: existingEntry?.entryDate || new Date().toISOString(),
       photos: [],
     },
   });
 
   const createEntryMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Create the build log entry first
+      // Create or update the build log entry
       const entryData = {
         modelId: data.modelId,
         entryNumber: data.entryNumber,
@@ -88,7 +88,9 @@ export default function BuildLogEntryDialog({
         entryDate: data.entryDate,
       };
 
-      const response = await apiRequest("POST", `/api/models/${modelId}/build-log-entries`, entryData);
+      const response = existingEntry 
+        ? await apiRequest("PUT", `/api/build-log-entries/${existingEntry.id}`, entryData)
+        : await apiRequest("POST", `/api/models/${modelId}/build-log-entries`, entryData);
       
       // Upload new photos if any
       if (selectedFiles.length > 0) {
@@ -118,8 +120,8 @@ export default function BuildLogEntryDialog({
       queryClient.invalidateQueries({ queryKey: ["/api/models", modelId.toString(), "build-log-entries"] });
       queryClient.invalidateQueries({ queryKey: ["/api/models", modelId.toString()] });
       toast({
-        title: "Build log entry created",
-        description: "Your build progress has been documented.",
+        title: existingEntry ? "Build log entry updated" : "Build log entry created",
+        description: existingEntry ? "Your changes have been saved." : "Your build progress has been documented.",
       });
       onOpenChange(false);
       form.reset();
@@ -228,7 +230,7 @@ export default function BuildLogEntryDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-mono">
-            Add Build Log Entry #{nextEntryNumber}
+            {existingEntry ? `Edit Build Log Entry #${existingEntry.entryNumber}` : `Add Build Log Entry #${nextEntryNumber}`}
           </DialogTitle>
         </DialogHeader>
 
@@ -245,7 +247,7 @@ export default function BuildLogEntryDialog({
                     <Input
                       type="datetime-local"
                       {...field}
-                      value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ""}
+                      value={field.value ? (typeof field.value === 'string' ? new Date(field.value).toISOString().slice(0, 16) : field.value.toISOString().slice(0, 16)) : ""}
                       onChange={(e) => field.onChange(new Date(e.target.value).toISOString())}
                       className="font-mono"
                     />
