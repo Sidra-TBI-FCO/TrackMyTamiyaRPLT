@@ -78,116 +78,8 @@ const chassisCompatibility = [
 export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: HopUpPartDialogProps) {
   const [isParsingUrl, setIsParsingUrl] = useState(false);
   const [parseLog, setParseLog] = useState<string[]>([]);
-  const [isScrapingPage, setIsScrapingPage] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Enhanced page scraping function
-  const scrapeProductPage = async (url: string) => {
-    if (!url) return;
-    
-    setIsScrapingPage(true);
-    setParseLog(["🔄 Scraping product page..."]);
-    
-    try {
-      const response = await fetch('/api/scrape-product', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Scraping failed: ${response.status}`);
-      }
-      
-      const scrapedData = await response.json();
-      
-      // Check if scraping was blocked but we got a fallback suggestion
-      if (scrapedData.fallbackSuggested) {
-        setParseLog([`⚠️ ${scrapedData.message}`]);
-        toast({
-          title: "Scraping blocked",
-          description: "Store is blocking automated requests. Use 'URL Only' button instead.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const newLog = ["✅ Successfully scraped product page!"];
-      
-      // Apply the scraped data to the form
-      if (scrapedData.name) {
-        form.setValue('name', scrapedData.name);
-        newLog.push(`✅ Product name: ${scrapedData.name}`);
-      }
-      
-      if (scrapedData.manufacturer) {
-        form.setValue('manufacturer', scrapedData.manufacturer);
-        newLog.push(`✅ Manufacturer: ${scrapedData.manufacturer}`);
-      }
-      
-      if (scrapedData.category) {
-        form.setValue('category', scrapedData.category);
-        newLog.push(`✅ Category: ${scrapedData.category}`);
-      }
-      
-      if (scrapedData.material) {
-        form.setValue('material', scrapedData.material);
-        newLog.push(`✅ Material: ${scrapedData.material}`);
-      }
-      
-      if (scrapedData.color) {
-        form.setValue('color', scrapedData.color);
-        newLog.push(`✅ Color: ${scrapedData.color}`);
-      }
-      
-      if (scrapedData.compatibility && scrapedData.compatibility.length > 0) {
-        const currentCompat = form.getValues('compatibility') || [];
-        const newCompatibility = Array.from(new Set([...currentCompat, ...scrapedData.compatibility]));
-        form.setValue('compatibility', newCompatibility);
-        newLog.push(`✅ Chassis compatibility: ${scrapedData.compatibility.join(', ')}`);
-      }
-      
-      if (scrapedData.cost) {
-        form.setValue('cost', scrapedData.cost);
-        newLog.push(`✅ Price: $${scrapedData.cost}`);
-      }
-      
-      // Extract item number from URL as fallback
-      const itemNumberMatch = url.match(/([a-z]{2,4}-[a-z0-9]+)/i);
-      if (itemNumberMatch) {
-        form.setValue('itemNumber', itemNumberMatch[1].toUpperCase());
-        newLog.push(`✅ Item number: ${itemNumberMatch[1].toUpperCase()}`);
-      }
-      
-      // Set store based on URL
-      if (url.includes('rcmart.com')) {
-        form.setValue('supplier', 'RC Mart');
-        newLog.push(`✅ Store: RC Mart`);
-      }
-      
-      setParseLog(newLog);
-      
-      toast({
-        title: "Page scraped successfully!",
-        description: `Found ${newLog.length - 1} product details`,
-      });
-      
-    } catch (error: any) {
-      console.error('Scraping error:', error);
-      setParseLog([`❌ Scraping failed: ${error.message}`]);
-      
-      toast({
-        title: "Scraping failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsScrapingPage(false);
-    }
-  };
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -209,6 +101,150 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       material: "",
     },
   });
+
+  // Combined parse function that tries scraping first, then falls back to URL-only
+  const parseProductUrl = async (url: string) => {
+    if (!url) return;
+    
+    setIsParsingUrl(true);
+    setParseLog(["🔄 Parsing product URL..."]);
+    
+    try {
+      // First, try page scraping
+      setParseLog(["🔄 Attempting to scrape product page..."]);
+      
+      try {
+        const response = await fetch('/api/scrape-product', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+        
+        if (response.ok) {
+          const scrapedData = await response.json();
+          
+          // Check if scraping succeeded
+          if (!scrapedData.fallbackSuggested) {
+            const newLog = ["✅ Successfully scraped product page!"];
+            
+            // Apply the scraped data to the form
+            if (scrapedData.name) {
+              form.setValue('name', scrapedData.name);
+              newLog.push(`✅ Product name: ${scrapedData.name}`);
+            }
+            
+            if (scrapedData.manufacturer) {
+              form.setValue('manufacturer', scrapedData.manufacturer);
+              newLog.push(`✅ Manufacturer: ${scrapedData.manufacturer}`);
+            }
+            
+            if (scrapedData.category) {
+              form.setValue('category', scrapedData.category);
+              newLog.push(`✅ Category: ${scrapedData.category}`);
+            }
+            
+            if (scrapedData.material) {
+              form.setValue('material', scrapedData.material);
+              newLog.push(`✅ Material: ${scrapedData.material}`);
+            }
+            
+            if (scrapedData.color) {
+              form.setValue('color', scrapedData.color);
+              newLog.push(`✅ Color: ${scrapedData.color}`);
+            }
+            
+            if (scrapedData.compatibility && scrapedData.compatibility.length > 0) {
+              const currentCompat = form.getValues('compatibility') || [];
+              const newCompatibility = Array.from(new Set([...currentCompat, ...scrapedData.compatibility]));
+              form.setValue('compatibility', newCompatibility);
+              newLog.push(`✅ Chassis compatibility: ${scrapedData.compatibility.join(', ')}`);
+            }
+            
+            if (scrapedData.cost) {
+              form.setValue('cost', scrapedData.cost);
+              newLog.push(`✅ Price: $${scrapedData.cost}`);
+            }
+            
+            // Extract item number from URL as fallback
+            const itemNumberMatch = url.match(/([a-z]{2,4}-[a-z0-9]+)/i);
+            if (itemNumberMatch) {
+              form.setValue('itemNumber', itemNumberMatch[1].toUpperCase());
+              newLog.push(`✅ Item number: ${itemNumberMatch[1].toUpperCase()}`);
+            }
+            
+            // Set store based on URL
+            if (url.includes('rcmart.com')) {
+              form.setValue('supplier', 'RC Mart');
+              newLog.push(`✅ Store: RC Mart`);
+            }
+            
+            setParseLog(newLog);
+            
+            toast({
+              title: "Page scraped successfully!",
+              description: `Found ${newLog.length - 1} product details`,
+            });
+            return;
+          }
+        }
+      } catch (scrapeError) {
+        console.log('Scraping failed, falling back to URL parsing:', scrapeError);
+      }
+      
+      // Fallback to URL-only parsing
+      setParseLog(["⚠️ Page scraping failed, analyzing URL structure..."]);
+      
+      const parseLog: string[] = ["🔍 Starting URL analysis..."];
+      
+      const urlLower = url.toLowerCase();
+      parseLog.push(`📝 Processing: ${url}`);
+
+      // Auto-detect if this is a TamiyaBase URL and move it to the correct field
+      if (url.includes('tamiyabase.com')) {
+        form.setValue('tamiyaBaseUrl', url);
+        form.setValue('productUrl', '');
+        form.setValue('isTamiyaBrand', true);
+        parseLog.push("✅ TamiyaBase URL detected - moved to correct field");
+        parseLog.push("✅ Marked as official Tamiya part");
+        
+        // Extract TamiyaBase part number
+        const tamiyaPartMatch = url.match(/parts\/(\d+)-(\d+)/);
+        if (tamiyaPartMatch) {
+          const partNumber = tamiyaPartMatch[2];
+          form.setValue('itemNumber', partNumber);
+          parseLog.push(`✅ Extracted TamiyaBase part number: ${partNumber}`);
+        }
+        
+        setParseLog(parseLog);
+        toast({ 
+          title: "TamiyaBase URL Processed",
+          description: `Found ${parseLog.length - 1} product details`
+        });
+        return;
+      }
+
+      // Continue with standard URL parsing logic...
+      setParseLog(parseLog);
+      toast({
+        title: "URL parsed successfully!",
+        description: `Found ${parseLog.length - 1} product details`,
+      });
+      
+    } catch (error: any) {
+      console.error('Parsing error:', error);
+      setParseLog([`❌ Parsing failed: ${error.message}`]);
+      
+      toast({
+        title: "Parsing failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingUrl(false);
+    }
+  };
 
   // Load part data for editing
   useEffect(() => {
@@ -277,357 +313,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
     },
   });
 
-  const parseProductUrl = async (url: string) => {
-    setIsParsingUrl(true);
-    
-    const parseLog: string[] = ["🔍 Starting URL analysis..."];
-    
-    try {
-      const urlLower = url.toLowerCase();
-      parseLog.push(`📝 Processing: ${url}`);
-
-      // Auto-detect if this is a TamiyaBase URL and move it to the correct field
-      if (url.includes('tamiyabase.com')) {
-        form.setValue('tamiyaBaseUrl', url);
-        form.setValue('productUrl', '');
-        form.setValue('isTamiyaBrand', true);
-        parseLog.push("✅ TamiyaBase URL detected - moved to correct field");
-        parseLog.push("✅ Marked as official Tamiya part");
-        
-        // Extract TamiyaBase part number
-        const tamiyaPartMatch = url.match(/parts\/(\d+)-(\d+)/);
-        if (tamiyaPartMatch) {
-          const partNumber = tamiyaPartMatch[2];
-          form.setValue('itemNumber', partNumber);
-          parseLog.push(`✅ Extracted TamiyaBase part number: ${partNumber}`);
-        }
-        
-        toast({ 
-          title: "TamiyaBase URL Processed",
-          description: parseLog.join('\n')
-        });
-        return;
-      }
-
-      // Detect store/supplier from URL domain
-      if (urlLower.includes('rcmart')) {
-        form.setValue('supplier', 'RC Mart');
-        parseLog.push("✅ Store detected: RC Mart");
-      } else if (urlLower.includes('amain')) {
-        form.setValue('supplier', 'AMain Hobbies');
-        parseLog.push("✅ Store detected: AMain Hobbies");
-      } else if (urlLower.includes('tower')) {
-        form.setValue('supplier', 'Tower Hobbies');
-        parseLog.push("✅ Store detected: Tower Hobbies");
-      } else if (urlLower.includes('horizonhobby')) {
-        form.setValue('supplier', 'Horizon Hobby');
-        parseLog.push("✅ Store detected: Horizon Hobby");
-      } else if (urlLower.includes('tamiyabase')) {
-        form.setValue('supplier', 'TamiyaBase');
-        parseLog.push("✅ Store detected: TamiyaBase");
-      } else {
-        parseLog.push("⚠️ Store not auto-detected");
-      }
-
-      // Detect brand/manufacturer from URL path
-      const brandPatterns = [
-        { pattern: /xtra-speed/i, brand: 'Xtra Speed', code: 'XS' },
-        { pattern: /yeah-racing/i, brand: 'Yeah Racing', code: 'YBS' }, // YBS is Yeah Racing's part code
-        { pattern: /gpm-racing/i, brand: 'GPM Racing', code: 'GPM' },
-        { pattern: /hot-racing/i, brand: 'Hot Racing', code: 'HR' },
-        { pattern: /3racing/i, brand: '3Racing', code: '3R' },
-        { pattern: /mst/i, brand: 'MST', code: 'MST' },
-      ];
-
-      let detectedBrand = null;
-      for (const { pattern, brand, code } of brandPatterns) {
-        if (pattern.test(url)) {
-          form.setValue('manufacturer', brand);
-          detectedBrand = { brand, code };
-          parseLog.push(`✅ Manufacturer detected: ${brand}`);
-          break;
-        }
-      }
-
-      // Detect official Tamiya parts and extract part number properly
-      // Pattern for URLs like: tamiya-ta02-carbon-chassis-conversion-47479-00112749
-      const tamiyaPartPattern = /tamiya-.*?-(\d{4,5})-\d+$/i;
-      const tamiyaMatch = url.match(tamiyaPartPattern);
-      
-      if (tamiyaMatch) {
-        form.setValue('isTamiyaBrand', true);
-        form.setValue('manufacturer', 'Tamiya');
-        form.setValue('itemNumber', tamiyaMatch[1]);
-        parseLog.push("✅ Official Tamiya part detected");
-        parseLog.push(`✅ Official Tamiya part number: ${tamiyaMatch[1]}`);
-      } else if (urlLower.includes('tamiya-47') || urlLower.includes('tamiya-54') || urlLower.includes('/tamiya/')) {
-        form.setValue('isTamiyaBrand', true);
-        form.setValue('manufacturer', 'Tamiya');
-        parseLog.push("✅ Official Tamiya part detected");
-      } else if (detectedBrand) {
-        form.setValue('isTamiyaBrand', false);
-        parseLog.push("✅ Marked as aftermarket part");
-      }
-      
-      // Extract part numbers - look for brand-specific patterns first
-      let partNumberFound = false;
-      
-      // Check if we already have a Tamiya part number
-      if (form.getValues('itemNumber') && form.getValues('isTamiyaBrand')) {
-        partNumberFound = true;
-      } else if (detectedBrand) {
-        // Look for brand-specific part number patterns
-        const brandPartPatterns = [
-          new RegExp(`${detectedBrand.code.toLowerCase()}-([a-z0-9]+)`, 'i'), // XS-TA29181RD
-          new RegExp(`${detectedBrand.code.toLowerCase()}([a-z0-9]+)`, 'i'),  // XSTA29181RD
-        ];
-        
-        for (const pattern of brandPartPatterns) {
-          const match = url.match(pattern);
-          if (match) {
-            const fullPartNumber = `${detectedBrand.code}-${match[1].toUpperCase()}`;
-            form.setValue('itemNumber', fullPartNumber);
-            parseLog.push(`✅ Brand part number extracted: ${fullPartNumber}`);
-            partNumberFound = true;
-            break;
-          }
-        }
-      }
-      
-      // Fallback to manufacturer part number patterns if no brand-specific number found
-      if (!partNumberFound) {
-        // Look for manufacturer part numbers like YBS-0048, MST-310xxx
-        const manufacturerPartPatterns = [
-          /([a-z]{2,4}-\d{4}[a-z]{0,2})/i,  // YBS-0048, MST-310xxx format
-          /([a-z]{3,4}\d{4,6})/i,           // YBS0048 format without dash
-        ];
-        
-        for (const pattern of manufacturerPartPatterns) {
-          const match = url.match(pattern);
-          if (match) {
-            form.setValue('itemNumber', match[1].toUpperCase());
-            parseLog.push(`✅ Manufacturer part number extracted: ${match[1].toUpperCase()}`);
-            partNumberFound = true;
-            break;
-          }
-        }
-        
-        // Final fallback to store SKU if no manufacturer number found
-        if (!partNumberFound) {
-          const partNumberMatches = url.match(/(\d{5,})/g);
-          if (partNumberMatches && !form.getValues('itemNumber')) {
-            const partNumber = partNumberMatches[0];
-            form.setValue('itemNumber', partNumber);
-            parseLog.push(`✅ Store SKU extracted: ${partNumber} (no manufacturer part number found)`);
-          } else {
-            parseLog.push("⚠️ No part number found in URL");
-          }
-        }
-      }
-      
-      // Extract part name from URL path - improved logic
-      const pathParts = url.split('/').pop()?.split('-') || [];
-      if (pathParts.length > 2) {
-        // Remove brand name, model numbers, and store-specific codes
-        const filteredParts = pathParts
-          .filter(part => 
-            !part.match(/^\d+$/) && // Remove pure numbers
-            part.length > 1 && // Remove single characters
-            !part.match(/^(xs|yr|gpm|hr|3r|mst)$/i) && // Remove brand codes
-            !part.match(/^(ta|tb|tt|df|m|tc|xv)\d+/i) && // Remove chassis codes
-            !part.match(/^\d{8,}$/) // Remove long product codes
-          );
-          
-        // Take meaningful parts and clean them up
-        const meaningfulParts = filteredParts.slice(0, 8); // Limit length
-        const potentialName = meaningfulParts
-          .join(' ')
-          .replace(/[^a-zA-Z0-9\s]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .replace(/\b(for|tamiya|w|with)\b/gi, '') // Remove common filler words
-          .trim();
-        
-        if (potentialName && !form.getValues('name')) {
-          const cleanName = potentialName.charAt(0).toUpperCase() + potentialName.slice(1);
-          form.setValue('name', cleanName);
-          parseLog.push(`✅ Part name extracted: ${cleanName}`);
-        }
-      }
-
-      // Auto-categorize based on URL keywords - more specific patterns
-      const categoryKeywords = {
-        'Suspension': ['damper', 'shock', 'spring', 'suspension', 'steering-set', 'steering-linkage'],
-        'Drivetrain': ['gear', 'differential', 'driveshaft', 'belt', 'bearing', 'steering-set'],
-        'Chassis': ['main-frame', 'chassis-conversion', 'chassis-plate'],
-        'Motor': ['motor', 'brushless', 'brushed'],
-        'Wheels': ['wheel', 'rim', 'hub'],
-        'Tires': ['tire', 'tyre', 'rubber'],
-        'Body': ['body', 'shell', 'lexan'],
-        'Electronics': ['esc', 'servo', 'receiver', 'transmitter'],
-        'Tools': ['tool', 'wrench', 'hex', 'driver']
-      };
-
-      let categoryFound = false;
-      // Check for specific part types first (more specific patterns)
-      if (urlLower.includes('steering')) {
-        form.setValue('category', 'Suspension');
-        parseLog.push("✅ Category detected: Suspension (steering component)");
-        categoryFound = true;
-      } else if (urlLower.includes('drive-shaft') || urlLower.includes('driveshaft') || urlLower.includes('main-drive-shaft')) {
-        form.setValue('category', 'Drivetrain');
-        parseLog.push("✅ Category detected: Drivetrain (drive shaft)");
-        categoryFound = true;
-      } else {
-        for (const [category, keywords] of Object.entries(categoryKeywords)) {
-          if (keywords.some(keyword => urlLower.includes(keyword))) {
-            form.setValue('category', category);
-            parseLog.push(`✅ Category detected: ${category}`);
-            categoryFound = true;
-            break;
-          }
-        }
-      }
-      if (!categoryFound) {
-        parseLog.push("⚠️ Category not auto-detected - leave blank for manual selection");
-      }
-
-      // Detect materials from URL - look for material hints in product names
-      const materialKeywords = {
-        'Aluminum': ['aluminum', 'aluminium', '-alu-', 'alloy'],
-        'Carbon Fiber': ['carbon-fiber', 'carbon', '-cf-', '-carbon-'],
-        'Steel': ['steel', '-steel-', 'hardened'],
-        'Plastic': ['plastic', '-plastic-', 'abs', 'delrin'],
-        'Titanium': ['titanium', '-ti-', '-titan-']
-      };
-
-      let materialFound = false;
-      for (const [material, keywords] of Object.entries(materialKeywords)) {
-        if (keywords.some(keyword => urlLower.includes(keyword))) {
-          form.setValue('material', material);
-          parseLog.push(`✅ Material detected: ${material}`);
-          materialFound = true;
-          break;
-        }
-      }
-      
-      // Common RC part material detection from context
-      if (!materialFound) {
-        if (urlLower.includes('damper') || urlLower.includes('shock')) {
-          form.setValue('material', 'Aluminum'); // Most aftermarket dampers are aluminum
-          parseLog.push("✅ Material detected: Aluminum (typical for dampers)");
-          materialFound = true;
-        }
-      }
-      
-      if (!materialFound) {
-        parseLog.push("⚠️ Material not auto-detected");
-      }
-
-      // Detect chassis compatibility from URL - be more careful not to confuse with part numbers
-      const chassisRegex = /(^|[^a-z\d])(ta0?[0-9]{1,2}(?:sw)?|tb0?[0-9]{1,2}|tt0?[0-9]{1,2}|df0?[0-9]{1,2}|m0?[0-9]{1,2}|tc0?[0-9]{1,2}|xv0?[0-9]{1,2}|cc0?[0-9]{1,2}|ff0?[0-9]{1,2})(?=[^a-z\d]|$)/gi;
-      const chassisMatches = [];
-      let match;
-      const urlForChassis = url.replace(/xs-ta\d+/gi, ''); // Remove part numbers like XS-TA29171SV to avoid confusion
-      while ((match = chassisRegex.exec(urlForChassis)) !== null) {
-        const chassis = match[2]; // match[2] because we have capturing groups
-        if (chassis && chassis.length <= 6) { // Reasonable chassis code length
-          chassisMatches.push(chassis.toUpperCase());
-        }
-      }
-      
-      let chassisFound = false;
-      if (chassisMatches.length > 0) {
-        const uniqueChassis = Array.from(new Set(chassisMatches));
-        const currentCompat = form.getValues('compatibility') || [];
-        const newCompatibility = Array.from(new Set([...currentCompat, ...uniqueChassis]));
-        form.setValue('compatibility', newCompatibility);
-        uniqueChassis.forEach(chassis => {
-          parseLog.push(`✅ Chassis compatibility detected: ${chassis}`);
-        });
-        chassisFound = true;
-      }
-      if (!chassisFound) {
-        parseLog.push("⚠️ Chassis compatibility not auto-detected");
-      }
-
-      // Color detection - look for color indicators in part numbers and descriptions
-      const colorKeywords = ['red', 'blue', 'black', 'white', 'silver', 'gold', 'green', 'orange', 'purple', 'grey', 'gray'];
-      const colorSuffixes = ['rd', 'bl', 'bk', 'wh', 'sv', 'gd', 'gn', 'or', 'pp']; // Common color codes in part numbers
-      
-      let colorFound = null;
-      
-      // First try direct color words
-      colorFound = colorKeywords.find(color => urlLower.includes(color));
-      
-      // Then try color suffix codes (like SV for silver in XS-TA29171SV)
-      if (!colorFound) {
-        const partNumber = form.getValues('itemNumber') || '';
-        if (partNumber.includes('SV')) {
-          colorFound = 'silver';
-        } else if (partNumber.includes('RD')) {
-          colorFound = 'red';
-        } else if (partNumber.includes('BK')) {
-          colorFound = 'black';
-        } else if (partNumber.includes('BL')) {
-          colorFound = 'blue';
-        }
-      }
-      
-      if (colorFound) {
-        form.setValue('color', colorFound.charAt(0).toUpperCase() + colorFound.slice(1));
-        parseLog.push(`✅ Color detected: ${colorFound.charAt(0).toUpperCase() + colorFound.slice(1)}`);
-      } else {
-        parseLog.push("⚠️ Color not auto-detected");
-      }
-
-      // Price detection (various patterns stores might use)
-      const pricePatterns = [
-        /price[_-](\d+[\._]\d{2})/i,           // price_15.99, price-15.99
-        /cost[_-](\d+[\._]\d{2})/i,            // cost_15.99, cost-15.99  
-        /\$(\d+[\._]\d{2})/,                   // $15.99
-        /usd[_-](\d+[\._]\d{2})/i,            // usd-15.99, usd_15.99
-        /(\d+[\._]\d{2})[_-]?usd/i,           // 15.99usd, 15.99-usd
-        /[_-](\d+[\._]\d{2})[_-]?$/,          // ending with price like -15.99
-      ];
-
-      let priceFound = false;
-      for (const pattern of pricePatterns) {
-        const match = url.match(pattern);
-        if (match) {
-          const priceStr = match[1].replace('_', '.');
-          const price = parseFloat(priceStr);
-          if (price > 0 && price < 10000) { // Reasonable price range
-            form.setValue('cost', price);
-            parseLog.push(`✅ Price detected: $${price.toFixed(2)}`);
-            priceFound = true;
-            break;
-          }
-        }
-      }
-      if (!priceFound) {
-        parseLog.push("⚠️ Price not found in URL - enter manually");
-      }
-
-      parseLog.push("✅ URL analysis complete!");
-      
-      console.log("URL Parse Debug Log:", parseLog);
-      
-      toast({ 
-        title: "URL Analysis Complete",
-        description: `Found ${parseLog.filter(log => log.includes('✅')).length - 1} details. Check console for full log.`
-      });
-      
-    } catch (error) {
-      parseLog.push(`❌ Error: ${error}`);
-      console.error("URL Parse Error:", parseLog);
-      toast({ title: "URL parsing failed", description: "Check console for details", variant: "destructive" });
-    } finally {
-      setIsParsingUrl(false);
-    }
-  };
-
   const onSubmit = (data: FormData) => {
-    // console.log("Form submission data:", data); // Remove debug logging
     if (part) {
       updateMutation.mutate(data);
     } else {
@@ -667,45 +353,26 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                             className="font-mono text-sm"
                           />
                         </FormControl>
-                        <div className="flex gap-1">
-                          <Button
-                            type="button"
-                            variant="default"
-                            onClick={() => {
-                              const url = form.getValues('productUrl');
-                              if (url) scrapeProductPage(url);
-                            }}
-                            disabled={isScrapingPage || !field.value}
-                            className="whitespace-nowrap px-3"
-                          >
-                            {isScrapingPage ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              "Scrape Page"
-                            )}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              const url = form.getValues('productUrl');
-                              if (url) parseProductUrl(url);
-                            }}
-                            disabled={isParsingUrl || !field.value}
-                            className="whitespace-nowrap px-3"
-                          >
-                            {isParsingUrl ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              "URL Only"
-                            )}
-                          </Button>
-                        </div>
+                        <Button
+                          type="button"
+                          variant="default"
+                          onClick={() => {
+                            const url = form.getValues('productUrl');
+                            if (url) parseProductUrl(url);
+                          }}
+                          disabled={isParsingUrl || !field.value}
+                          className="whitespace-nowrap px-3"
+                        >
+                          {isParsingUrl ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Parse"
+                          )}
+                        </Button>
                       </div>
                       <FormDescription className="text-xs">
                         <div className="space-y-1">
-                          <div><strong>Scrape Page</strong>: Fetches complete product details from page content</div>
-                          <div><strong>URL Only</strong>: Extracts basic info from URL structure (faster but limited)</div>
+                          <div><strong>Parse</strong>: Automatically tries to scrape complete product details from the page, then falls back to URL analysis if blocked</div>
                           <details className="text-xs">
                             <summary className="cursor-pointer hover:text-blue-600">Supported stores & example URLs</summary>
                             <div className="mt-2 space-y-1 pl-4 border-l-2 border-blue-200">
