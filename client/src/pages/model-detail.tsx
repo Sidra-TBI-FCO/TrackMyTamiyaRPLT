@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink } from "lucide-react";
 import { ModelWithRelations } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -525,6 +525,113 @@ export default function ModelDetail() {
                 </div>
               </div>
               
+              {/* Build Type and Body Information */}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-1">Build Type</p>
+                    <div className="flex items-center space-x-2">
+                      <Badge 
+                        className={`font-mono text-xs ${
+                          model.buildType === 'custom' 
+                            ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' 
+                            : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                        }`}
+                      >
+                        {model.buildType === 'custom' ? 'Custom Build' : 'Kit Build'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {model.buildType === 'custom' && model.bodyManufacturer && (
+                    <div>
+                      <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-1">Body Manufacturer</p>
+                      <p className="font-mono text-gray-900 dark:text-white text-sm">
+                        {model.bodyManufacturer}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Custom Build Body Details */}
+                {model.buildType === 'custom' && (
+                  <div className="space-y-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 mb-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="font-mono text-sm font-semibold text-green-800 dark:text-green-200">Body Details</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      {model.bodyName && (
+                        <div>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-1">Body Name</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm font-semibold">
+                            {model.bodyName}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.bodyItemNumber && (
+                        <div>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-1">Body Item Number</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.bodyItemNumber}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {model.chassis && (
+                        <div>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-1">Chassis</p>
+                          <p className="font-mono text-gray-900 dark:text-white text-sm">
+                            {model.chassis}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Reference Links */}
+              {(model.tamiyaUrl || model.tamiyaBaseUrl) && (
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="space-y-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="font-mono text-sm font-semibold text-purple-800 dark:text-purple-200">Reference Links</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {model.tamiyaUrl && (
+                        <div>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-1">Official Tamiya</p>
+                          <a 
+                            href={model.tamiyaUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-mono text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 text-xs underline break-all"
+                          >
+                            {model.tamiyaUrl}
+                          </a>
+                        </div>
+                      )}
+                      
+                      {model.tamiyaBaseUrl && (
+                        <div>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-1">TamiyaBase</p>
+                          <a 
+                            href={model.tamiyaBaseUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-mono text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 text-xs underline break-all"
+                          >
+                            {model.tamiyaBaseUrl}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Full-width sections */}
               {model.notes && (
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
