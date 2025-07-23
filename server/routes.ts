@@ -324,14 +324,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const caption = req.body[`caption_${i}`] || '';
 
         // Upload file to storage
-        const storedFile = await fileStorage.uploadFile(file.buffer, file.originalname, file.mimetype);
+        const storedFile = await fileStorage.uploadFile(file.buffer, file.originalname);
         
         // Create photo record
         const photoData = {
           modelId: 0, // Will be set via entry relationship
-          filename: storedFile.filename,
+          filename: storedFile,
           originalName: file.originalname,
-          url: storedFile.url,
+          url: `/api/files/${storedFile}`,
           caption,
           isBoxArt: false,
         };

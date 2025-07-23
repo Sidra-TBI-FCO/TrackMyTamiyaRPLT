@@ -113,8 +113,8 @@ export default function BuildLogEntryDialog({
       };
 
       const response = existingEntry 
-        ? await apiRequest("PUT", `/api/build-log-entries/${existingEntry.id}`, entryData)
-        : await apiRequest("POST", `/api/models/${modelId}/build-log-entries`, entryData);
+        ? await apiRequest("PUT", `/api/build-log-entries/${existingEntry.id}`, entryData) as any
+        : await apiRequest("POST", `/api/models/${modelId}/build-log-entries`, entryData) as any;
       
       // Upload new photos if any
       if (selectedFiles.length > 0) {
