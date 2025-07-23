@@ -42,6 +42,7 @@ export default function ModelDetail() {
   const [isAddHopUpOpen, setIsAddHopUpOpen] = useState(false);
   const [isAddBuildLogOpen, setIsAddBuildLogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openSlideshow: openGlobalSlideshow } = useSlideshow();
@@ -553,7 +554,7 @@ export default function ModelDetail() {
                           setEditingEntry(entry);
                         }}
                         onDelete={() => {
-                          deleteBuildLogEntryMutation.mutate(entry.id);
+                          setDeletingEntry(entry);
                         }}
                       />
                     ))}
@@ -1075,6 +1076,33 @@ export default function ModelDetail() {
               className="bg-red-600 hover:bg-red-700"
             >
               {deleteModelMutation.isPending ? "Deleting..." : "Delete Model"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deletingEntry} onOpenChange={(open) => !open && setDeletingEntry(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Build Log Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete build log entry #{deletingEntry?.entryNumber} "{deletingEntry?.title}"? 
+              This action cannot be undone and will also delete any photos attached to this entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingEntry) {
+                  deleteBuildLogEntryMutation.mutate(deletingEntry.id);
+                  setDeletingEntry(null);
+                }
+              }}
+              disabled={deleteBuildLogEntryMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteBuildLogEntryMutation.isPending ? "Deleting..." : "Delete Entry"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
