@@ -718,7 +718,10 @@ export default function ModelDetail() {
                 <Camera className="mr-2 h-4 w-4" />
                 Add Photo
               </Button>
-              <Button className="w-full bg-green-600 hover:bg-green-700 font-mono" disabled>
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 font-mono"
+                onClick={() => setLocation(`/models/${model.id}/build-log`)}
+              >
                 <Wrench className="mr-2 h-4 w-4" />
                 Log Progress
               </Button>
