@@ -695,14 +695,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!response.ok) {
-        // If scraping fails, do URL parsing to extract what we can
+        // If scraping fails, automatically use URL parsing to extract what we can
         console.log(`Scraping failed with status ${response.status}, falling back to URL parsing`);
         
         const urlParsedData = parseDataFromUrl(url);
         
         return res.status(200).json({
-          message: `Page scraping blocked (${response.status}), extracted what we could from URL`,
-          fallbackSuggested: true,
+          message: `Page scraping blocked (${response.status}), but extracted data from URL structure`,
+          fallbackUsed: true,
           ...urlParsedData
         });
       }

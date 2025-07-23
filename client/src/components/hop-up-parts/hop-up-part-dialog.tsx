@@ -600,8 +600,8 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
                 <FormDescription className="text-xs">
                   <div className="space-y-1">
-                    <div><strong>Parse URL</strong>: Scrapes live product page (may be blocked)</div>
-                    <div><strong>URL Only</strong>: Extracts supplier, brand, material from URL structure</div>
+                    <div><strong>Parse URL</strong>: Scrapes live product page, auto-extracts from URL if blocked</div>
+                    <div><strong>URL Only</strong>: Direct URL structure parsing (manual option)</div>
                     <div><strong>Parse Text</strong>: Extracts details from copied product text/description</div>
                     <details className="text-xs">
                       <summary className="cursor-pointer hover:text-blue-600">Supported stores & example URLs</summary>
