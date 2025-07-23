@@ -53,10 +53,10 @@ interface AddModelDialogProps {
 
 const popularChassis = [
   "TT-01", "TT-02", "TT-03", "TA-01", "TA-02", "TA-03", "TA-04", "TA-05", "TA-06", "TA-07", "TA-08",
-  "TB-01", "TB-02", "TB-03", "TB-04", "TB-05", "TC-01", "TC-02", "TC-03",
+  "TB-01", "TB-02", "TB-03", "TB-04", "TB-05", "TB-06", "TC-01", "TC-02", "TC-03",
   "DF-01", "DF-02", "DF-03", "DF-04", "M-01", "M-02", "M-03", "M-04", "M-05", "M-06", "M-07", "M-08",
-  "XV-01", "XV-02", "CC-01", "CC-02", "CR-01", "DT-01", "DT-02", "DT-03",
-  "FF-01", "FF-02", "FF-03", "F-1", "F103", "F104", "F201", "Gravel Hound"
+  "MF-01", "MF-01X", "XV-01", "XV-02", "CC-01", "CC-02", "CR-01", "DT-01", "DT-02", "DT-03",
+  "FF-01", "FF-02", "FF-03", "F-1", "F103", "F104", "F201", "GF-01", "GRX130", "Gravel Hound"
 ];
 
 export default function AddModelDialog({ trigger }: AddModelDialogProps) {

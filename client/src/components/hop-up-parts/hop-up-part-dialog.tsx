@@ -67,12 +67,18 @@ const manufacturers = [
 
 const chassisCompatibility = [
   "TA01", "TA02", "TA03", "TA04", "TA05", "TA06", "TA07", "TA08",
-  "TB01", "TB02", "TB03", "TB04", "TB05",
+  "TB01", "TB02", "TB03", "TB04", "TB05", "TB06",
   "TC01", "TC02", "TC03",
   "TT01", "TT02", "TT03",
   "DF01", "DF02", "DF03", "DF04",
   "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08",
+  "MF01", "MF01X",
   "XV01", "XV02",
+  "CC01", "CC02", "CR01",
+  "DT01", "DT02", "DT03",
+  "FF01", "FF02", "FF03",
+  "F103", "F104", "F201",
+  "GF01", "GRX130",
   "Other"
 ];
 
