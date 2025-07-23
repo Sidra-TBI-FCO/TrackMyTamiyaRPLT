@@ -269,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Build log routes
-  app.get('/api/models/:modelId/build-logs', async (req, res) => {
+  app.get('/api/models/:modelId/build-log-entries', async (req, res) => {
     try {
       const userId = (req as any).userId;
       const modelId = parseInt(req.params.modelId);
@@ -280,28 +280,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/models/:modelId/build-logs', upload.single('voiceNote'), async (req, res) => {
+  app.post('/api/models/:modelId/build-log-entries', async (req, res) => {
     try {
       const userId = (req as any).userId;
       const modelId = parseInt(req.params.modelId);
       
       const entryData = insertBuildLogEntrySchema.parse({
         modelId,
+        entryNumber: req.body.entryNumber,
         title: req.body.title,
         content: req.body.content,
-        voiceNoteUrl: req.file ? `/uploads/${req.file.filename}` : null,
-        transcription: req.body.transcription || null,
         entryDate: req.body.entryDate ? new Date(req.body.entryDate) : new Date(),
       });
 
       const entry = await storage.createBuildLogEntry(entryData);
-      
-      // Add photos to entry if provided
-      if (req.body.photoIds) {
-        const photoIds = JSON.parse(req.body.photoIds);
-        await storage.addPhotosToEntry(entry.id, photoIds);
-      }
-
       res.status(201).json(entry);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -311,7 +303,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/build-logs/:id', async (req, res) => {
+  // Photo upload for build log entries
+  app.post('/api/build-log-entries/:entryId/photos', upload.array('photos', 10), async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const entryId = parseInt(req.params.entryId);
+      const files = req.files as Express.Multer.File[];
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+
+      const uploadedPhotos = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const caption = req.body[`caption_${i}`] || '';
+
+        // Upload file to storage
+        const storedFile = await fileStorage.uploadFile(file.buffer, file.originalname, file.mimetype);
+        
+        // Create photo record
+        const photoData = {
+          modelId: 0, // Will be set via entry relationship
+          filename: storedFile.filename,
+          originalName: file.originalname,
+          url: storedFile.url,
+          caption,
+          isBoxArt: false,
+        };
+
+        const photo = await storage.createPhoto(photoData);
+        
+        // Link photo to build log entry
+        await storage.addPhotosToEntry(entryId, [photo.id]);
+        
+        uploadedPhotos.push(photo);
+      }
+
+      res.status(201).json(uploadedPhotos);
+    } catch (error: any) {
+      console.error('Build log photo upload error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/build-log-entries/:id', async (req, res) => {
     try {
       const userId = (req as any).userId;
       const id = parseInt(req.params.id);
@@ -329,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/build-logs/:id', async (req, res) => {
+  app.delete('/api/build-log-entries/:id', async (req, res) => {
     try {
       const userId = (req as any).userId;
       const id = parseInt(req.params.id);

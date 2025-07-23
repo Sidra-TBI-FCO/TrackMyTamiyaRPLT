@@ -1,110 +1,163 @@
+import { useState } from "react";
+import { format } from "date-fns";
+import { MoreHorizontal, Calendar, Camera, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Camera, Mic, Edit, Trash2 } from "lucide-react";
-import { BuildLogEntryWithPhotos } from "@/types";
-import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { BuildLogEntryWithPhotos } from "@shared/schema";
 
 interface BuildLogEntryProps {
   entry: BuildLogEntryWithPhotos;
-  onEdit?: () => void;
-  onDelete?: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntryProps) {
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+
+  const handlePhotoClick = (photoUrl: string) => {
+    setSelectedPhoto(photoUrl);
+    setShowPhotoModal(true);
+  };
+
   return (
-    <Card className="bg-white dark:bg-gray-800">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="font-mono font-semibold text-gray-900 dark:text-white">
-              {entry.title}
-            </h3>
-            <div className="flex items-center space-x-2 mt-1">
-              <Calendar className="h-3 w-3 text-gray-400" />
-              <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                {format(new Date(entry.entryDate), "MMM dd, yyyy 'at' h:mm a")}
-              </span>
+    <>
+      <Card className="w-full">
+        <CardContent className="p-6">
+          {/* Header - Mobile & Desktop */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <Badge 
+                  variant="outline" 
+                  className="font-mono bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+                >
+                  #{entry.entryNumber}
+                </Badge>
+                <h3 className="text-lg font-mono font-semibold text-gray-900 dark:text-white">
+                  {entry.title}
+                </h3>
+              </div>
+              
+              <div className="flex items-center text-sm font-mono text-gray-500 dark:text-gray-400">
+                <Calendar className="h-4 w-4 mr-2" />
+                {format(new Date(entry.entryDate), "MMM d, yyyy 'at' h:mm a")}
+              </div>
+            </div>
+
+            {/* Desktop Actions */}
+            <div className="hidden sm:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onDelete} className="text-red-600 dark:text-red-400">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-1">
-            {entry.voiceNoteUrl && (
-              <Badge variant="secondary" className="text-xs font-mono">
-                <Mic className="h-3 w-3 mr-1" />
-                Voice
-              </Badge>
-            )}
-            {entry.photos.length > 0 && (
-              <Badge variant="secondary" className="text-xs font-mono">
-                <Camera className="h-3 w-3 mr-1" />
-                {entry.photos.length}
-              </Badge>
-            )}
-          </div>
-        </div>
 
-        {entry.content && (
-          <p className="font-mono text-sm text-gray-700 dark:text-gray-300 mb-4 whitespace-pre-wrap">
-            {entry.content}
-          </p>
-        )}
+          {/* Content */}
+          {entry.content && (
+            <div className="mb-4">
+              <p className="font-mono text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                {entry.content}
+              </p>
+            </div>
+          )}
 
-        {entry.transcription && entry.transcription !== entry.content && (
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
-            <p className="text-xs font-mono text-gray-500 dark:text-gray-400 mb-1">
-              Voice transcription:
-            </p>
-            <p className="font-mono text-sm text-gray-700 dark:text-gray-300">
-              {entry.transcription}
-            </p>
-          </div>
-        )}
-
-        {entry.photos.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-            {entry.photos.slice(0, 4).map(({ photo }) => (
-              <img
-                key={photo.id}
-                src={photo.url}
-                alt={photo.caption || "Build progress photo"}
-                className="w-full h-20 object-cover rounded border border-gray-200 dark:border-gray-600"
-              />
-            ))}
-            {entry.photos.length > 4 && (
-              <div className="w-full h-20 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center">
-                <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                  +{entry.photos.length - 4} more
+          {/* Photos Section */}
+          {entry.photos && entry.photos.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Camera className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span className="font-mono text-sm text-gray-500 dark:text-gray-400">
+                  {entry.photos.length} photo{entry.photos.length !== 1 ? 's' : ''}
                 </span>
               </div>
-            )}
-          </div>
-        )}
-
-        {entry.voiceNoteUrl && (
-          <div className="mb-4">
-            <audio controls className="w-full h-8">
-              <source src={entry.voiceNoteUrl} type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
-          </div>
-        )}
-
-        <div className="flex justify-end space-x-2">
-          {onEdit && (
-            <Button variant="ghost" size="sm" onClick={onEdit} className="font-mono">
-              <Edit className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
+              
+              {/* Photo Grid - Responsive */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {entry.photos.map((photoWrapper) => (
+                  <div
+                    key={photoWrapper.photo.id}
+                    className="relative group cursor-pointer"
+                    onClick={() => handlePhotoClick(photoWrapper.photo.url)}
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                      <img
+                        src={photoWrapper.photo.url}
+                        alt={photoWrapper.photo.caption || "Build photo"}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </div>
+                    {photoWrapper.photo.caption && (
+                      <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white p-2 text-xs font-mono rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        {photoWrapper.photo.caption}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-          {onDelete && (
-            <Button variant="ghost" size="sm" onClick={onDelete} className="font-mono text-red-600 hover:text-red-700">
-              <Trash2 className="h-3 w-3 mr-1" />
-              Delete
-            </Button>
+
+          {/* Mobile Actions */}
+          <div className="sm:hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={onEdit} className="font-mono">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onDelete} className="font-mono text-red-600 dark:text-red-400">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Photo Modal */}
+      <Dialog open={showPhotoModal} onOpenChange={setShowPhotoModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="font-mono">Build Photo</DialogTitle>
+          </DialogHeader>
+          {selectedPhoto && (
+            <div className="p-6 pt-0">
+              <img
+                src={selectedPhoto}
+                alt="Build photo"
+                className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+              />
+            </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

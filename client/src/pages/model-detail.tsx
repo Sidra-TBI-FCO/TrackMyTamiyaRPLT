@@ -424,12 +424,61 @@ export default function ModelDetail() {
             </TabsContent>
 
             <TabsContent value="builds">
-              <Card className="p-8">
-                <div className="text-center text-gray-500 dark:text-gray-400">
-                  <Wrench className="h-8 w-8 mx-auto mb-2" />
-                  <p className="font-mono">Build logs coming soon</p>
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-mono font-semibold text-gray-900 dark:text-white">
+                      Build Progress
+                    </h3>
+                    <p className="text-sm font-mono text-gray-500 dark:text-gray-400">
+                      Document your build journey with photos and notes
+                    </p>
+                  </div>
+                  
+                  <Button
+                    onClick={() => setLocation(`/models/${model.id}/build-log`)}
+                    className="bg-red-600 hover:bg-red-700 text-white font-mono w-full sm:w-auto"
+                  >
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Open Build Log
+                  </Button>
                 </div>
-              </Card>
+
+                <Card className="p-8">
+                  <div className="text-center text-gray-400 dark:text-gray-500">
+                    <Wrench className="h-12 w-12 mx-auto mb-4" />
+                    <h4 className="text-lg font-mono font-semibold text-gray-900 dark:text-white mb-2">
+                      Build Documentation
+                    </h4>
+                    <p className="font-mono text-gray-500 dark:text-gray-400 mb-6">
+                      Track your build progress with sequential entries, voice notes, and photo documentation.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto">
+                          <span className="font-mono font-bold text-red-600 dark:text-red-400">1</span>
+                        </div>
+                        <p className="font-mono font-medium">Sequential Entries</p>
+                        <p className="font-mono text-gray-500 dark:text-gray-400">Numbered build log entries with timestamps</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto">
+                          <span className="font-mono font-bold text-red-600 dark:text-red-400">2</span>
+                        </div>
+                        <p className="font-mono font-medium">Voice-to-Text</p>
+                        <p className="font-mono text-gray-500 dark:text-gray-400">Speak your build notes for easy documentation</p>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto">
+                          <span className="font-mono font-bold text-red-600 dark:text-red-400">3</span>
+                        </div>
+                        <p className="font-mono font-medium">Photo Documentation</p>
+                        <p className="font-mono text-gray-500 dark:text-gray-400">Capture progress with photos and captions</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="parts">

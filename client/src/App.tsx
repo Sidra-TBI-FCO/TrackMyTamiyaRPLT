@@ -28,6 +28,7 @@ function Router() {
       <Route path="/models" component={Models} />
       <Route path="/models/:id" component={ModelDetail} />
       <Route path="/build-logs" component={BuildLogs} />
+      <Route path="/models/:modelId/build-log" component={BuildLogs} />
 
       <Route path="/parts" component={Parts} />
       <Route path="/photo-gallery" component={PhotoGallery} />
