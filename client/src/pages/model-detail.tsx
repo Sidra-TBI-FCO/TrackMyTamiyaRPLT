@@ -366,13 +366,54 @@ export default function ModelDetail() {
             </CardContent>
           </Card>
 
+          {/* Mobile Quick Actions - Show only on mobile, above tabs */}
+          <Card className="lg:hidden mb-6">
+            <CardHeader>
+              <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 font-mono text-xs p-2"
+                  onClick={() => setIsAddPhotoOpen(true)}
+                >
+                  <Camera className="h-4 w-4 mb-1" />
+                  <span className="block">Photo</span>
+                </Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 font-mono text-xs p-2"
+                  onClick={() => setIsAddBuildLogOpen(true)}
+                >
+                  <Wrench className="h-4 w-4 mb-1" />
+                  <span className="block">Log</span>
+                </Button>
+                <Button 
+                  className="bg-orange-600 hover:bg-orange-700 font-mono text-xs p-2"
+                  onClick={() => setIsAddHopUpOpen(true)}
+                >
+                  <Cog className="h-4 w-4 mb-1" />
+                  <span className="block">Hop-Up</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Tabs for different sections */}
           <Tabs defaultValue="photos" className="w-full">
             <TabsList className="grid w-full grid-cols-4 lg:grid-cols-3 font-mono">
-              <TabsTrigger value="photos">Photos ({model.photos.length})</TabsTrigger>
-              <TabsTrigger value="builds">Build Log ({buildLogEntries?.length || 0})</TabsTrigger>
-              <TabsTrigger value="parts">Hop-Ups ({model.hopUpParts.length})</TabsTrigger>
-              <TabsTrigger value="details" className="lg:hidden">Details</TabsTrigger>
+              <TabsTrigger value="photos" className="text-xs sm:text-sm">
+                <span className="hidden sm:inline">Photos ({model.photos.length})</span>
+                <span className="sm:hidden">Photos</span>
+              </TabsTrigger>
+              <TabsTrigger value="builds" className="text-xs sm:text-sm">
+                <span className="hidden sm:inline">Build Log ({buildLogEntries?.length || 0})</span>
+                <span className="sm:hidden">Build</span>
+              </TabsTrigger>
+              <TabsTrigger value="parts" className="text-xs sm:text-sm">
+                <span className="hidden sm:inline">Hop-Ups ({model.hopUpParts.length})</span>
+                <span className="sm:hidden">Parts</span>
+              </TabsTrigger>
+              <TabsTrigger value="details" className="lg:hidden text-xs sm:text-sm">Details</TabsTrigger>
             </TabsList>
 
             <TabsContent value="photos" className="space-y-4">
@@ -688,35 +729,7 @@ export default function ModelDetail() {
                   </CardContent>
                 </Card>
 
-                {/* Quick Actions (Mobile) */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-mono text-lg">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 font-mono"
-                      onClick={() => setIsAddPhotoOpen(true)}
-                    >
-                      <Camera className="mr-2 h-4 w-4" />
-                      Add Photo
-                    </Button>
-                    <Button 
-                      className="w-full bg-green-600 hover:bg-green-700 font-mono"
-                      onClick={() => setLocation(`/models/${model.id}/build-log`)}
-                    >
-                      <Wrench className="mr-2 h-4 w-4" />
-                      Log Progress
-                    </Button>
-                    <Button 
-                      className="w-full bg-orange-600 hover:bg-orange-700 font-mono"
-                      onClick={() => setIsAddHopUpOpen(true)}
-                    >
-                      <Cog className="mr-2 h-4 w-4" />
-                      Add Hop-Up
-                    </Button>
-                  </CardContent>
-                </Card>
+
               </div>
             </TabsContent>
           </Tabs>
