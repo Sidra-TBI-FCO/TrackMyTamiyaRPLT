@@ -59,7 +59,7 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden sm:flex sm:items-center sm:gap-2">
+            <div className="hidden sm:flex sm:items-center sm:gap-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -129,7 +129,7 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
 
           {/* Mobile Actions */}
           <div className="sm:hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-1">
               <Button
                 variant="ghost"
                 size="sm"
