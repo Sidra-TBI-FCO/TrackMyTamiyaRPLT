@@ -240,7 +240,9 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const newStatus = part.installationStatus === "installed" ? "planned" : "installed";
                     toggleStatusMutation.mutate({ partId: part.id, newStatus });
                   }}
@@ -251,7 +253,9 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setEditingPart(part);
                     setDialogOpen(true);
                   }}
@@ -262,7 +266,9 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       const url = part.tamiyaBaseUrl || part.productUrl;
                       if (url) window.open(url, '_blank');
                     }}
@@ -273,7 +279,11 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => deleteMutation.mutate(part.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteMutation.mutate(part.id);
+                  }}
                   disabled={deleteMutation.isPending}
                   className="text-red-600 hover:text-red-700"
                 >
