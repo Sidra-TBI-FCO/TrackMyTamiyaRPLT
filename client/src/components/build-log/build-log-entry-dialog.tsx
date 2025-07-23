@@ -133,7 +133,6 @@ export default function BuildLogEntryDialog({
         for (const existingPhoto of selectedExistingPhotos) {
           await apiRequest("POST", `/api/build-log-entries/${response.id}/existing-photos`, {
             photoId: existingPhoto.id,
-            caption: existingPhoto.caption,
           });
         }
       }

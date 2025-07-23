@@ -9,6 +9,9 @@ import path from "path";
 import fs from "fs";
 import { fileStorage } from "./storage-service";
 import { JSDOM } from "jsdom";
+import { db } from "./db";
+import { models, photos, buildLogEntries } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -382,6 +385,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(204).send();
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Link existing photos to build log entries
+  app.post('/api/build-log-entries/:entryId/existing-photos', async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const entryId = parseInt(req.params.entryId);
+      const { photoId } = req.body;
+
+      if (!photoId) {
+        return res.status(400).json({ message: 'Photo ID is required' });
+      }
+
+      // Verify the entry exists and belongs to user by checking through models
+      const userModels = await db.query.models.findMany({
+        where: eq(models.userId, userId),
+        with: {
+          buildLogEntries: true,
+        },
+      });
+      
+      const targetEntry = userModels
+        .flatMap(model => model.buildLogEntries)
+        .find(entry => entry.id === entryId);
+      
+      if (!targetEntry) {
+        return res.status(404).json({ message: 'Build log entry not found' });
+      }
+
+      // Verify the photo belongs to the same model
+      const photo = await db.query.photos.findFirst({
+        where: and(eq(photos.id, photoId), eq(photos.modelId, targetEntry.modelId)),
+      });
+
+      if (!photo) {
+        return res.status(404).json({ message: 'Photo not found or does not belong to this model' });
+      }
+
+      // Add the photo to the entry
+      const result = await storage.addPhotosToEntry(entryId, [photoId]);
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error('Error linking existing photo to build log entry:', error);
       res.status(500).json({ message: error.message });
     }
   });
