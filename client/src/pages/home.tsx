@@ -43,7 +43,7 @@ export default function Home() {
     console.log(`Adding photo to model ${modelId}`);
   };
 
-  const recentModels = models?.slice(0, 3) || [];
+  const recentModels = models?.slice(0, 8) || [];
   const allPhotos = models?.flatMap(m => m.photos).slice(0, 8) || [];
 
   return (
@@ -166,7 +166,7 @@ export default function Home() {
 
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((i) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <Card key={i} className="overflow-hidden">
                     <Skeleton className="h-40 w-full" />
                     <CardContent className="p-3 space-y-2">
