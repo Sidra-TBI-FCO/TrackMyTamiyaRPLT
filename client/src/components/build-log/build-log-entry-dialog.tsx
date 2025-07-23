@@ -141,10 +141,12 @@ export default function BuildLogEntryDialog({
 
       return response;
     },
-    onSuccess: async () => {
-      // Force refresh the queries to show updated data immediately
-      await queryClient.invalidateQueries({ queryKey: ["/api/models", modelId.toString(), "build-log-entries"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/models", modelId.toString()] });
+    onSuccess: () => {
+      // Use the correct query key format to match what's used in the component
+      queryClient.invalidateQueries({ queryKey: [`/api/models/${modelId}/build-log-entries`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/models/${modelId}`] });
+      // Force immediate refetch
+      queryClient.refetchQueries({ queryKey: [`/api/models/${modelId}/build-log-entries`] });
       toast({
         title: existingEntry ? "Build log entry updated" : "Build log entry created",
         description: existingEntry ? "Your changes have been saved." : "Your build progress has been documented.",
