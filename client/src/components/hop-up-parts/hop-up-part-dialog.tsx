@@ -414,6 +414,34 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                 )}
               />
 
+              {/* Official Tamiya Part Toggle - Right after part name */}
+              <FormField
+                control={form.control}
+                name="isTamiyaBrand"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Official Tamiya Part</FormLabel>
+                      <FormDescription>
+                        Is this an official Tamiya brand part?
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // When enabled, set manufacturer to "Tamiya"
+                          if (checked) {
+                            form.setValue('manufacturer', 'Tamiya');
+                          }
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -512,7 +540,11 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Manufacturer/Brand</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || ""} 
+                        disabled={form.watch('isTamiyaBrand')}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select brand" />
@@ -526,6 +558,11 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           ))}
                         </SelectContent>
                       </Select>
+                      {form.watch('isTamiyaBrand') && (
+                        <FormDescription className="text-xs text-muted-foreground">
+                          Automatically set to "Tamiya" for official parts
+                        </FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -533,31 +570,10 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
               </div>
             </div>
 
-            {/* Brand and Links */}
+            {/* Store Links */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Brand & Links</h4>
+              <h4 className="font-semibold text-sm">Store Links</h4>
               
-              <FormField
-                control={form.control}
-                name="isTamiyaBrand"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Official Tamiya Part</FormLabel>
-                      <FormDescription>
-                        Is this an official Tamiya brand part?
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value || false}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -584,7 +600,13 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                       <FormLabel>TamiyaBase URL</FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
-                          <Input placeholder="https://tamiyabase.com/parts/..." {...field} value={field.value || ""} className="font-mono text-sm" />
+                          <Input 
+                            placeholder="https://tamiyabase.com/parts/..." 
+                            {...field} 
+                            value={field.value || ""} 
+                            className="font-mono text-sm" 
+                            disabled={!form.watch('isTamiyaBrand')}
+                          />
                         </FormControl>
                         {field.value && (
                           <Button
@@ -592,13 +614,17 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                             size="sm"
                             variant="outline"
                             onClick={() => window.open(field.value || "", '_blank')}
+                            disabled={!form.watch('isTamiyaBrand')}
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
                       <FormDescription className="text-xs">
-                        Official parts database
+                        {form.watch('isTamiyaBrand') ? 
+                          "Official parts database" : 
+                          "Only available for official Tamiya parts"
+                        }
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
