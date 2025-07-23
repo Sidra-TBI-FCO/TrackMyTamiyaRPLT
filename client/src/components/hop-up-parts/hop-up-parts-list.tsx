@@ -187,22 +187,24 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base line-clamp-2 flex items-center gap-2">
-                    {part.isTamiyaBrand && (
-                      <Badge variant="outline" className="text-xs tamiya-red bg-white border-tamiya-red">
-                        TAMIYA
-                      </Badge>
-                    )}
+                  <CardTitle className="text-base line-clamp-2">
                     {part.name}
                   </CardTitle>
                   {part.itemNumber && (
                     <CardDescription className="text-xs">#{part.itemNumber}</CardDescription>
                   )}
                 </div>
-                <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1`}>
-                  {getStatusIcon(part.installationStatus)}
-                  {part.installationStatus}
-                </Badge>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1`}>
+                    {getStatusIcon(part.installationStatus)}
+                    {part.installationStatus}
+                  </Badge>
+                  {part.isTamiyaBrand && (
+                    <Badge variant="outline" className="text-xs tamiya-red bg-white border-tamiya-red">
+                      TAMIYA
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
