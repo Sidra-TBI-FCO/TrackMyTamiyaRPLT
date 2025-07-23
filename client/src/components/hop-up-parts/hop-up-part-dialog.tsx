@@ -33,6 +33,7 @@ import { useState, useEffect } from "react";
 
 const formSchema = insertHopUpPartSchema.extend({
   cost: z.coerce.number().optional(),
+  quantity: z.coerce.number().min(1).default(1),
   compatibility: z.array(z.string()).default([]),
   installationDate: z.string().optional(),
   manufacturer: z.string().optional(),
@@ -93,6 +94,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
       supplier: "",
       manufacturer: "",
       cost: undefined,
+      quantity: 1,
       installationStatus: "planned",
       notes: "",
       isTamiyaBrand: false,
@@ -347,6 +349,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         supplier: part.supplier || "",
         manufacturer: part.manufacturer || "",
         cost: part.cost ? parseFloat(part.cost) : undefined,
+        quantity: part.quantity || 1,
         installationStatus: part.installationStatus,
         notes: part.notes || "",
         isTamiyaBrand: part.isTamiyaBrand || false,
@@ -365,6 +368,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         supplier: "",
         manufacturer: "",
         cost: undefined,
+        quantity: 1,
         installationStatus: "planned",
         notes: "",
         isTamiyaBrand: false,
@@ -441,6 +445,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           <Input 
                             placeholder="https://www.rcmart.com/..." 
                             {...field}
+                            value={field.value || ""}
                             className="font-mono text-sm"
                           />
                         </FormControl>
@@ -564,7 +569,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="itemNumber"
@@ -581,10 +586,38 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
                 <FormField
                   control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          step="1" 
+                          placeholder="1" 
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = value === "" ? 1 : parseInt(value);
+                            field.onChange(numValue);
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        How many of this part are used
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="cost"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cost ($)</FormLabel>
+                      <FormLabel>Unit Cost ($)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -594,11 +627,13 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                           onChange={(e) => {
                             const value = e.target.value;
                             const numValue = value === "" ? undefined : parseFloat(value);
-                            // console.log("Cost field change:", value, "->", numValue); // Remove debug logging
                             field.onChange(numValue);
                           }}
                         />
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        Cost per individual part
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

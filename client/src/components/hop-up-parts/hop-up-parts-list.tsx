@@ -216,7 +216,19 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                     <div className="text-xs text-muted-foreground">from {part.supplier}</div>
                   )}
                   {part.cost && (
-                    <div className="text-sm font-medium text-green-600">${parseFloat(part.cost).toFixed(2)}</div>
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium text-green-600">
+                        ${parseFloat(part.cost).toFixed(2)} each
+                        {part.quantity && part.quantity > 1 && (
+                          <span className="text-xs ml-1">× {part.quantity}</span>
+                        )}
+                      </div>
+                      {part.quantity && part.quantity > 1 && (
+                        <div className="text-sm font-semibold text-green-700">
+                          Total: ${(parseFloat(part.cost) * part.quantity).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
                   )}
                   {part.material && (
                     <div className="text-xs text-muted-foreground">Material: {part.material}</div>

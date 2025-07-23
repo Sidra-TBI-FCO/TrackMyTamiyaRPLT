@@ -78,6 +78,7 @@ export const hopUpParts = pgTable("hop_up_parts", {
   supplier: text("supplier"), // Store/retailer where purchased
   manufacturer: text("manufacturer"), // Brand that makes the part
   cost: numeric("cost", { precision: 10, scale: 2 }),
+  quantity: integer("quantity").notNull().default(1), // Number of this part used on the model
   installationStatus: text("installation_status").notNull().default("planned"), // planned, installed, removed
   installationDate: timestamp("installation_date"),
   notes: text("notes"),
