@@ -146,3 +146,10 @@ The application is designed to be mobile-first with responsive design, supportin
 - **Database Migration**: Updated schema to support authentication with proper foreign key constraints
 - **Dark Mode Enhancement**: Implemented red-to-blue color swapping in dark mode across all components
 - **Tamiya Branding**: Consistent star logo and color scheme throughout marketing and main application
+- **Dual Authentication System**: Added traditional email/password registration alongside Replit OIDC authentication
+  - Production deployment supports both Replit login and email/password registration
+  - Created comprehensive `/auth` page with dual authentication interface
+  - Updated database schema with password hashing and authentication provider tracking
+  - Landing page offers both "Quick Login (Replit)" and "Create Account" options
+  - Environment detection ensures development uses mock auth, production uses real authentication
+  - Successfully deployed at https://mytamiyatracker.replit.app/ with working Replit authentication
