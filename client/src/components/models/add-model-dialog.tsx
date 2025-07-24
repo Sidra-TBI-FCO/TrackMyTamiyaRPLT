@@ -112,7 +112,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       tamiyaUrl: "",
       tamiyaBaseUrl: "",
       tags: [],
-      userId: 2, // Mock user ID
     },
   });
 
