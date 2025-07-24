@@ -77,7 +77,7 @@ export async function setupAuth(app: Express) {
   setupTraditionalAuth(app);
   
   // Force development mode - use email authentication only
-  const forceDevMode = true; // Set to false for production Replit auth
+  const forceDevMode = false; // Set to false for production Replit auth
   
   // Check if we're in a deployed environment (has REPLIT_DOMAINS with real domain)
   const isDeployedProduction = !forceDevMode && 
