@@ -189,8 +189,8 @@ function setupDevAuth(app: Express) {
     // Create mock user in database
     await storage.upsertUser(mockUser);
     
-    // Set up mock session
-    (req as any).user = {
+    // Set up mock session with proper login
+    req.login({
       claims: {
         sub: mockUser.id,
         email: mockUser.email,
@@ -199,20 +199,31 @@ function setupDevAuth(app: Express) {
         profile_image_url: mockUser.profileImageUrl
       },
       access_token: "mock-access-token",
-      expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
-    };
-    
-    // Mark as authenticated
-    (req.session as any).passport = { user: (req as any).user };
-    
-    res.redirect("/");
+      expires_at: Math.floor(Date.now() / 1000) + 86400 // 24 hours from now
+    }, (err) => {
+      if (err) {
+        console.error("Dev login error:", err);
+        return res.status(500).json({ message: "Login failed" });
+      }
+      res.redirect("/");
+    });
   });
 
   // Development logout route
   app.get("/api/logout", (req, res) => {
     console.log("Development logout");
-    req.logout(() => {
-      res.redirect("/");
+    req.logout((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+      }
+      // Destroy the session completely
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+        }
+        res.clearCookie('connect.sid'); // Clear the session cookie
+        res.redirect("/");
+      });
     });
   });
 
