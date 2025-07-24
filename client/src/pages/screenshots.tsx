@@ -205,9 +205,9 @@ export default function Screenshots() {
             with our intuitive and powerful tools.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/api/login">
+            <Link href="/auth">
               <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white">
-                Access Web App
+                Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>

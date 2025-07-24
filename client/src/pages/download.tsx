@@ -69,7 +69,7 @@ export default function DownloadPage() {
                     <p className="text-sm text-muted-foreground">Works directly in browser</p>
                   </div>
                 </div>
-                <Link href="/api/login">
+                <Link href="/auth">
                   <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
                     Launch Web App
                     <ArrowRight className="ml-2 h-4 w-4" />

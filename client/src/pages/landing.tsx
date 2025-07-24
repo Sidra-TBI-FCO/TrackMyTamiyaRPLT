@@ -24,19 +24,14 @@ export default function Landing() {
               organize photos, and monitor hop-up parts with precision and style.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/api/login">
+              <Link href="/auth">
                 <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
-                  Quick Login (Replit)
+                  Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/auth">
-                <Button size="lg" variant="outline" className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-600">
-                  Create Account
-                </Button>
-              </Link>
               <Link href="/features">
-                <Button size="lg" variant="ghost">
+                <Button size="lg" variant="outline">
                   Explore Features
                 </Button>
               </Link>
@@ -160,7 +155,7 @@ export default function Landing() {
             Join RC enthusiasts who trust TrackMyTamiya to manage their collections. 
             Start tracking your builds today.
           </p>
-          <Link href="/api/login">
+          <Link href="/auth">
             <Button size="lg" variant="secondary" className="bg-white text-red-600 dark:text-blue-600 hover:bg-gray-100">
               Get Started Now
               <ArrowRight className="ml-2 h-4 w-4" />

@@ -59,7 +59,7 @@ export default function MarketingHeader({ isDarkMode, onToggleDarkMode }: Market
               )}
             </Button>
             
-            <Link href="/api/login">
+            <Link href="/auth">
               <Button className="bg-red-600 hover:bg-red-700 text-white">
                 Login
               </Button>
