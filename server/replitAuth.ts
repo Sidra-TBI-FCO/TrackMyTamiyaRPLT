@@ -72,6 +72,13 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Development mode: use mock authentication for localhost
+  if (process.env.NODE_ENV === "development") {
+    console.log("Setting up development authentication...");
+    setupDevAuth(app);
+    return;
+  }
+
   try {
     const config = await getOidcConfig();
 
@@ -162,6 +169,61 @@ export async function setupAuth(app: Express) {
       });
     }
   });
+}
+
+// Development authentication for localhost testing
+function setupDevAuth(app: Express) {
+  // Mock user data for development
+  const mockUser = {
+    id: "dev-user-123",
+    email: "developer@tamiya.test",
+    firstName: "Test",
+    lastName: "User",
+    profileImageUrl: "https://replit.com/public/images/evalMarkIcon.png"
+  };
+
+  // Development login route
+  app.get("/api/login", async (req, res) => {
+    console.log("Development login - creating mock session");
+    
+    // Create mock user in database
+    await storage.upsertUser(mockUser);
+    
+    // Set up mock session
+    (req as any).user = {
+      claims: {
+        sub: mockUser.id,
+        email: mockUser.email,
+        first_name: mockUser.firstName,
+        last_name: mockUser.lastName,
+        profile_image_url: mockUser.profileImageUrl
+      },
+      access_token: "mock-access-token",
+      expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+    };
+    
+    // Mark as authenticated
+    (req.session as any).passport = { user: (req as any).user };
+    
+    res.redirect("/");
+  });
+
+  // Development logout route
+  app.get("/api/logout", (req, res) => {
+    console.log("Development logout");
+    req.logout(() => {
+      res.redirect("/");
+    });
+  });
+
+  // Development callback (not needed but included for consistency)
+  app.get("/api/callback", (req, res) => {
+    res.redirect("/api/login");
+  });
+
+  // Setup passport serialization for mock user
+  passport.serializeUser((user: any, cb) => cb(null, user));
+  passport.deserializeUser((user: any, cb) => cb(null, user));
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
