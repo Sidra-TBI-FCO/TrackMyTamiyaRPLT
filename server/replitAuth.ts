@@ -230,10 +230,17 @@ function setupDevAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  // Handle traditional email/password authentication (no expires_at)
+  if (!user.expires_at) {
+    // Traditional auth user - just check if authenticated
+    return next();
+  }
+
+  // Handle Replit OAuth authentication with token refresh
   const now = Math.floor(Date.now() / 1000);
   if (now <= user.expires_at) {
     return next();

@@ -67,6 +67,11 @@ const upload = multer({
   }
 });
 
+// Helper function to get user ID from either auth type
+function getUserId(req: any): string {
+  return req.user.claims?.sub || req.user.id;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   await setupAuth(app);
@@ -74,7 +79,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Handle both Replit OAuth and traditional auth user structures
+      const userId = getUserId(req);
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -103,7 +109,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Models routes
   app.get('/api/models', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      // Handle both Replit OAuth and traditional auth user structures
+      const userId = getUserId(req);
       const models = await storage.getModels(userId);
       res.json(models);
     } catch (error: any) {
@@ -113,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/models/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const model = await storage.getModel(id, userId);
       if (!model) {
@@ -127,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/models', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelData = insertModelSchema.parse({ ...req.body, userId });
       const model = await storage.createModel(modelData);
       res.status(201).json(model);
@@ -141,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/models/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const modelData = insertModelSchema.partial().parse(req.body);
       const model = await storage.updateModel(id, userId, modelData);
@@ -159,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/models/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteModel(id, userId);
       if (!deleted) {
@@ -174,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Photos routes
   app.get('/api/models/:modelId/photos', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const photos = await storage.getPhotos(modelId, userId);
       res.json(photos);
@@ -185,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/models/:modelId/photos', upload.array('photos', 10), async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const files = req.files as Express.Multer.File[];
       
@@ -250,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/photos/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const photoData = insertPhotoSchema.partial().parse(req.body);
       
@@ -277,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/photos/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const deleted = await storage.deletePhoto(id, userId);
       if (!deleted) {
@@ -292,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Build log routes
   app.get('/api/build-log-entries', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       console.log('Fetching all build log entries for user:', userId);
       
       // Fallback approach: get all models and their entries separately if needed
@@ -310,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/models/:modelId/build-log-entries', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const entries = await storage.getBuildLogEntries(modelId, userId);
       res.json(entries);
@@ -321,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/models/:modelId/build-log-entries', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       
       const entryData = insertBuildLogEntrySchema.parse({
@@ -345,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Photo upload for build log entries
   app.post('/api/build-log-entries/:entryId/photos', upload.array('photos', 10), async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const entryId = parseInt(req.params.entryId);
       const files = req.files as Express.Multer.File[];
 
@@ -389,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/build-log-entries/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       
       // Custom schema for updates that accepts string dates
@@ -413,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/build-log-entries/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteBuildLogEntry(id, userId);
       if (!deleted) {
@@ -428,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Link existing photos to build log entries
   app.post('/api/build-log-entries/:entryId/existing-photos', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const entryId = parseInt(req.params.entryId);
       const { photoId } = req.body;
 
@@ -473,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hop-up parts routes
   app.get('/api/models/:modelId/hop-up-parts', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const parts = await storage.getHopUpParts(modelId, userId);
       res.json(parts);
@@ -484,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/models/:modelId/hop-up-parts', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const partData = insertHopUpPartSchema.parse({ ...req.body, modelId });
       const part = await storage.createHopUpPart(partData);
@@ -499,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/hop-up-parts/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const partData = insertHopUpPartSchema.partial().parse(req.body);
       const part = await storage.updateHopUpPart(id, userId, partData);
@@ -517,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/hop-up-parts/:id', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const deleted = await storage.deleteHopUpPart(id, userId);
       if (!deleted) {
@@ -532,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stats route
   app.get('/api/stats', async (req, res) => {
     try {
-      const userId = (req as any).user.claims.sub;
+      const userId = getUserId(req);
       const stats = await storage.getCollectionStats(userId);
       res.json(stats);
     } catch (error: any) {
