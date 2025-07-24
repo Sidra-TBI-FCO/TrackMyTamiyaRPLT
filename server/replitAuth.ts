@@ -8,6 +8,7 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { setupTraditionalAuth } from "./traditionalAuth";
+import { setupGoogleAuth } from "./googleAuth";
 
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -75,6 +76,9 @@ export async function setupAuth(app: Express) {
 
   // Set up traditional email/password authentication
   setupTraditionalAuth(app);
+  
+  // Set up Google OAuth authentication
+  setupGoogleAuth(app);
   
   // Force development mode - use email authentication only
   const forceDevMode = false; // Set to false for production Replit auth

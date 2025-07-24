@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Star, Car, Settings, Wrench } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
@@ -130,15 +131,23 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              {/* Quick Replit Login */}
+              {/* Quick Social Login */}
               <Card className="border-tamiya-red/20 dark:border-tamiya-blue/20">
                 <CardHeader className="text-center pb-4">
                   <CardTitle className="text-lg">Quick Access</CardTitle>
                   <CardDescription>
-                    Login instantly with your Replit account
+                    Login instantly with your existing account
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  <Button 
+                    onClick={() => window.location.href = "/api/auth/google"}
+                    className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+                    variant="outline"
+                  >
+                    <SiGoogle className="mr-2 h-4 w-4" />
+                    Continue with Google
+                  </Button>
                   <Button 
                     onClick={() => window.location.href = "/api/login"}
                     className="w-full bg-tamiya-red hover:bg-tamiya-red/90 dark:bg-tamiya-blue dark:hover:bg-tamiya-blue/90"
