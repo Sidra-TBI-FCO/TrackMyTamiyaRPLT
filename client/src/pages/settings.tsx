@@ -4,12 +4,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings } from "@/lib/settings";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
+  const { user } = useAuth();
 
   const updateSetting = <K extends keyof SlideshowSettings>(
     key: K,
@@ -22,6 +24,10 @@ export default function SettingsPage() {
       title: "Settings saved",
       description: "Your slideshow preferences have been updated.",
     });
+  };
+
+  const handleLogout = () => {
+    window.location.href = '/api/logout';
   };
 
   return (
@@ -46,6 +52,40 @@ export default function SettingsPage() {
                 <span className="font-mono text-sm">Slideshow:</span>
                 <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{settings.duration}s</span>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-mono">User Account</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {user && (
+                <>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-red-600 text-white p-2 rounded-full">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                        {(user as any).firstName} {(user as any).lastName}
+                      </p>
+                      <p className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                        {(user as any).email}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleLogout}
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full font-mono text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200 dark:border-red-800"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
