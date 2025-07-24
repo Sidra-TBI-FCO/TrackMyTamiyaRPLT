@@ -76,17 +76,21 @@ export async function setupAuth(app: Express) {
   // Set up traditional email/password authentication
   setupTraditionalAuth(app);
   
+  // Force development mode - use email authentication only
+  const forceDevMode = true; // Set to false for production Replit auth
+  
   // Check if we're in a deployed environment (has REPLIT_DOMAINS with real domain)
-  const isDeployedProduction = process.env.REPLIT_DOMAINS && 
+  const isDeployedProduction = !forceDevMode && 
+                              process.env.REPLIT_DOMAINS && 
                               !process.env.REPLIT_DOMAINS.includes("localhost") &&
                               (process.env.REPLIT_DOMAINS.includes("replit.dev") || process.env.REPLIT_DOMAINS.includes("picard.replit.dev"));
   
-  console.log(`Environment check: REPLIT_DOMAINS=${process.env.REPLIT_DOMAINS}, isDeployedProduction=${isDeployedProduction}`);
+  console.log(`Environment check: REPLIT_DOMAINS=${process.env.REPLIT_DOMAINS}, forceDevMode=${forceDevMode}, isDeployedProduction=${isDeployedProduction}`);
   
   if (isDeployedProduction) {
     console.log("Setting up production Replit authentication...");
   } else {
-    console.log("Setting up development authentication...");
+    console.log("Setting up development authentication (email/password only)...");
     setupDevAuth(app);
     return;
   }
