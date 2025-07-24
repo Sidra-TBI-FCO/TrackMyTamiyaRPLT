@@ -38,7 +38,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
     },
   });
@@ -72,47 +72,76 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const config = await getOidcConfig();
+  try {
+    const config = await getOidcConfig();
 
-  const verify: VerifyFunction = async (
-    tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
-    verified: passport.AuthenticateCallback
-  ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
-  };
+    const verify: VerifyFunction = async (
+      tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
+      verified: passport.AuthenticateCallback
+    ) => {
+      const user = {};
+      updateUserSession(user, tokens);
+      await upsertUser(tokens.claims());
+      verified(null, user);
+    };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
-    const strategy = new Strategy(
-      {
-        name: `replitauth:${domain}`,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
-      },
-      verify,
-    );
-    passport.use(strategy);
+    // Register strategies for all domains, including localhost for development
+    const domains = process.env.REPLIT_DOMAINS!.split(",");
+    const allDomains = [...domains, "localhost"];
+
+    for (const domain of allDomains) {
+      // Use http for localhost, https for production domains
+      const protocol = domain === "localhost" ? "http" : "https";
+      const port = domain === "localhost" ? ":5000" : "";
+      
+      const strategy = new Strategy(
+        {
+          name: `replitauth:${domain}`,
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL: `${protocol}://${domain}${port}/api/callback`,
+        },
+        verify,
+      );
+      passport.use(strategy);
+      console.log(`Registered auth strategy for domain: ${domain} (${protocol}://${domain}${port})`);
+    }
+  } catch (error) {
+    console.error("Failed to setup OIDC authentication:", error);
+    console.log("Authentication will be disabled");
   }
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
+    try {
+      const hostname = req.hostname || "localhost";
+      console.log(`Login attempt for hostname: ${hostname}`);
+      
+      passport.authenticate(`replitauth:${hostname}`, {
+        prompt: "login consent",
+        scope: ["openid", "email", "profile", "offline_access"],
+      })(req, res, next);
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Authentication setup failed", error: error.message });
+    }
   });
 
   app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
-    })(req, res, next);
+    try {
+      const hostname = req.hostname || "localhost";
+      console.log(`Callback for hostname: ${hostname}`);
+      
+      passport.authenticate(`replitauth:${hostname}`, {
+        successReturnToOrRedirect: "/",
+        failureRedirect: "/api/login",
+      })(req, res, next);
+    } catch (error) {
+      console.error("Callback error:", error);
+      res.status(500).json({ message: "Authentication callback failed", error: error.message });
+    }
   });
 
   app.get("/api/logout", (req, res) => {
