@@ -105,7 +105,7 @@ export default function Screenshots() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredScreenshots.map((screenshot, index) => (
               <div key={index} className="group">
-                <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-600 transition-colors">
+                <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-blue-600 transition-colors">
                   <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     <div className="text-center p-8">
                       <div className="text-muted-foreground text-sm mb-2">
@@ -155,8 +155,8 @@ export default function Screenshots() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="bg-red-100 dark:bg-red-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Smartphone className="h-6 w-6 text-red-600" />
+              <div className="bg-red-100 dark:bg-blue-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Smartphone className="h-6 w-6 text-red-600 dark:text-blue-400" />
               </div>
               <h3 className="font-semibold mb-2">Mobile First</h3>
               <p className="text-sm text-muted-foreground">
@@ -164,8 +164,8 @@ export default function Screenshots() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-red-100 dark:bg-red-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Monitor className="h-6 w-6 text-red-600" />
+              <div className="bg-red-100 dark:bg-blue-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Monitor className="h-6 w-6 text-red-600 dark:text-blue-400" />
               </div>
               <h3 className="font-semibold mb-2">Desktop Power</h3>
               <p className="text-sm text-muted-foreground">
@@ -173,8 +173,8 @@ export default function Screenshots() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-red-100 dark:bg-red-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-red-600 font-bold">🌙</span>
+              <div className="bg-red-100 dark:bg-blue-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-red-600 dark:text-blue-400 font-bold">🌙</span>
               </div>
               <h3 className="font-semibold mb-2">Dark Mode</h3>
               <p className="text-sm text-muted-foreground">
@@ -182,8 +182,8 @@ export default function Screenshots() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-red-100 dark:bg-red-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-red-600 font-bold">⚡</span>
+              <div className="bg-red-100 dark:bg-blue-900/20 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-red-600 dark:text-blue-400 font-bold">⚡</span>
               </div>
               <h3 className="font-semibold mb-2">Fast & Smooth</h3>
               <p className="text-sm text-muted-foreground">

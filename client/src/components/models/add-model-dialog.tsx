@@ -1344,7 +1344,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
               <Button
                 type="submit"
                 disabled={createModelMutation.isPending || isScraping}
-                className="bg-red-600 hover:bg-red-700 font-mono"
+                className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 font-mono"
                 onClick={(e) => {
                   console.log("Submit button clicked");
                   toast({

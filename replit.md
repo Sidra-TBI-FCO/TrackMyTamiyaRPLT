@@ -137,4 +137,12 @@ The application uses a relational PostgreSQL schema with the following main enti
 - Production-ready error handling and logging
 - Session management preparation for authentication
 
-The application is designed to be mobile-first with responsive design, supporting both light and dark themes. The architecture supports future enhancements including PDF export, advanced search, and social features while maintaining clean separation of concerns and type safety throughout the stack.
+The application is designed to be mobile-first with responsive design, supporting both light and dark themes with dynamic Tamiya color swapping (red/blue elements swap in dark mode for optimal branding consistency). The architecture supports future enhancements including PDF export, advanced search, and social features while maintaining clean separation of concerns and type safety throughout the stack.
+
+## Recent Changes (January 2025)
+
+- **Marketing Website**: Complete marketing site with landing, features, screenshots, and download pages
+- **Replit Authentication**: Integrated Replit Auth with string-based user IDs and session management
+- **Database Migration**: Updated schema to support authentication with proper foreign key constraints
+- **Dark Mode Enhancement**: Implemented red-to-blue color swapping in dark mode across all components
+- **Tamiya Branding**: Consistent star logo and color scheme throughout marketing and main application

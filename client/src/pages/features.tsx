@@ -8,7 +8,7 @@ export default function Features() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
+      <section className="bg-gradient-to-r from-red-600 to-red-700 dark:from-blue-600 dark:to-blue-700 text-white py-16">
         <div className="container mx-auto px-4">
           <Link href="/">
             <Button variant="ghost" className="mb-4 text-white hover:bg-white/20">
@@ -34,7 +34,7 @@ export default function Features() {
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
             <div>
               <div className="flex items-center mb-4">
-                <Database className="h-8 w-8 text-red-600 mr-3" />
+                <Database className="h-8 w-8 text-red-600 dark:text-blue-400 dark:text-blue-400 mr-3" />
                 <h3 className="text-2xl font-bold">Model Management</h3>
               </div>
               <p className="text-lg text-muted-foreground mb-6">
@@ -43,19 +43,19 @@ export default function Features() {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Automatic data import from TamiyaBase
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Build status tracking (Planning, Building, Built, Maintenance)
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Custom tags and organization
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Cost tracking and investment analysis
                 </li>
               </ul>
@@ -75,7 +75,7 @@ export default function Features() {
             </div>
             <div className="order-1 lg:order-2">
               <div className="flex items-center mb-4">
-                <Camera className="h-8 w-8 text-red-600 mr-3" />
+                <Camera className="h-8 w-8 text-red-600 dark:text-blue-400 mr-3" />
                 <h3 className="text-2xl font-bold">Photo Gallery</h3>
               </div>
               <p className="text-lg text-muted-foreground mb-6">
@@ -84,19 +84,19 @@ export default function Features() {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Drag-and-drop multi-file uploads
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Box art designation and management
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Photo captions and metadata
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Lightbox gallery viewing
                 </li>
               </ul>
@@ -106,7 +106,7 @@ export default function Features() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="flex items-center mb-4">
-                <Clock className="h-8 w-8 text-red-600 mr-3" />
+                <Clock className="h-8 w-8 text-red-600 dark:text-blue-400 mr-3" />
                 <h3 className="text-2xl font-bold">Build Logging</h3>
               </div>
               <p className="text-lg text-muted-foreground mb-6">
@@ -115,19 +115,19 @@ export default function Features() {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Chronological build timeline
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Voice recording with transcription
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Photo attachments per entry
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
                   Cross-model build history
                 </li>
               </ul>
@@ -148,7 +148,7 @@ export default function Features() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card>
               <CardHeader>
-                <Settings className="h-8 w-8 text-red-600 mb-2" />
+                <Settings className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Hop-Up Parts Tracking</CardTitle>
                 <CardDescription>
                   Monitor performance upgrades, installation status, costs, and compatibility 
@@ -159,7 +159,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <Search className="h-8 w-8 text-red-600 mb-2" />
+                <Search className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Advanced Search</CardTitle>
                 <CardDescription>
                   Find models, parts, and build entries quickly with powerful search 
@@ -170,7 +170,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <BarChart3 className="h-8 w-8 text-red-600 mb-2" />
+                <BarChart3 className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Analytics & Reports</CardTitle>
                 <CardDescription>
                   Track collection growth, investment analysis, and build progress 
@@ -181,7 +181,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <FileText className="h-8 w-8 text-red-600 mb-2" />
+                <FileText className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Data Export</CardTitle>
                 <CardDescription>
                   Export your collection data in various formats for backup, 
@@ -192,7 +192,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <Cloud className="h-8 w-8 text-red-600 mb-2" />
+                <Cloud className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Cloud Sync</CardTitle>
                 <CardDescription>
                   Access your collection from anywhere with secure cloud storage 
@@ -203,7 +203,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <Smartphone className="h-8 w-8 text-red-600 mb-2" />
+                <Smartphone className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Mobile Experience</CardTitle>
                 <CardDescription>
                   Optimized mobile interface with touch-friendly controls, 
@@ -227,7 +227,7 @@ export default function Features() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/api/login">
-              <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
                 Access Web App
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

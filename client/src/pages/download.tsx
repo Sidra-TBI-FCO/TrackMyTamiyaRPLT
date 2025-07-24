@@ -8,7 +8,7 @@ export default function DownloadPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
+      <section className="bg-gradient-to-r from-red-600 to-red-700 dark:from-blue-600 dark:to-blue-700 text-white py-16">
         <div className="container mx-auto px-4">
           <Link href="/screenshots">
             <Button variant="ghost" className="mb-4 text-white hover:bg-white/20">
@@ -254,7 +254,7 @@ export default function DownloadPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/api/login">
-              <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
                 Launch Web App
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

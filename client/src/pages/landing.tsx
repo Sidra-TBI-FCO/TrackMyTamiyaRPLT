@@ -6,16 +6,16 @@ import { Link } from "wouter";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-red-50 dark:to-red-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-red-50 dark:to-blue-950/20">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-background">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">
+            <Badge className="mb-4 bg-red-100 text-red-800 dark:bg-blue-900/20 dark:text-blue-300">
               RC Collection Management
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Track Your <span className="text-red-600">Tamiya</span>
+              Track Your <span className="text-red-600 dark:text-blue-400">Tamiya</span>
               <br />
               <span className="text-gray-600 dark:text-gray-300">RC Collection</span>
             </h1>
@@ -25,7 +25,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/api/login">
-                <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white">
+                <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
                   Access Web App
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
