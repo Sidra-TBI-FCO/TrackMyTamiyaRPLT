@@ -4,6 +4,21 @@ import crypto from "crypto";
 import { registerUserSchema, loginUserSchema, RegisterUser, LoginUser } from "@shared/schema";
 import { storage } from "./storage";
 
+// Simple email sending simulation (in production, use a real email service)
+function sendVerificationEmail(email: string, token: string) {
+  const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] 
+    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
+    : 'http://localhost:5000';
+  
+  console.log(`📧 Verification email would be sent to: ${email}`);
+  console.log(`🔗 Verification link: ${baseUrl}/api/auth/verify-email?token=${token}`);
+  console.log(`✨ In production, integrate with SendGrid, AWS SES, or similar service`);
+}
+
+function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 export function setupTraditionalAuth(app: Express) {
   // Register new user with email/password
   app.post("/api/auth/register", async (req: Request, res: Response) => {
@@ -23,6 +38,9 @@ export function setupTraditionalAuth(app: Express) {
       // Generate unique user ID
       const userId = crypto.randomUUID();
 
+      // Generate verification token
+      const verificationToken = generateVerificationToken();
+
       // Create user
       const user = await storage.upsertUser({
         id: userId,
@@ -31,8 +49,12 @@ export function setupTraditionalAuth(app: Express) {
         lastName: validatedData.lastName,
         password: hashedPassword,
         authProvider: "email",
-        isVerified: true, // For now, auto-verify. Later add email verification
+        isVerified: false, // Require email verification
+        verificationToken,
       });
+
+      // Send verification email
+      sendVerificationEmail(validatedData.email, verificationToken);
 
       // Log the user in
       req.login({
@@ -115,6 +137,64 @@ export function setupTraditionalAuth(app: Express) {
       if (error.name === "ZodError") {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Email verification endpoint
+  app.get("/api/auth/verify-email", async (req: Request, res: Response) => {
+    try {
+      const token = req.query.token as string;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Verification token is required" });
+      }
+
+      // Find user by verification token
+      const user = await storage.getUserByVerificationToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired verification token" });
+      }
+
+      // Update user as verified
+      await storage.verifyUserEmail(user.id);
+
+      // Redirect to success page or login
+      res.redirect('/?verified=true');
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Resend verification email endpoint
+  app.post("/api/auth/resend-verification", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.isVerified) {
+        return res.status(400).json({ message: "Email is already verified" });
+      }
+
+      // Generate new verification token
+      const newToken = generateVerificationToken();
+      await storage.updateUserVerificationToken(user.id, newToken);
+      
+      // Send verification email
+      sendVerificationEmail(email, newToken);
+      
+      res.json({ message: "Verification email sent" });
+    } catch (error) {
+      console.error("Resend verification error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

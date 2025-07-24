@@ -21,6 +21,7 @@ export default function AuthPage() {
   
   // Simple state for debugging email field
   const [emailValue, setEmailValue] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Login form
   const loginForm = useForm<LoginUser>({
@@ -76,7 +77,7 @@ export default function AuthPage() {
       queryClient.setQueryData(["/api/auth/user"], user);
       toast({
         title: "Welcome to TrackMyTamiya!",
-        description: `Account created for ${user.firstName} ${user.lastName}`,
+        description: `Account created for ${user.firstName} ${user.lastName}. Please check your email to verify your account.`,
       });
       navigate("/");
     },
@@ -94,6 +95,16 @@ export default function AuthPage() {
   };
 
   const onRegister = (data: RegisterUser) => {
+    // Check password confirmation
+    if (confirmPassword !== data.password) {
+      toast({
+        title: "Password Mismatch",
+        description: "Please ensure both password fields match",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     registerMutation.mutate(data);
   };
 
@@ -256,7 +267,7 @@ export default function AuthPage() {
                         </div>
                         <div className="space-y-2">
                           <label htmlFor="test-email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            Email (Test Field)
+                            Email
                           </label>
                           <input 
                             id="test-email"
@@ -283,10 +294,26 @@ export default function AuthPage() {
                             </FormItem>
                           )}
                         />
+                        <div className="space-y-2">
+                          <label htmlFor="confirm-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Confirm Password
+                          </label>
+                          <input 
+                            id="confirm-password"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                          {confirmPassword && confirmPassword !== registerForm.watch("password") && (
+                            <p className="text-sm text-red-600">Passwords do not match</p>
+                          )}
+                        </div>
                         <Button 
                           type="submit" 
                           className="w-full"
-                          disabled={registerMutation.isPending}
+                          disabled={registerMutation.isPending || (confirmPassword !== "" && confirmPassword !== registerForm.watch("password"))}
                         >
                           {registerMutation.isPending ? "Creating Account..." : "Create Account"}
                         </Button>

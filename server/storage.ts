@@ -14,7 +14,10 @@ export interface IStorage {
   // User methods for Replit Auth and traditional auth
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  verifyUserEmail(userId: string): Promise<void>;
+  updateUserVerificationToken(userId: string, token: string): Promise<void>;
 
   // Model methods
   getModels(userId: string): Promise<ModelWithRelations[]>;
@@ -64,6 +67,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.verificationToken, token));
+    return user || undefined;
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -77,6 +85,25 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async verifyUserEmail(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ 
+        isVerified: true, 
+        verificationToken: null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserVerificationToken(userId: string, token: string): Promise<void> {
+    await db.update(users)
+      .set({ 
+        verificationToken: token,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
   }
 
   async getModels(userId: string): Promise<ModelWithRelations[]> {

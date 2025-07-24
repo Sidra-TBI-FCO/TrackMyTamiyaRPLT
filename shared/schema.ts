@@ -174,9 +174,6 @@ export const hopUpPartsRelations = relations(hopUpParts, ({ one }) => ({
 export const upsertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
-  verificationToken: true,
-  resetPasswordToken: true,
-  resetPasswordExpires: true,
 });
 
 // Schema for email/password registration
