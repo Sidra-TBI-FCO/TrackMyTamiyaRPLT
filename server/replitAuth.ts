@@ -125,7 +125,7 @@ export async function setupAuth(app: Express) {
       })(req, res, next);
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ message: "Authentication setup failed", error: error.message });
+      res.status(500).json({ message: "Authentication setup failed", error: String(error) });
     }
   });
 
@@ -140,19 +140,27 @@ export async function setupAuth(app: Express) {
       })(req, res, next);
     } catch (error) {
       console.error("Callback error:", error);
-      res.status(500).json({ message: "Authentication callback failed", error: error.message });
+      res.status(500).json({ message: "Authentication callback failed", error: String(error) });
     }
   });
 
-  app.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
-    });
+  app.get("/api/logout", async (req, res) => {
+    try {
+      const config = await getOidcConfig();
+      req.logout(() => {
+        res.redirect(
+          client.buildEndSessionUrl(config, {
+            client_id: process.env.REPL_ID!,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+          }).href
+        );
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      req.logout(() => {
+        res.redirect("/");
+      });
+    }
   });
 }
 
