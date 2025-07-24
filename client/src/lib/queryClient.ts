@@ -30,7 +30,7 @@ export async function apiRequest(
     clearTimeout(timeoutId);
     await throwIfResNotOk(res);
     return res;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
       throw new Error('Request timeout - please check your connection and try again');
