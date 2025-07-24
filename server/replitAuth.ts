@@ -76,14 +76,19 @@ export async function setupAuth(app: Express) {
   // Set up traditional email/password authentication
   setupTraditionalAuth(app);
   
-  // For testing purposes, always use development authentication  
-  // In real production, you would check: process.env.NODE_ENV !== "production"
-  console.log("Setting up development authentication for testing...");
-  setupDevAuth(app);
-  return;
+  // Check if we're in a deployed environment (has REPLIT_DOMAINS with real domain)
+  const isDeployedProduction = process.env.REPLIT_DOMAINS && 
+                              !process.env.REPLIT_DOMAINS.includes("localhost") &&
+                              process.env.REPLIT_DOMAINS.includes("replit.dev");
   
-  // This production auth code is disabled for testing
-  /*
+  if (isDeployedProduction) {
+    console.log("Setting up production Replit authentication...");
+  } else {
+    console.log("Setting up development authentication...");
+    setupDevAuth(app);
+    return;
+  }
+  
   console.log("Setting up production authentication...");
 
   try {
@@ -176,7 +181,6 @@ export async function setupAuth(app: Express) {
       });
     }
   });
-  */
 }
 
 // Development authentication for localhost testing

@@ -73,9 +73,15 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   
-  // Always seed demo data for testing
-  await copyExistingDataToDevUser();
-  await seedDemoData();
+  // Seed demo data only in development
+  const isDeployedProduction = process.env.REPLIT_DOMAINS && 
+                              !process.env.REPLIT_DOMAINS.includes("localhost") &&
+                              process.env.REPLIT_DOMAINS.includes("replit.dev");
+  
+  if (!isDeployedProduction) {
+    await copyExistingDataToDevUser();
+    await seedDemoData();
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
