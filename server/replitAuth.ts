@@ -189,42 +189,14 @@ export async function setupAuth(app: Express) {
   });
 }
 
-// Development authentication for localhost testing
+// Development authentication for localhost testing - using email/password only
 function setupDevAuth(app: Express) {
-  // Mock user data for development
-  const mockUser = {
-    id: "dev-user-123",
-    email: "developer@tamiya.test",
-    firstName: "Test",
-    lastName: "User",
-    profileImageUrl: "https://replit.com/public/images/evalMarkIcon.png"
-  };
+  console.log("Development mode: Only email/password authentication available");
 
-  // Development login route
-  app.get("/api/login", async (req, res) => {
-    console.log("Development login - creating mock session");
-    
-    // Create mock user in database
-    await storage.upsertUser(mockUser);
-    
-    // Set up mock session with proper login
-    req.login({
-      claims: {
-        sub: mockUser.id,
-        email: mockUser.email,
-        first_name: mockUser.firstName,
-        last_name: mockUser.lastName,
-        profile_image_url: mockUser.profileImageUrl
-      },
-      access_token: "mock-access-token",
-      expires_at: Math.floor(Date.now() / 1000) + 86400 // 24 hours from now
-    }, (err) => {
-      if (err) {
-        console.error("Dev login error:", err);
-        return res.status(500).json({ message: "Login failed" });
-      }
-      res.redirect("/");
-    });
+  // Development login route - redirect to auth page
+  app.get("/api/login", (req, res) => {
+    console.log("Development login - redirecting to auth page");
+    res.redirect("/auth");
   });
 
   // Development logout route
