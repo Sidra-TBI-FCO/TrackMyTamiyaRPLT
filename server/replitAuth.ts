@@ -72,11 +72,18 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Development mode: use mock authentication for testing
-  // Force development auth for testing purposes
-  console.log("Setting up development authentication...");
-  setupDevAuth(app);
-  return;
+  // Check if we're in development environment
+  const isDevelopment = process.env.NODE_ENV === "development" || 
+                       process.env.REPL_SLUG?.includes("dev") ||
+                       !process.env.REPL_SLUG; // Local development
+  
+  if (isDevelopment) {
+    console.log("Setting up development authentication...");
+    setupDevAuth(app);
+    return;
+  }
+  
+  console.log("Setting up production authentication...");
 
   try {
     const config = await getOidcConfig();

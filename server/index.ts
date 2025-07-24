@@ -73,9 +73,15 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   
-  // Copy existing data to dev user and seed additional demo data
-  await copyExistingDataToDevUser();
-  await seedDemoData();
+  // Copy existing data to dev user and seed demo data only in development
+  const isDevelopment = process.env.NODE_ENV === "development" || 
+                       process.env.REPL_SLUG?.includes("dev") ||
+                       !process.env.REPL_SLUG; // Local development
+  
+  if (isDevelopment) {
+    await copyExistingDataToDevUser();
+    await seedDemoData();
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
