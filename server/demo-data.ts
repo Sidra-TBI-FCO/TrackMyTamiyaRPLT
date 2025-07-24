@@ -1,6 +1,122 @@
 import { storage } from "./storage";
+import { db } from "./db";
+import { models, photos, buildLogEntries, hopUpParts, buildLogPhotos } from "@shared/schema";
+import { eq, ne } from "drizzle-orm";
 
-// Development test data for the dev user account
+// Copy all existing database records to the development test user
+export async function copyExistingDataToDevUser() {
+  try {
+    const DEV_USER_ID = "dev-user-123";
+    
+    console.log("Copying all existing database records to dev user...");
+    
+    // Get all existing models from other users
+    const existingModels = await db.query.models.findMany({
+      where: ne(models.userId, DEV_USER_ID),
+      with: {
+        photos: true,
+        buildLogEntries: {
+          with: {
+            photos: {
+              with: {
+                photo: true
+              }
+            }
+          }
+        },
+        hopUpParts: true
+      }
+    });
+    
+    if (existingModels.length === 0) {
+      console.log("No existing models found to copy");
+      return;
+    }
+    
+    const modelIdMapping = new Map<number, number>();
+    const photoIdMapping = new Map<number, number>();
+    
+    // Copy models
+    for (const originalModel of existingModels) {
+      const { id, userId, createdAt, updatedAt, ...modelData } = originalModel;
+      const newModel = await storage.createModel({
+        ...modelData,
+        userId: DEV_USER_ID,
+        releaseYear: modelData.releaseYear || undefined,
+        totalCost: parseFloat(modelData.totalCost || "0")
+      });
+      modelIdMapping.set(originalModel.id, newModel.id);
+      console.log(`Copied model: ${originalModel.name} (ID: ${originalModel.id} -> ${newModel.id})`);
+    }
+    
+    // Copy photos and create mapping
+    for (const originalModel of existingModels) {
+      const newModelId = modelIdMapping.get(originalModel.id)!;
+      
+      for (const originalPhoto of originalModel.photos) {
+        const { id, modelId, createdAt, ...photoData } = originalPhoto;
+        const newPhoto = await storage.createPhoto({
+          ...photoData,
+          modelId: newModelId,
+          metadata: photoData.metadata as any
+        });
+        photoIdMapping.set(originalPhoto.id, newPhoto.id);
+        console.log(`Copied photo: ${originalPhoto.originalName} (ID: ${originalPhoto.id} -> ${newPhoto.id})`);
+      }
+    }
+    
+    // Copy build log entries
+    for (const originalModel of existingModels) {
+      const newModelId = modelIdMapping.get(originalModel.id)!;
+      
+      for (const originalEntry of originalModel.buildLogEntries) {
+        const { id, modelId, createdAt, ...entryData } = originalEntry;
+        const newEntry = await storage.createBuildLogEntry({
+          ...entryData,
+          modelId: newModelId
+        });
+        
+        // Copy build log photos relationships
+        for (const buildLogPhoto of originalEntry.photos) {
+          const newPhotoId = photoIdMapping.get(buildLogPhoto.photo.id);
+          if (newPhotoId) {
+            await storage.addPhotosToEntry(newEntry.id, [newPhotoId]);
+          }
+        }
+        
+        console.log(`Copied build log entry: ${originalEntry.title} (ID: ${originalEntry.id} -> ${newEntry.id})`);
+      }
+    }
+    
+    // Copy hop-up parts
+    for (const originalModel of existingModels) {
+      const newModelId = modelIdMapping.get(originalModel.id)!;
+      
+      for (const originalPart of originalModel.hopUpParts) {
+        const { id, modelId, photoId, createdAt, ...partData } = originalPart;
+        
+        // Map photo ID if it exists
+        const newPhotoId = originalPart.photoId ? photoIdMapping.get(originalPart.photoId) : null;
+        
+        const newPart = await storage.createHopUpPart({
+          ...partData,
+          modelId: newModelId,
+          photoId: newPhotoId || undefined,
+          cost: parseFloat(partData.cost || "0")
+        });
+        
+        console.log(`Copied hop-up part: ${originalPart.name} (ID: ${originalPart.id} -> ${newPart.id})`);
+      }
+    }
+    
+    console.log(`Successfully copied ${existingModels.length} models with all related data to dev user`);
+    
+  } catch (error) {
+    console.error('Error copying existing data to dev user:', error);
+  }
+}
+
+// Development test data for the dev user account  
 export async function seedDemoData() {
   try {
     const DEV_USER_ID = "dev-user-123";
@@ -24,7 +140,7 @@ export async function seedDemoData() {
         releaseYear: 2023,
         buildStatus: "built" as const,
         buildType: "kit" as const,
-        totalCost: "485.50",
+        totalCost: 485.50,
         scale: "1/10",
         driveType: "4WD",
         chassisMaterial: "Carbon",
@@ -44,7 +160,7 @@ export async function seedDemoData() {
         releaseYear: 2022,
         buildStatus: "building" as const,
         buildType: "kit" as const,
-        totalCost: "285.99",
+        totalCost: 285.99,
         scale: "1/10",
         driveType: "4WD",
         chassisMaterial: "Plastic",
@@ -66,7 +182,7 @@ export async function seedDemoData() {
         releaseYear: 2005,
         buildStatus: "planning" as const,
         buildType: "kit" as const,
-        totalCost: "165.00",
+        totalCost: 165.00,
         scale: "1/10",
         driveType: "2WD",
         chassisMaterial: "Plastic",
@@ -85,7 +201,7 @@ export async function seedDemoData() {
         releaseYear: 2021,
         buildStatus: "built" as const,
         buildType: "kit" as const,
-        totalCost: "320.75",
+        totalCost: 320.75,
         scale: "1/10",
         driveType: "RWD",
         chassisMaterial: "Plastic",
@@ -107,7 +223,7 @@ export async function seedDemoData() {
         releaseYear: 2010,
         buildStatus: "maintenance" as const,
         buildType: "kit" as const,
-        totalCost: "425.00",
+        totalCost: 425.00,
         scale: "1/10",
         driveType: "2WD",
         chassisMaterial: "Aluminum",
@@ -176,7 +292,7 @@ export async function seedDemoData() {
         category: "Suspension",
         manufacturer: "Tamiya",
         supplier: "Tower Hobbies",
-        cost: "45.99",
+        cost: 45.99,
         quantity: 2,
         installationStatus: "installed" as const,
         installationDate: new Date("2024-01-12"),
@@ -192,7 +308,7 @@ export async function seedDemoData() {
         category: "Chassis",
         manufacturer: "Tamiya",
         supplier: "AMain Hobbies",
-        cost: "89.99",
+        cost: 89.99,
         quantity: 1,
         installationStatus: "installed" as const,
         installationDate: new Date("2024-01-10"),
@@ -207,7 +323,7 @@ export async function seedDemoData() {
         category: "Drivetrain",
         manufacturer: "Tamiya", 
         supplier: "Horizon Hobby",
-        cost: "25.50",
+        cost: 25.50,
         quantity: 1,
         installationStatus: "planned" as const,
         notes: "Upgrade from plastic to aluminum driveshaft",
@@ -221,7 +337,7 @@ export async function seedDemoData() {
         category: "Tires",
         manufacturer: "Tamiya",
         supplier: "Local Hobby Shop",
-        cost: "18.99",
+        cost: 18.99,
         quantity: 4,
         installationStatus: "installed" as const,
         installationDate: new Date("2024-01-08"),

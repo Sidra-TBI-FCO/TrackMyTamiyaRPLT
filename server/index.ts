@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { seedDemoData } from "./demo-data";
+import { seedDemoData, copyExistingDataToDevUser } from "./demo-data";
 
 const app = express();
 
@@ -73,8 +73,11 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   
-  // Skip demo data seeding for now while setting up authentication
-  console.log("Skipping demo data seeding - authentication setup in progress");
+  // Copy existing data to dev user and seed additional demo data
+  if (process.env.NODE_ENV === "development") {
+    await copyExistingDataToDevUser();
+    await seedDemoData();
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
