@@ -11,8 +11,9 @@ import { db } from "./db";
 import { eq, desc, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods for Replit Auth
+  // User methods for Replit Auth and traditional auth
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
 
   // Model methods
@@ -55,6 +56,11 @@ export class DatabaseStorage implements IStorage {
   // User operations for Replit Auth
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 

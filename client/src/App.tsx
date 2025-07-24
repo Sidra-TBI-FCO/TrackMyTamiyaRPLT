@@ -22,6 +22,7 @@ import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
 import SettingsPage from "@/pages/settings";
+import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
 import Header from "@/components/layout/header";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/features" component={Features} />
       <Route path="/screenshots" component={Screenshots} />
       <Route path="/download" component={DownloadPage} />
+      <Route path="/auth" component={AuthPage} />
       
       {/* Protected application routes */}
       {isLoading || !isAuthenticated ? (

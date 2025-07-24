@@ -26,12 +26,17 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/api/login">
                 <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
-                  Access Web App
+                  Quick Login (Replit)
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
+              <Link href="/auth">
+                <Button size="lg" variant="outline" className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-600">
+                  Create Account
+                </Button>
+              </Link>
               <Link href="/features">
-                <Button size="lg" variant="outline">
+                <Button size="lg" variant="ghost">
                   Explore Features
                 </Button>
               </Link>

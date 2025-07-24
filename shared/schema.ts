@@ -14,13 +14,20 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table for Replit Auth
+// User storage table supporting both Replit Auth and traditional email/password
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  // Traditional auth fields
+  password: varchar("password"), // Hashed password for email/password auth
+  authProvider: varchar("auth_provider").notNull().default("email"), // "replit" or "email"
+  isVerified: boolean("is_verified").default(false),
+  verificationToken: varchar("verification_token"),
+  resetPasswordToken: varchar("reset_password_token"),
+  resetPasswordExpires: timestamp("reset_password_expires"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -167,6 +174,23 @@ export const hopUpPartsRelations = relations(hopUpParts, ({ one }) => ({
 export const upsertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
+  verificationToken: true,
+  resetPasswordToken: true,
+  resetPasswordExpires: true,
+});
+
+// Schema for email/password registration
+export const registerUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+});
+
+// Schema for email/password login
+export const loginUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const insertModelSchema = createInsertSchema(models, {
@@ -204,6 +228,8 @@ export const insertHopUpPartSchema = createInsertSchema(hopUpParts, {
 
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertModel = z.infer<typeof insertModelSchema>;
 export type Model = typeof models.$inferSelect;

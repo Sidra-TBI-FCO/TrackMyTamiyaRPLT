@@ -7,6 +7,7 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { setupTraditionalAuth } from "./traditionalAuth";
 
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -72,7 +73,10 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // For testing purposes, always use development authentication
+  // Set up traditional email/password authentication
+  setupTraditionalAuth(app);
+  
+  // For testing purposes, always use development authentication  
   // In real production, you would check: process.env.NODE_ENV !== "production"
   console.log("Setting up development authentication for testing...");
   setupDevAuth(app);
