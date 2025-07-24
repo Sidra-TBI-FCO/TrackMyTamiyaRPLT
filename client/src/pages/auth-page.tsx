@@ -175,7 +175,13 @@ export default function AuthPage() {
                             <FormItem>
                               <FormLabel>Email</FormLabel>
                               <FormControl>
-                                <Input {...field} type="email" placeholder="your@email.com" />
+                                <Input 
+                                  {...field} 
+                                  type="email" 
+                                  placeholder="your@email.com"
+                                  autoComplete="username email"
+                                  id="login-email"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -214,7 +220,12 @@ export default function AuthPage() {
                               <FormItem>
                                 <FormLabel>First Name</FormLabel>
                                 <FormControl>
-                                  <Input {...field} placeholder="John" />
+                                  <Input 
+                                    {...field} 
+                                    placeholder="John"
+                                    autoComplete="given-name"
+                                    id="register-firstName"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -227,7 +238,12 @@ export default function AuthPage() {
                               <FormItem>
                                 <FormLabel>Last Name</FormLabel>
                                 <FormControl>
-                                  <Input {...field} placeholder="Doe" />
+                                  <Input 
+                                    {...field} 
+                                    placeholder="Doe"
+                                    autoComplete="family-name"
+                                    id="register-lastName"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -241,7 +257,13 @@ export default function AuthPage() {
                             <FormItem>
                               <FormLabel>Email</FormLabel>
                               <FormControl>
-                                <Input {...field} type="email" placeholder="your@email.com" />
+                                <Input 
+                                  {...field} 
+                                  type="email" 
+                                  placeholder="your@email.com"
+                                  autoComplete="email"
+                                  id="register-email"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
