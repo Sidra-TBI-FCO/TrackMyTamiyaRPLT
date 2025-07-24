@@ -79,7 +79,9 @@ export async function setupAuth(app: Express) {
   // Check if we're in a deployed environment (has REPLIT_DOMAINS with real domain)
   const isDeployedProduction = process.env.REPLIT_DOMAINS && 
                               !process.env.REPLIT_DOMAINS.includes("localhost") &&
-                              process.env.REPLIT_DOMAINS.includes("replit.dev");
+                              (process.env.REPLIT_DOMAINS.includes("replit.dev") || process.env.REPLIT_DOMAINS.includes("picard.replit.dev"));
+  
+  console.log(`Environment check: REPLIT_DOMAINS=${process.env.REPLIT_DOMAINS}, isDeployedProduction=${isDeployedProduction}`);
   
   if (isDeployedProduction) {
     console.log("Setting up production Replit authentication...");
