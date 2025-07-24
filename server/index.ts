@@ -73,8 +73,8 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
   
-  // Seed demo data if database is empty
-  await seedDemoData();
+  // Skip demo data seeding for now while setting up authentication
+  console.log("Skipping demo data seeding - authentication setup in progress");
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

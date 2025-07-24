@@ -1,6 +1,6 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
-  type User, type InsertUser,
+  type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
   type BuildLogEntry, type InsertBuildLogEntry, type BuildLogEntryWithPhotos,
@@ -11,40 +11,39 @@ import { db } from "./db";
 import { eq, desc, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // User methods for Replit Auth
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
 
   // Model methods
-  getModels(userId: number): Promise<ModelWithRelations[]>;
-  getModel(id: number, userId: number): Promise<ModelWithRelations | undefined>;
+  getModels(userId: string): Promise<ModelWithRelations[]>;
+  getModel(id: number, userId: string): Promise<ModelWithRelations | undefined>;
   createModel(model: InsertModel): Promise<Model>;
-  updateModel(id: number, userId: number, model: Partial<InsertModel>): Promise<Model | undefined>;
-  deleteModel(id: number, userId: number): Promise<boolean>;
+  updateModel(id: number, userId: string, model: Partial<InsertModel>): Promise<Model | undefined>;
+  deleteModel(id: number, userId: string): Promise<boolean>;
 
   // Photo methods
-  getPhotos(modelId: number, userId: number): Promise<Photo[]>;
+  getPhotos(modelId: number, userId: string): Promise<Photo[]>;
   createPhoto(photo: InsertPhoto): Promise<Photo>;
-  updatePhoto(id: number, userId: number, photo: Partial<InsertPhoto>): Promise<Photo | undefined>;
-  deletePhoto(id: number, userId: number): Promise<boolean>;
+  updatePhoto(id: number, userId: string, photo: Partial<InsertPhoto>): Promise<Photo | undefined>;
+  deletePhoto(id: number, userId: string): Promise<boolean>;
 
   // Build log methods
-  getAllBuildLogEntries(userId: number): Promise<BuildLogEntryWithPhotos[]>;
-  getBuildLogEntries(modelId: number, userId: number): Promise<BuildLogEntryWithPhotos[]>;
+  getAllBuildLogEntries(userId: string): Promise<BuildLogEntryWithPhotos[]>;
+  getBuildLogEntries(modelId: number, userId: string): Promise<BuildLogEntryWithPhotos[]>;
   createBuildLogEntry(entry: InsertBuildLogEntry): Promise<BuildLogEntry>;
-  updateBuildLogEntry(id: number, userId: number, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined>;
-  deleteBuildLogEntry(id: number, userId: number): Promise<boolean>;
+  updateBuildLogEntry(id: number, userId: string, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined>;
+  deleteBuildLogEntry(id: number, userId: string): Promise<boolean>;
   addPhotosToEntry(entryId: number, photoIds: number[]): Promise<BuildLogPhoto[]>;
 
   // Hop-up parts methods
-  getHopUpParts(modelId: number, userId: number): Promise<HopUpPart[]>;
+  getHopUpParts(modelId: number, userId: string): Promise<HopUpPart[]>;
   createHopUpPart(part: InsertHopUpPart): Promise<HopUpPart>;
-  updateHopUpPart(id: number, userId: number, part: Partial<InsertHopUpPart>): Promise<HopUpPart | undefined>;
-  deleteHopUpPart(id: number, userId: number): Promise<boolean>;
+  updateHopUpPart(id: number, userId: string, part: Partial<InsertHopUpPart>): Promise<HopUpPart | undefined>;
+  deleteHopUpPart(id: number, userId: string): Promise<boolean>;
 
   // Stats methods
-  getCollectionStats(userId: number): Promise<{
+  getCollectionStats(userId: string): Promise<{
     totalModels: number;
     activeBuilds: number;
     totalInvestment: string;
@@ -53,22 +52,28 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
+  // User operations for Replit Auth
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
-  async getModels(userId: number): Promise<ModelWithRelations[]> {
+  async getModels(userId: string): Promise<ModelWithRelations[]> {
     return await db.query.models.findMany({
       where: eq(models.userId, userId),
       with: {
@@ -87,7 +92,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getModel(id: number, userId: number): Promise<ModelWithRelations | undefined> {
+  async getModel(id: number, userId: string): Promise<ModelWithRelations | undefined> {
     return await db.query.models.findFirst({
       where: and(eq(models.id, id), eq(models.userId, userId)),
       with: {
@@ -112,7 +117,7 @@ export class DatabaseStorage implements IStorage {
     return newModel;
   }
 
-  async updateModel(id: number, userId: number, model: Partial<InsertModel>): Promise<Model | undefined> {
+  async updateModel(id: number, userId: string, model: Partial<InsertModel>): Promise<Model | undefined> {
     const [updated] = await db
       .update(models)
       .set({ 
@@ -125,14 +130,14 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteModel(id: number, userId: number): Promise<boolean> {
+  async deleteModel(id: number, userId: string): Promise<boolean> {
     const result = await db
       .delete(models)
       .where(and(eq(models.id, id), eq(models.userId, userId)));
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getPhotos(modelId: number, userId: number): Promise<Photo[]> {
+  async getPhotos(modelId: number, userId: string): Promise<Photo[]> {
     // Verify model belongs to user first
     const model = await db.query.models.findFirst({
       where: and(eq(models.id, modelId), eq(models.userId, userId)),
@@ -150,7 +155,7 @@ export class DatabaseStorage implements IStorage {
     return newPhoto;
   }
 
-  async updatePhoto(id: number, userId: number, photo: Partial<InsertPhoto>): Promise<Photo | undefined> {
+  async updatePhoto(id: number, userId: string, photo: Partial<InsertPhoto>): Promise<Photo | undefined> {
     // Verify photo belongs to user's model
     const existingPhoto = await db.query.photos.findFirst({
       where: eq(photos.id, id),
@@ -171,7 +176,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deletePhoto(id: number, userId: number): Promise<boolean> {
+  async deletePhoto(id: number, userId: string): Promise<boolean> {
     // Verify photo belongs to user's model
     const existingPhoto = await db.query.photos.findFirst({
       where: eq(photos.id, id),
@@ -188,7 +193,7 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async clearModelBoxArt(modelId: number, userId: number): Promise<void> {
+  async clearModelBoxArt(modelId: number, userId: string): Promise<void> {
     // Verify model belongs to user
     const model = await db.query.models.findFirst({
       where: and(eq(models.id, modelId), eq(models.userId, userId)),
@@ -203,7 +208,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(photos.modelId, modelId));
   }
 
-  async getPhoto(id: number, userId: number): Promise<Photo | undefined> {
+  async getPhoto(id: number, userId: string): Promise<Photo | undefined> {
     const photo = await db.query.photos.findFirst({
       where: eq(photos.id, id),
       with: {
@@ -218,7 +223,7 @@ export class DatabaseStorage implements IStorage {
     return photo;
   }
 
-  async getAllBuildLogEntries(userId: number): Promise<BuildLogEntryWithPhotos[]> {
+  async getAllBuildLogEntries(userId: string): Promise<BuildLogEntryWithPhotos[]> {
     try {
       // Use a simpler approach: get all models with their build log entries
       const userModels = await db.query.models.findMany({
@@ -262,7 +267,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getBuildLogEntries(modelId: number, userId: number): Promise<BuildLogEntryWithPhotos[]> {
+  async getBuildLogEntries(modelId: number, userId: string): Promise<BuildLogEntryWithPhotos[]> {
     // Verify model belongs to user
     const model = await db.query.models.findFirst({
       where: and(eq(models.id, modelId), eq(models.userId, userId)),
@@ -288,7 +293,7 @@ export class DatabaseStorage implements IStorage {
     return newEntry;
   }
 
-  async updateBuildLogEntry(id: number, userId: number, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined> {
+  async updateBuildLogEntry(id: number, userId: string, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined> {
     // Verify entry belongs to user's model
     const existingEntry = await db.query.buildLogEntries.findFirst({
       where: eq(buildLogEntries.id, id),
@@ -309,7 +314,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteBuildLogEntry(id: number, userId: number): Promise<boolean> {
+  async deleteBuildLogEntry(id: number, userId: string): Promise<boolean> {
     // Verify entry belongs to user's model
     const existingEntry = await db.query.buildLogEntries.findFirst({
       where: eq(buildLogEntries.id, id),
@@ -331,7 +336,7 @@ export class DatabaseStorage implements IStorage {
     return await db.insert(buildLogPhotos).values(values).returning();
   }
 
-  async getHopUpParts(modelId: number, userId: number): Promise<HopUpPart[]> {
+  async getHopUpParts(modelId: number, userId: string): Promise<HopUpPart[]> {
     // Verify model belongs to user
     const model = await db.query.models.findFirst({
       where: and(eq(models.id, modelId), eq(models.userId, userId)),
@@ -352,7 +357,7 @@ export class DatabaseStorage implements IStorage {
     return newPart;
   }
 
-  async updateHopUpPart(id: number, userId: number, part: Partial<InsertHopUpPart>): Promise<HopUpPart | undefined> {
+  async updateHopUpPart(id: number, userId: string, part: Partial<InsertHopUpPart>): Promise<HopUpPart | undefined> {
     // Verify part belongs to user's model
     const existingPart = await db.query.hopUpParts.findFirst({
       where: eq(hopUpParts.id, id),
@@ -376,7 +381,7 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteHopUpPart(id: number, userId: number): Promise<boolean> {
+  async deleteHopUpPart(id: number, userId: string): Promise<boolean> {
     // Verify part belongs to user's model
     const existingPart = await db.query.hopUpParts.findFirst({
       where: eq(hopUpParts.id, id),
@@ -393,7 +398,7 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getCollectionStats(userId: number): Promise<{
+  async getCollectionStats(userId: string): Promise<{
     totalModels: number;
     activeBuilds: number;
     totalInvestment: string;
