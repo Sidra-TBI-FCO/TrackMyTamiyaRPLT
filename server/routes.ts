@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const caption = req.body[`caption_${i}`] || '';
 
         // Upload file to storage
-        const storedFile = await fileStorage.uploadFile(file.buffer, file.originalname);
+        const storedFile = await fileStorage.uploadFile(file, file.originalname);
         
         // Create photo record
         const photoData = {
