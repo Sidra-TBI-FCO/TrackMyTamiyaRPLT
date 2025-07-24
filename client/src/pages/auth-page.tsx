@@ -131,28 +131,34 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              {/* Quick Social Login */}
-              <Card className="border-tamiya-red/20 dark:border-tamiya-blue/20">
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-lg">Quick Access</CardTitle>
-                  <CardDescription>
-                    Login instantly with your existing account
+
+
+              {/* OAuth Authentication */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-center">Quick Sign In</CardTitle>
+                  <CardDescription className="text-center">
+                    Sign in with your existing accounts
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
-                    onClick={() => window.location.href = "/api/auth/google"}
-                    className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+                  <Button
                     variant="outline"
+                    onClick={() => window.location.href = '/api/auth/google'}
+                    className="w-full flex items-center justify-center space-x-2 h-11"
                   >
-                    <SiGoogle className="mr-2 h-4 w-4" />
-                    Continue with Google
+                    <SiGoogle className="h-5 w-5 text-red-500" />
+                    <span>Continue with Google</span>
                   </Button>
-                  <Button 
-                    onClick={() => window.location.href = "/api/login"}
-                    className="w-full bg-tamiya-red hover:bg-tamiya-red/90 dark:bg-tamiya-blue dark:hover:bg-tamiya-blue/90"
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/api/auth/replit'}
+                    className="w-full flex items-center justify-center space-x-2 h-11"
                   >
-                    Continue with Replit
+                    <div className="bg-tamiya-blue p-1 rounded">
+                      <Star className="h-3 w-3 text-white" />
+                    </div>
+                    <span>Continue with Replit</span>
                   </Button>
                 </CardContent>
               </Card>
@@ -162,7 +168,7 @@ export default function AuthPage() {
                   <Separator className="w-full" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">
+                  <span className="bg-gradient-to-br from-blue-50 via-white to-red-50 dark:from-blue-950 dark:via-gray-900 dark:to-red-950 px-2 text-muted-foreground">
                     Or continue with email
                   </span>
                 </div>

@@ -60,7 +60,7 @@ export default function SettingsPage() {
               <CardTitle className="text-lg font-mono">User Account</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {user && (
+              {user ? (
                 <>
                   <div className="flex items-center space-x-3">
                     <div className="bg-red-600 text-white p-2 rounded-full">
@@ -85,7 +85,7 @@ export default function SettingsPage() {
                     Sign Out
                   </Button>
                 </>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
@@ -128,7 +128,7 @@ export default function SettingsPage() {
             <CardTitle className="text-lg font-mono">User Account</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {user && (
+            {user ? (
               <>
                 <div className="flex items-center space-x-3">
                   <div className="bg-tamiya-red dark:bg-tamiya-blue p-2 rounded-full">
@@ -153,7 +153,7 @@ export default function SettingsPage() {
                   Sign Out
                 </Button>
               </>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       </div>
