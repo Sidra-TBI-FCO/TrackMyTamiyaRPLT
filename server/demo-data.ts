@@ -8,6 +8,13 @@ export async function copyExistingDataToDevUser() {
   try {
     const DEV_USER_ID = "dev-user-123";
     
+    // Check if dev user already has data to avoid duplicates
+    const existingDevModels = await storage.getModels(DEV_USER_ID);
+    if (existingDevModels.length > 0) {
+      console.log("Dev user already has data, skipping copying to avoid duplicates");
+      return;
+    }
+    
     console.log("Copying all existing database records to dev user...");
     
     // Get all existing models from other users
