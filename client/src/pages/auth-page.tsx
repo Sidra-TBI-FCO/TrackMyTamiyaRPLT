@@ -37,6 +37,7 @@ export default function AuthPage() {
       firstName: "",
       lastName: "",
     },
+    mode: "onChange",
   });
 
   // Login mutation
@@ -258,11 +259,14 @@ export default function AuthPage() {
                               <FormLabel>Email</FormLabel>
                               <FormControl>
                                 <Input 
-                                  {...field} 
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  onBlur={field.onBlur}
+                                  name="email"
                                   type="email" 
                                   placeholder="your@email.com"
-                                  autoComplete="email"
-                                  id="register-email"
+                                  autoComplete="new-password"
+                                  id="register-email-field"
                                 />
                               </FormControl>
                               <FormMessage />
