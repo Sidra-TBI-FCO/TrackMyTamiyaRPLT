@@ -214,15 +214,22 @@ export default function Features() {
               </CardHeader>
             </Card>
 
-            <Card>
+            <Card className="overflow-hidden">
               <CardHeader>
                 <Smartphone className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
-                <CardTitle>Mobile Experience</CardTitle>
+                <CardTitle>Dark Mode & Theming</CardTitle>
                 <CardDescription>
-                  Optimized mobile interface with touch-friendly controls, 
-                  perfect for managing your collection while at the track or shop.
+                  Beautiful dark mode with Tamiya-branded color switching. Red elements 
+                  become blue in dark mode for optimal viewing in any lighting condition.
                 </CardDescription>
               </CardHeader>
+              <CardContent className="p-0">
+                <img 
+                  src="/screenshots/dark-mode-collection.jpg" 
+                  alt="Dark Mode Collection View - My Collection with 7 models"
+                  className="w-full h-auto object-cover"
+                />
+              </CardContent>
             </Card>
           </div>
         </div>
