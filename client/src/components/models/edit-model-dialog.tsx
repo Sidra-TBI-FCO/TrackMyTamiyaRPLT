@@ -35,7 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { ModelWithRelations } from "@/types";
 import { z } from "zod";
 
-const formSchema = insertModelSchema.extend({
+const formSchema = insertModelSchema.omit({
+  userId: true, // Server will provide this from the authenticated user
+}).extend({
   itemNumber: z.string().min(1, "Item number is required"),
   name: z.string().min(1, "Model name is required"),
   tags: z.array(z.string()).optional().default([]),
