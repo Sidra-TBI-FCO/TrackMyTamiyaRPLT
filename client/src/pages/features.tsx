@@ -149,7 +149,7 @@ export default function Features() {
           <h2 className="text-3xl font-bold text-center mb-16">Additional Features</h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card>
+            <Card className="overflow-hidden">
               <CardHeader>
                 <Settings className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
                 <CardTitle>Hop-Up Parts Tracking</CardTitle>
@@ -158,6 +158,13 @@ export default function Features() {
                   across your entire collection with detailed parts management.
                 </CardDescription>
               </CardHeader>
+              <CardContent className="p-0">
+                <img 
+                  src="/attached_assets/Screenshot_20250725_122333_com_android_chrome_ChromeTabbedActivity_1753437414898.jpg" 
+                  alt="Hop-Up Parts Detail - Aluminum Main Drive Shaft"
+                  className="w-full h-auto object-cover"
+                />
+              </CardContent>
             </Card>
 
             <Card>
