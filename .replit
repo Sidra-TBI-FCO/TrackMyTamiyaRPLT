@@ -40,3 +40,6 @@ waitForPort = 5000
 
 [objectStorage]
 defaultBucketID = "replit-objstore-7df54dd9-8b24-43bb-a2aa-1032df3bccd1"
+
+[agent]
+integrations = ["firebase_barebones_javascript==1.0.0", "javascript_auth_all_persistance==1.0.0"]
