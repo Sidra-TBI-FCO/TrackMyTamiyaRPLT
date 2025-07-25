@@ -62,7 +62,7 @@ export default function Features() {
             </div>
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
               <img 
-                src="/attached_assets/Screenshot_20250725_122307_com_android_chrome_ChromeTabbedActivity_1753437520134.jpg" 
+                src="/screenshots/model-details.jpg" 
                 alt="Model Details - Comprehensive specifications and investment tracking"
                 className="w-full h-auto object-cover"
               />
@@ -73,7 +73,7 @@ export default function Features() {
             <div className="order-2 lg:order-1">
               <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                 <img 
-                  src="/attached_assets/Screenshot_20250725_122439_com_android_chrome_ChromeTabbedActivity_1753435854875.jpg" 
+                  src="/screenshots/photo-frame.jpg" 
                   alt="Photo Frame Slideshow - Lancia Delta HF Integrale"
                   className="w-full h-auto object-cover"
                 />
@@ -163,7 +163,7 @@ export default function Features() {
               </CardHeader>
               <CardContent className="p-0">
                 <img 
-                  src="/attached_assets/Screenshot_20250725_122333_com_android_chrome_ChromeTabbedActivity_1753437414898.jpg" 
+                  src="/screenshots/hop-up-parts.jpg" 
                   alt="Hop-Up Parts Detail - Aluminum Main Drive Shaft"
                   className="w-full h-auto object-cover"
                 />
