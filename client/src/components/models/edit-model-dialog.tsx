@@ -56,7 +56,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
   const [newTag, setNewTag] = useState("");
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [buildType, setBuildType] = useState<"kit" | "custom">(model.buildType || "kit");
+  const [buildType, setBuildType] = useState<"kit" | "custom">((model.buildType as "kit" | "custom") || "kit");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -80,7 +80,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
       chassis: model.chassis || "",
       releaseYear: model.releaseYear || undefined,
       buildStatus: model.buildStatus,
-      buildType: model.buildType || "kit",
+      buildType: (model.buildType as "kit" | "custom") || "kit",
       totalCost: parseFloat(model.totalCost || "0"),
       notes: model.notes || "",
       scale: model.scale || "",
@@ -147,7 +147,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
 
   // Update buildType state when model changes
   useEffect(() => {
-    setBuildType(model.buildType || "kit");
+    setBuildType((model.buildType as "kit" | "custom") || "kit");
   }, [model.buildType]);
 
   // Update tag suggestions when newTag changes
@@ -585,6 +585,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                   <FormControl>
                     <Textarea
                       {...field}
+                      value={field.value || ""}
                       placeholder="Additional notes about this model..."
                       className="font-mono"
                     />
