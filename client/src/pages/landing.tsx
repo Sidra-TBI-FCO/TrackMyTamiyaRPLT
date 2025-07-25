@@ -30,12 +30,183 @@ export default function Landing() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/features">
+              <Link href="/screenshots">
                 <Button size="lg" variant="outline">
-                  Explore Features
+                  View Screenshots
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* App Preview Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              See TrackMyTamiya in Action
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Beautiful, intuitive interface designed for both desktop and mobile devices
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Desktop Preview */}
+            <div className="order-2 lg:order-1">
+              <div className="relative">
+                <div className="bg-gray-900 rounded-t-lg p-3">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-b-lg p-6">
+                  <div className="text-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-red-600 dark:text-blue-400">TrackMyTamiya Dashboard</h3>
+                      <div className="flex gap-2">
+                        <div className="w-8 h-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div className="w-8 h-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="bg-red-50 dark:bg-blue-950/50 p-3 rounded text-center">
+                        <div className="font-bold text-2xl">7</div>
+                        <div className="text-muted-foreground text-xs">Total Models</div>
+                      </div>
+                      <div className="bg-yellow-50 dark:bg-yellow-950/50 p-3 rounded text-center">
+                        <div className="font-bold text-2xl">1</div>
+                        <div className="text-muted-foreground text-xs">Active Builds</div>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-950/50 p-3 rounded text-center">
+                        <div className="font-bold text-2xl">$450</div>
+                        <div className="text-muted-foreground text-xs">Investment</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span className="text-sm">Tamiya TT-02 Rally Car</span>
+                        <Badge className="ml-auto text-xs bg-yellow-100 text-yellow-800">Building</Badge>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm">Tamiya Sand Rover</span>
+                        <Badge className="ml-auto text-xs bg-green-100 text-green-800">Built</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Desktop Features */}
+            <div className="order-1 lg:order-2">
+              <h3 className="text-2xl font-bold mb-4">
+                <Monitor className="inline mr-2 h-6 w-6 text-red-600 dark:text-blue-400" />
+                Desktop Experience
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Full-featured desktop interface with comprehensive model management, 
+                detailed analytics, and advanced photo organization tools.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full"></div>
+                  <span>Advanced model cataloging with detailed specifications</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full"></div>
+                  <span>Comprehensive build logging with timeline view</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full"></div>
+                  <span>Detailed hop-up parts tracking and cost analysis</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center mt-20">
+            {/* Mobile Features */}
+            <div>
+              <h3 className="text-2xl font-bold mb-4">
+                <Smartphone className="inline mr-2 h-6 w-6 text-red-600 dark:text-blue-400" />
+                Mobile Optimized
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Touch-optimized mobile interface perfect for on-the-go collection 
+                management, quick photo uploads, and build progress tracking.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full"></div>
+                  <span>Quick photo capture and upload</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full"></div>
+                  <span>Touch-friendly navigation and controls</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full"></div>
+                  <span>Offline-capable for garage and field use</span>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Mobile Preview */}
+            <div>
+              <div className="max-w-xs mx-auto">
+                <div className="bg-gray-900 rounded-t-3xl p-4">
+                  <div className="bg-black rounded-2xl p-1">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+                      <div className="bg-gray-900 text-white p-2 text-center text-sm font-medium">
+                        TrackMyTamiya
+                      </div>
+                      <div className="p-4">
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          <Button size="sm" className="text-xs h-8 bg-red-600 text-white">Models</Button>
+                          <Button size="sm" variant="outline" className="text-xs h-8">Photos</Button>
+                          <Button size="sm" variant="outline" className="text-xs h-8">Parts</Button>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                            <div className="font-semibold text-sm">TT-02 Rally</div>
+                            <div className="text-xs text-muted-foreground">Building progress: 75%</div>
+                            <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                              <div className="bg-red-600 h-1 rounded-full w-3/4"></div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                              <Camera className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                              <Camera className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-xs text-gray-500">
+                              +5
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-center mt-16">
+            <Link href="/screenshots">
+              <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
+                View All Screenshots
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
