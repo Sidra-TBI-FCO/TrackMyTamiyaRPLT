@@ -60,7 +60,9 @@ export default function AddPhotoDialog({ modelId, open, onOpenChange }: AddPhoto
           console.log('Uploading photo:', photoData.file.name, 'caption:', photoData.caption, 'boxArt:', photoData.isBoxArt);
           
           const response = await apiRequest("POST", `/api/models/${modelId}/photos`, formData);
-          results.push(response);
+          const responseData = await response.json();
+          console.log('✅ Upload successful:', responseData);
+          results.push(responseData);
         } catch (error: any) {
           console.error('Failed to upload photo:', photoData.file.name, error);
           throw new Error(`Failed to upload ${photoData.file.name}: ${error.message || 'Network error'}`);
