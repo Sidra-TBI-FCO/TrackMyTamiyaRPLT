@@ -99,10 +99,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protect all API routes except auth routes
   app.use('/api', (req, res, next) => {
-    // Skip auth for auth routes
-    if (req.path.startsWith('/auth/') || req.path === '/login' || req.path === '/logout' || req.path === '/callback') {
+    // Skip auth for auth routes and file serving
+    if (req.path.startsWith('/auth/') || req.path === '/login' || req.path === '/logout' || req.path === '/callback' || req.path.startsWith('/files/')) {
       return next();
     }
+    
+    console.log('🔐 Auth middleware - checking:', {
+      path: req.path,
+      method: req.method,
+      hasUser: !!req.user,
+      contentType: req.headers['content-type']
+    });
+    
     return isAuthenticated(req, res, next);
   });
 
@@ -191,6 +199,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/models/:modelId/photos', upload.array('photos', 10), async (req, res) => {
+    console.log('📸 Photo upload endpoint hit!', {
+      modelId: req.params.modelId,
+      hasUser: !!req.user,
+      contentType: req.headers['content-type'],
+      method: req.method,
+      url: req.url
+    });
+    
     try {
       const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
@@ -198,6 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Upload request received:', {
         modelId,
+        userId,
         filesCount: files?.length || 0,
         body: req.body,
         files: files?.map(f => ({ name: f.originalname, type: f.mimetype, size: f.size }))
