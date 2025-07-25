@@ -68,9 +68,12 @@ export default function Features() {
 
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 lg:order-1">
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-                <div className="text-muted-foreground">Photo Gallery Preview</div>
-                <div className="mt-4 text-sm text-muted-foreground">Screenshots coming soon</div>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                <img 
+                  src="/attached_assets/Screenshot_20250725_122439_com_android_chrome_ChromeTabbedActivity_1753435854875.jpg" 
+                  alt="Photo Frame Slideshow - Lancia Delta HF Integrale"
+                  className="w-full h-auto object-cover"
+                />
               </div>
             </div>
             <div className="order-1 lg:order-2">
