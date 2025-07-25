@@ -60,9 +60,12 @@ export default function Features() {
                 </li>
               </ul>
             </div>
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-              <div className="text-muted-foreground">Model Management Preview</div>
-              <div className="mt-4 text-sm text-muted-foreground">Screenshots coming soon</div>
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+              <img 
+                src="/attached_assets/Screenshot_20250725_122307_com_android_chrome_ChromeTabbedActivity_1753437520134.jpg" 
+                alt="Model Details - Comprehensive specifications and investment tracking"
+                className="w-full h-auto object-cover"
+              />
             </div>
           </div>
 
