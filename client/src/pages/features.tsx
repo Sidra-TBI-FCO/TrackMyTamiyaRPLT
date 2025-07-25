@@ -138,9 +138,12 @@ export default function Features() {
                 </li>
               </ul>
             </div>
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-              <div className="text-muted-foreground">Build Logging Preview</div>
-              <div className="mt-4 text-sm text-muted-foreground">Screenshots coming soon</div>
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+              <img 
+                src="/screenshots/build-log-entry.jpg" 
+                alt="Build Log Entry - Add Build Log Entry #2 with voice input and photo attachments"
+                className="w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
