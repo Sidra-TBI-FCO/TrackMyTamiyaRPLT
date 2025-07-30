@@ -1,8 +1,8 @@
-# TrackMyTamiya - RC Collection Manager
+# TrackMyRC - RC Collection Manager
 
 ## Overview
 
-TrackMyTamiya is a comprehensive web application for tracking and managing Tamiya RC car model collections. The application provides features for model management, photo organization, build logging with voice notes, hop-up parts tracking, and a photo frame slideshow mode. It's designed with Tamiya's signature red, white, and blue branding and targets mobile-first usage for on-the-go collection management.
+TrackMyRC is a comprehensive web application for tracking and managing RC car model collections. The application provides features for model management, photo organization, build logging with voice notes, hop-up parts tracking, and a photo frame slideshow mode. It's designed with a modern green and orange color scheme and targets mobile-first usage for on-the-go collection management.
 
 ## User Preferences
 
@@ -17,7 +17,7 @@ The application follows a full-stack TypeScript architecture with a React fronte
 - **Backend**: REST API built with Express.js
 - **Database**: PostgreSQL with Drizzle ORM
 - **Build System**: Vite for frontend bundling, esbuild for backend compilation
-- **Styling**: Tailwind CSS with custom Tamiya brand colors
+- **Styling**: Tailwind CSS with custom green/orange brand colors
 - **Component Library**: shadcn/ui with Radix UI primitives
 
 ## Key Components
@@ -26,7 +26,7 @@ The application follows a full-stack TypeScript architecture with a React fronte
 - **Router**: Wouter for client-side routing
 - **State Management**: TanStack Query for server state, React hooks for local state
 - **UI Framework**: React with TypeScript, shadcn/ui components
-- **Styling**: Tailwind CSS with custom design tokens matching Tamiya branding
+- **Styling**: Tailwind CSS with custom design tokens and dual color scheme support
 - **File Structure**: Feature-based organization with shared components
 
 ### Backend Architecture
@@ -172,3 +172,10 @@ The application is designed to be mobile-first with responsive design, supportin
   - Color scheme selector added to settings page with real-time preview
   - Updated CSS variables system to support multiple color schemes
   - Theme switching works across entire application including headers and UI components
+- **Rebranding to TrackMyRC (July 30, 2025)**:
+  - Changed app name from "TrackMyTamiya" to "TrackMyRC" to avoid trademark issues
+  - Made military green/orange the default color scheme (instead of alternative)
+  - Updated all branding, headers, and marketing website to use new TrackMyRC identity
+  - Website now uses default green/orange theme consistently
+  - Alternative red/blue theme still available as color scheme option
+  - Updated disclaimer to reflect independence from RC manufacturers

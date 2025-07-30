@@ -34,13 +34,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Apply dark mode class
     html.classList.toggle("dark", dark);
     
-    // Apply color scheme class
+    // Apply color scheme class - military is now default, tamiya is alternative
     html.classList.remove("tamiya-theme", "military-theme");
-    if (scheme === "military") {
-      html.classList.add("military-theme");
-    } else {
+    if (scheme === "tamiya") {
       html.classList.add("tamiya-theme");
     }
+    // military theme is default, so no class needed
   };
   
   // Initialize theme on mount

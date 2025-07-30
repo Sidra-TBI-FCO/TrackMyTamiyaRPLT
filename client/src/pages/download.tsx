@@ -8,7 +8,7 @@ export default function DownloadPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="bg-gradient-to-r from-red-600 to-red-700 dark:from-blue-600 dark:to-blue-700 text-white py-16">
+      <section className="bg-gradient-to-r from-green-600 to-green-700 dark:from-orange-600 dark:to-orange-700 text-white py-16">
         <div className="container mx-auto px-4">
           <Link href="/screenshots">
             <Button variant="ghost" className="mb-4 text-white hover:bg-white/20">
@@ -17,11 +17,11 @@ export default function DownloadPage() {
             </Button>
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Download TrackMyTamiya
+            Download TrackMyRC
           </h1>
           <p className="text-xl opacity-90 max-w-3xl">
             Access your RC collection from any device. Choose the best option 
-            for your platform and start managing your Tamiya models today.
+            for your platform and start managing your RC models today.
           </p>
         </div>
       </section>
@@ -36,7 +36,7 @@ export default function DownloadPage() {
               </Badge>
               <h2 className="text-3xl font-bold mb-4">Web Application</h2>
               <p className="text-xl text-muted-foreground">
-                Access TrackMyTamiya directly in your browser. No installation required, 
+                Access TrackMyRC directly in your browser. No installation required, 
                 works on all devices with internet connection.
               </p>
             </div>

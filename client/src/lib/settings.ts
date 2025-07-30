@@ -16,7 +16,7 @@ export interface AppSettings {
 }
 
 export const defaultAppSettings: AppSettings = {
-  colorScheme: 'tamiya',
+  colorScheme: 'military',
   darkMode: false,
 };
 

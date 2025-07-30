@@ -48,7 +48,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="font-mono text-sm">Colors:</span>
-                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{colorScheme === 'tamiya' ? 'Tamiya' : 'Military'}</span>
+                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{colorScheme === 'military' ? 'Default' : 'Alternative'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-mono text-sm">Language:</span>
@@ -101,7 +101,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
-                TrackMyTamiya v1.0
+                TrackMyRC v1.0
               </p>
               <p className="font-mono text-xs text-gray-500 dark:text-gray-500">
                 Built with React & Express
@@ -122,7 +122,7 @@ export default function SettingsPage() {
             Settings
           </h1>
           <p className="text-gray-500 dark:text-gray-400 font-mono">
-            Customize your TrackMyTamiya experience
+            Customize your TrackMyRC experience
           </p>
         </div>
       </div>
@@ -196,7 +196,7 @@ export default function SettingsPage() {
                 setColorScheme(value);
                 toast({
                   title: "Color scheme updated",
-                  description: `Switched to ${value === 'tamiya' ? 'Tamiya red/blue' : 'military green/orange'} colors.`,
+                  description: `Switched to ${value === 'military' ? 'default green/orange' : 'alternative red/blue'} colors.`,
                 });
               }}
             >
@@ -204,14 +204,14 @@ export default function SettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="tamiya">Tamiya (Red/Blue)</SelectItem>
-                <SelectItem value="military">Military (Green/Orange)</SelectItem>
+                <SelectItem value="military">Default (Green/Orange)</SelectItem>
+                <SelectItem value="tamiya">Alternative (Red/Blue)</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-              {colorScheme === 'tamiya' 
-                ? 'Classic Tamiya red and blue colors'
-                : 'Military green (light mode) and orange (dark mode) theme'
+              {colorScheme === 'military' 
+                ? 'Default green (light mode) and orange (dark mode) theme'
+                : 'Alternative red and blue colors'
               }
             </p>
           </div>

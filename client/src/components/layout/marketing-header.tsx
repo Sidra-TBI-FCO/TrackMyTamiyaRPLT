@@ -11,7 +11,7 @@ export default function MarketingHeader() {
         <div className="flex h-16 items-center justify-between">
           <Link href="/">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-red-600 dark:bg-blue-600 flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'}}>
+              <div className="w-8 h-8 bg-green-600 dark:bg-orange-500 flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'}}>
                 {/* Angular star similar to Tamiya style */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div 
@@ -23,9 +23,9 @@ export default function MarketingHeader() {
                 </div>
               </div>
               <span className="font-bold text-lg">
-                <span className="text-red-600 dark:text-blue-500">TRACK</span>
-                <span className="text-blue-600 dark:text-red-500">MY</span>
-                <span className="text-red-600 dark:text-blue-500">TAMIYA</span>
+                <span className="text-green-600 dark:text-orange-500">TRACK</span>
+                <span className="text-orange-500 dark:text-green-600">MY</span>
+                <span className="text-green-600 dark:text-orange-500">RC</span>
               </span>
             </div>
           </Link>

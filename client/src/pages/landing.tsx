@@ -6,26 +6,26 @@ import { Link } from "wouter";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-red-50 dark:to-blue-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-green-50 dark:to-orange-950/20">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-background">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-red-100 text-red-800 dark:bg-blue-900/20 dark:text-blue-300">
+            <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-orange-900/20 dark:text-orange-300">
               RC Collection Management
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Track Your <span className="text-red-600 dark:text-blue-400">Tamiya</span>
+              Track Your <span className="text-green-600 dark:text-orange-400">RC</span>
               <br />
-              <span className="text-gray-600 dark:text-gray-300">RC Collection</span>
+              <span className="text-gray-600 dark:text-gray-300">Collection</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              The ultimate companion for Tamiya RC enthusiasts. Manage your models, track builds, 
+              The ultimate companion for RC enthusiasts. Manage your models, track builds, 
               organize photos, and monitor hop-up parts with precision and style.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth">
-                <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
+                <Button size="lg" className="bg-green-600 hover:bg-green-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -50,19 +50,19 @@ export default function Landing() {
               Everything You Need to Manage Your Collection
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              From planning your next build to tracking every hop-up part, TrackMyTamiya 
+              From planning your next build to tracking every hop-up part, TrackMyRC 
               provides comprehensive tools for serious RC enthusiasts.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-2 hover:border-red-200 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-2 hover:border-green-200 dark:hover:border-orange-600 transition-colors">
               <CardHeader>
-                <Database className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Database className="h-8 w-8 text-green-600 dark:text-orange-400 mb-2" />
                 <CardTitle>Model Management</CardTitle>
                 <CardDescription>
-                  Catalog your entire Tamiya collection with detailed specifications, 
-                  build status tracking, and automatic data import from TamiyaBase.
+                  Catalog your entire RC collection with detailed specifications, 
+                  build status tracking, and comprehensive model management.
                 </CardDescription>
               </CardHeader>
             </Card>
