@@ -263,6 +263,28 @@ export default function Features() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-8 bg-gray-50 dark:bg-gray-900 border-t">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
+            <div className="mb-4 sm:mb-0">
+              © 2025 TrackMyRC. All rights reserved.
+            </div>
+            <div className="flex space-x-6">
+              <Link href="/disclaimer" className="hover:text-foreground transition-colors">
+                Disclaimer
+              </Link>
+              <Link href="/features" className="hover:text-foreground transition-colors">
+                Features
+              </Link>
+              <Link href="/screenshots" className="hover:text-foreground transition-colors">
+                Screenshots
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

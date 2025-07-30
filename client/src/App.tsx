@@ -12,6 +12,7 @@ import Landing from "@/pages/landing";
 import Features from "@/pages/features";
 import Screenshots from "@/pages/screenshots";
 import DownloadPage from "@/pages/download";
+import DisclaimerPage from "@/pages/disclaimer";
 
 // Application pages
 import Home from "@/pages/home";
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/features" component={Features} />
       <Route path="/screenshots" component={Screenshots} />
       <Route path="/download" component={DownloadPage} />
+      <Route path="/disclaimer" component={DisclaimerPage} />
       <Route path="/auth" component={AuthPage} />
       
       {/* Protected application routes */}

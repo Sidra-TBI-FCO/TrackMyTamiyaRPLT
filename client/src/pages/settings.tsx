@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -289,6 +289,37 @@ export default function SettingsPage() {
               Reset All
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Disclaimer */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="text-lg font-mono flex items-center space-x-2">
+            <AlertTriangle className="h-5 w-5" />
+            <span>Disclaimer</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+          <p>
+            This app, <strong className="text-foreground">TrackMyRC</strong>, is an independent creation and is not affiliated with, endorsed by, sponsored by, or in any way officially connected with any RC car manufacturer, including but not limited to Traxxas, Tamiya, Arrma, Axial, Losi, or Associated Electrics.
+          </p>
+
+          <p>
+            All product names, logos, brands, trademarks, and registered trademarks are the property of their respective owners. The use of these names, trademarks, and brands in this app is for identification purposes only and does not imply endorsement.
+          </p>
+
+          <p>
+            <strong className="text-foreground">TrackMyRC</strong> is designed to help RC car enthusiasts organize their personal collection of RC car information, including models, hop-ups, manuals, setup sheets, and photos. It is not intended to replace official manufacturer resources or support. For official product information, support, and manuals, please refer directly to the respective RC car manufacturer's website and documentation.
+          </p>
+
+          <p>
+            The developer of this app is not responsible for any inaccuracies, omissions, or misinterpretations of information found within the app, which is provided for general informational purposes only. Users are encouraged to always consult official manufacturer documentation for precise and up-to-date information.
+          </p>
+
+          <p>
+            <strong className="text-foreground">By using this app, you acknowledge and agree to this disclaimer.</strong>
+          </p>
         </CardContent>
       </Card>
         </div>
