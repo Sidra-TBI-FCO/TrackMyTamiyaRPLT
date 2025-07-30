@@ -4,18 +4,15 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useSlideshow } from "@/lib/slideshow-context";
+import { useTheme } from "@/lib/theme-context";
 import { useQuery } from "@tanstack/react-query";
 import { ModelWithRelations } from "@/types";
 
-interface HeaderProps {
-  onToggleDarkMode: () => void;
-  isDarkMode: boolean;
-}
-
-export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
+export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [location, setLocation] = useLocation();
   const { openSlideshow } = useSlideshow();
+  const { darkMode, toggleDarkMode } = useTheme();
 
   // Get all models for global slideshow
   const { data: models } = useQuery<ModelWithRelations[]>({
@@ -61,9 +58,9 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-wide" style={{fontFamily: 'Bebas Neue, Arial, sans-serif'}}>
-                  <span style={{color: isDarkMode ? 'hsl(207, 90%, 54%)' : 'hsl(0, 84%, 60%)'}}>TRACK</span>
-                  <span style={{color: isDarkMode ? 'hsl(0, 84%, 60%)' : 'hsl(207, 90%, 54%)'}}>MY</span>
-                  <span style={{color: isDarkMode ? 'hsl(207, 90%, 54%)' : 'hsl(0, 84%, 60%)'}}>TAMIYA</span>
+                  <span style={{color: darkMode ? 'hsl(207, 90%, 54%)' : 'hsl(0, 84%, 60%)'}}>TRACK</span>
+                  <span style={{color: darkMode ? 'hsl(0, 84%, 60%)' : 'hsl(207, 90%, 54%)'}}>MY</span>
+                  <span style={{color: darkMode ? 'hsl(207, 90%, 54%)' : 'hsl(0, 84%, 60%)'}}>TAMIYA</span>
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   RC Collection Manager
@@ -99,10 +96,10 @@ export default function Header({ onToggleDarkMode, isDarkMode }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={onToggleDarkMode}
+              onClick={toggleDarkMode}
               className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
             >
-              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
             <Button
               variant="ghost"

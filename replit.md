@@ -165,3 +165,10 @@ The application is designed to be mobile-first with responsive design, supportin
   - Fixed authentication middleware to properly handle multipart form data uploads
   - Photo uploads now work seamlessly with Replit Object Storage for all three authentication methods
   - Multiple file uploads supported with individual photo processing and success confirmation
+- **Alternative Color Scheme Implementation (July 30, 2025)**:
+  - Added military green/orange theme as alternative to classic Tamiya red/blue colors
+  - Military theme uses green for light mode and orange for dark mode
+  - Implemented theme context system with persistent localStorage settings
+  - Color scheme selector added to settings page with real-time preview
+  - Updated CSS variables system to support multiple color schemes
+  - Theme switching works across entire application including headers and UI components

@@ -7,6 +7,19 @@ export interface SlideshowSettings {
   shuffle: boolean;
 }
 
+// App theme settings
+export type ColorScheme = 'tamiya' | 'military';
+
+export interface AppSettings {
+  colorScheme: ColorScheme;
+  darkMode: boolean;
+}
+
+export const defaultAppSettings: AppSettings = {
+  colorScheme: 'tamiya',
+  darkMode: false,
+};
+
 export const defaultSlideshowSettings: SlideshowSettings = {
   duration: 4,
   showCaptions: true,
@@ -36,5 +49,30 @@ export function saveSlideshowSettings(settings: Partial<SlideshowSettings>): voi
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
   } catch (error) {
     console.warn('Failed to save slideshow settings:', error);
+  }
+}
+
+// App settings functions
+const APP_SETTINGS_KEY = 'tamiya_app_settings';
+
+export function getAppSettings(): AppSettings {
+  try {
+    const saved = localStorage.getItem(APP_SETTINGS_KEY);
+    if (saved) {
+      return { ...defaultAppSettings, ...JSON.parse(saved) };
+    }
+  } catch (error) {
+    console.warn('Failed to load app settings:', error);
+  }
+  return defaultAppSettings;
+}
+
+export function saveAppSettings(settings: Partial<AppSettings>): void {
+  try {
+    const current = getAppSettings();
+    const updated = { ...current, ...settings };
+    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.warn('Failed to save app settings:', error);
   }
 }

@@ -4,14 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings } from "@/lib/settings";
+import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/lib/theme-context";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
   const { user } = useAuth();
+  const { colorScheme, darkMode, setColorScheme, toggleDarkMode } = useTheme();
 
   const updateSetting = <K extends keyof SlideshowSettings>(
     key: K,
@@ -41,8 +43,12 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="font-mono text-sm">Theme:</span>
-                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">Auto</span>
+                <span className="font-mono text-sm">Mode:</span>
+                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{darkMode ? 'Dark' : 'Light'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono text-sm">Colors:</span>
+                <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{colorScheme === 'tamiya' ? 'Tamiya' : 'Military'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-mono text-sm">Language:</span>
@@ -157,6 +163,60 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Theme Settings */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-lg font-mono">
+            <Palette className="h-5 w-5" />
+            <span>Theme Settings</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Dark Mode Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-mono font-medium">Dark Mode</Label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                Switch between light and dark themes
+              </p>
+            </div>
+            <Switch
+              checked={darkMode}
+              onCheckedChange={toggleDarkMode}
+            />
+          </div>
+
+          {/* Color Scheme Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-mono font-medium">Color Scheme</Label>
+            <Select 
+              value={colorScheme} 
+              onValueChange={(value: ColorScheme) => {
+                setColorScheme(value);
+                toast({
+                  title: "Color scheme updated",
+                  description: `Switched to ${value === 'tamiya' ? 'Tamiya red/blue' : 'military green/orange'} colors.`,
+                });
+              }}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tamiya">Tamiya (Red/Blue)</SelectItem>
+                <SelectItem value="military">Military (Green/Orange)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              {colorScheme === 'tamiya' 
+                ? 'Classic Tamiya red and blue colors'
+                : 'Military green (light mode) and orange (dark mode) theme'
+              }
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Photo Frame Settings */}
       <Card className="bg-white dark:bg-gray-800">

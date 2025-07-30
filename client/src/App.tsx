@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SlideshowProvider } from "@/lib/slideshow-context";
+import { ThemeProvider } from "@/lib/theme-context";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -65,43 +66,38 @@ function Router() {
 }
 
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("dark", !isDarkMode);
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <SlideshowProvider>
-          <AppContent isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-        </SlideshowProvider>
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <SlideshowProvider>
+            <AppContent />
+          </SlideshowProvider>
+        </TooltipProvider>
+        <Toaster />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
 
-function AppContent({ isDarkMode, toggleDarkMode }: { isDarkMode: boolean; toggleDarkMode: () => void }) {
+function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const showAppLayout = !isLoading && isAuthenticated;
 
   return (
-    <div className={`min-h-screen bg-background overflow-x-hidden ${isDarkMode ? "dark" : ""}`}>
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {showAppLayout ? (
         <>
-          <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
+          <Header />
           <Navigation />
         </>
       ) : (
-        <MarketingHeader isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
+        <MarketingHeader />
       )}
       <main className={showAppLayout ? "pb-16 lg:pb-0 max-w-full" : ""}>
         <Router />
       </main>
       {showAppLayout && <MobileNav />}
-      <Toaster />
     </div>
   );
 }

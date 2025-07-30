@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { Link } from "wouter";
+import { useTheme } from "@/lib/theme-context";
 
-interface MarketingHeaderProps {
-  isDarkMode: boolean;
-  onToggleDarkMode: () => void;
-}
-
-export default function MarketingHeader({ isDarkMode, onToggleDarkMode }: MarketingHeaderProps) {
+export default function MarketingHeader() {
+  const { darkMode, toggleDarkMode } = useTheme();
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -49,10 +46,10 @@ export default function MarketingHeader({ isDarkMode, onToggleDarkMode }: Market
             <Button
               variant="ghost"
               size="icon"
-              onClick={onToggleDarkMode}
+              onClick={toggleDarkMode}
               aria-label="Toggle dark mode"
             >
-              {isDarkMode ? (
+              {darkMode ? (
                 <Sun className="h-4 w-4 text-yellow-500" />
               ) : (
                 <Moon className="h-4 w-4 text-slate-600" />
