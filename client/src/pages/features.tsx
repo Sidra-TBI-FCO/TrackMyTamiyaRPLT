@@ -81,7 +81,7 @@ export default function Features() {
             </div>
             <div className="order-1 lg:order-2">
               <div className="flex items-center mb-4">
-                <Camera className="h-8 w-8 text-red-600 dark:text-blue-400 mr-3" />
+                <Camera className="h-8 w-8 mr-3" style={{color: 'var(--theme-primary)'}} />
                 <h3 className="text-2xl font-bold">Photo Gallery</h3>
               </div>
               <p className="text-lg text-muted-foreground mb-6">
@@ -90,19 +90,19 @@ export default function Features() {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Drag-and-drop multi-file uploads
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Box art designation and management
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Photo captions and metadata
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Lightbox gallery viewing
                 </li>
               </ul>
@@ -112,7 +112,7 @@ export default function Features() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="flex items-center mb-4">
-                <Clock className="h-8 w-8 text-red-600 dark:text-blue-400 mr-3" />
+                <Clock className="h-8 w-8 mr-3" style={{color: 'var(--theme-primary)'}} />
                 <h3 className="text-2xl font-bold">Build Logging</h3>
               </div>
               <p className="text-lg text-muted-foreground mb-6">
@@ -121,19 +121,19 @@ export default function Features() {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Chronological build timeline
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Voice recording with transcription
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Photo attachments per entry
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Cross-model build history
                 </li>
               </ul>
@@ -157,7 +157,7 @@ export default function Features() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="overflow-hidden">
               <CardHeader>
-                <Settings className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Settings className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Hop-Up Parts Tracking</CardTitle>
                 <CardDescription>
                   Monitor performance upgrades, installation status, costs, and compatibility 
@@ -175,7 +175,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <Search className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Search className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Advanced Search</CardTitle>
                 <CardDescription>
                   Find models, parts, and build entries quickly with powerful search 
@@ -186,7 +186,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <BarChart3 className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <BarChart3 className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Analytics & Reports</CardTitle>
                 <CardDescription>
                   Track collection growth, investment analysis, and build progress 
@@ -197,7 +197,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <FileText className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <FileText className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Data Export</CardTitle>
                 <CardDescription>
                   Export your collection data in various formats for backup, 
@@ -208,7 +208,7 @@ export default function Features() {
 
             <Card>
               <CardHeader>
-                <Cloud className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Cloud className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Cloud Sync</CardTitle>
                 <CardDescription>
                   Access your collection from anywhere with secure cloud storage 
@@ -219,11 +219,11 @@ export default function Features() {
 
             <Card className="overflow-hidden">
               <CardHeader>
-                <Smartphone className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Smartphone className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Dark Mode & Theming</CardTitle>
                 <CardDescription>
-                  Beautiful dark mode with Tamiya-branded color switching. Red elements 
-                  become blue in dark mode for optimal viewing in any lighting condition.
+                  Beautiful dark mode with dynamic color theming. Choose between military 
+                  green/orange or classic red/blue themes that adapt to light and dark modes.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
