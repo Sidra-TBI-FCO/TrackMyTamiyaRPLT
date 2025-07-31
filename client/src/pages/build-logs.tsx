@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { Wrench, ArrowLeft, Calendar, Camera, Edit, Trash2, ExternalLink } from "lucide-react";
+import { Wrench, ArrowLeft, Calendar, Camera, Edit, Trash2, ExternalLink, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import BuildLogList from "@/components/build-log/build-log-list";
 import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
 import { format } from "date-fns";
 import { useState } from "react";
+import { exportBuildLogsToPDF } from "@/lib/export-utils";
+import { toast } from "@/hooks/use-toast";
 
 export default function BuildLogs() {
   const params = useParams();
@@ -32,6 +34,23 @@ export default function BuildLogs() {
     entry.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.model.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  const handleExportPDF = () => {
+    if (!filteredEntries || filteredEntries.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "You don't have any build log entries to export yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    exportBuildLogsToPDF(filteredEntries);
+    toast({
+      title: "Export completed",
+      description: "Build logs have been exported to PDF file.",
+    });
+  };
 
   if (modelId && model) {
     // Show specific model's build log
@@ -73,41 +92,51 @@ export default function BuildLogs() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
-              All Build Logs
-            </h1>
-            <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mt-1">
-              {allEntries?.length || 0} entries across all models • chronological order
-            </p>
+          <div className="flex items-center space-x-3">
+            <div className="text-white p-3 rounded-lg" style={{backgroundColor: 'var(--theme-primary)'}}>
+              <Wrench className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-mono font-bold text-gray-900 dark:text-white">
+                All Build Logs
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 font-mono">
+                View build progress across all your models
+              </p>
+            </div>
           </div>
+          <Button 
+            onClick={handleExportPDF}
+            variant="outline" 
+            className="font-mono"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
         </div>
 
         {/* Search */}
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <Input
-              placeholder="Search entries or models..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-4 font-mono"
-            />
-          </div>
+        <div className="w-full max-w-md">
+          <Input
+            placeholder="Search build logs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="font-mono"
+          />
         </div>
 
-        {/* Loading State */}
+        {/* Loading state */}
         {entriesLoading && (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <Card key={i} className="p-6">
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-24" />
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
                   </div>
-                  <Skeleton className="h-6 w-64" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
+                </CardContent>
               </Card>
             ))}
           </div>
@@ -117,7 +146,9 @@ export default function BuildLogs() {
         {!entriesLoading && (!allEntries || allEntries.length === 0) && (
           <Card className="p-12">
             <div className="text-center">
-              <Wrench className="h-16 w-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+              <div className="text-white p-3 rounded-lg mx-auto w-fit mb-4" style={{backgroundColor: 'var(--theme-primary)'}}>
+                <Wrench className="h-6 w-6" />
+              </div>
               <h2 className="text-xl font-mono font-semibold text-gray-900 dark:text-white mb-2">
                 No Build Log Entries
               </h2>
@@ -125,10 +156,27 @@ export default function BuildLogs() {
                 Start documenting your builds by adding entries to your model collections.
               </p>
               <Link href="/models">
-                <Button className="bg-red-600 hover:bg-red-700 text-white font-mono">
+                <Button style={{backgroundColor: 'var(--theme-primary)'}} className="text-white font-mono">
                   Browse Models
                 </Button>
               </Link>
+            </div>
+          </Card>
+        )}
+
+        {/* Filtered Empty State */}
+        {!entriesLoading && allEntries && allEntries.length > 0 && filteredEntries.length === 0 && (
+          <Card className="p-12">
+            <div className="text-center">
+              <div className="text-white p-3 rounded-lg mx-auto w-fit mb-4" style={{backgroundColor: 'var(--theme-primary)'}}>
+                <Wrench className="h-6 w-6" />
+              </div>
+              <h2 className="text-xl font-mono font-semibold text-gray-900 dark:text-white mb-2">
+                No Matching Entries
+              </h2>
+              <p className="font-mono text-gray-500 dark:text-gray-400 mb-6">
+                No build log entries match your search criteria.
+              </p>
             </div>
           </Card>
         )}
@@ -184,7 +232,7 @@ export default function BuildLogs() {
                         </div>
                         <div className="flex gap-2 overflow-x-auto pb-2">
                           {entry.photos.slice(0, 4).map((photoLink, index) => (
-                            <div key={`${photoLink.buildLogEntryId}-${photoLink.photoId}-${index}`} className="flex-shrink-0">
+                            <div key={`${index}`} className="flex-shrink-0">
                               <img
                                 src={photoLink.photo.url}
                                 alt={photoLink.photo.caption || 'Build log photo'}

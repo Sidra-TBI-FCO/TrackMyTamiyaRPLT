@@ -431,6 +431,35 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
+  async getAllHopUpParts(userId: string): Promise<(HopUpPart & { model: { name: string } })[]> {
+    // Get all models for the user first
+    const userModels = await db.query.models.findMany({
+      where: eq(models.userId, userId),
+      columns: { id: true, name: true },
+    });
+
+    const userModelIds = userModels.map(m => m.id);
+    
+    if (userModelIds.length === 0) {
+      return [];
+    }
+
+    // Get hop-up parts for user's models
+    const parts = await db.query.hopUpParts.findMany({
+      with: {
+        model: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+      where: inArray(hopUpParts.modelId, userModelIds),
+      orderBy: desc(hopUpParts.createdAt),
+    });
+
+    return parts;
+  }
+
   async getCollectionStats(userId: string): Promise<{
     totalModels: number;
     activeBuilds: number;

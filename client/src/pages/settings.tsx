@@ -4,16 +4,28 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme-context";
+import { exportModelsToCSV, exportHopUpsToCSV } from "@/lib/export-utils";
+import { useQuery } from "@tanstack/react-query";
+import { ModelWithRelations, HopUpPart } from "@/types";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
   const { user } = useAuth();
   const { colorScheme, darkMode, setColorScheme, toggleDarkMode } = useTheme();
+
+  // Fetch data for exports
+  const { data: models } = useQuery<ModelWithRelations[]>({
+    queryKey: ["/api/models"],
+  });
+
+  const { data: allHopUps } = useQuery<(HopUpPart & { model: { name: string } })[]>({
+    queryKey: ["/api/hop-up-parts/all"],
+  });
 
   const updateSetting = <K extends keyof SlideshowSettings>(
     key: K,
@@ -30,6 +42,40 @@ export default function SettingsPage() {
 
   const handleLogout = () => {
     window.location.href = '/api/logout';
+  };
+
+  const handleExportModels = () => {
+    if (!models || models.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "You don't have any models to export yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    exportModelsToCSV(models);
+    toast({
+      title: "Export completed",
+      description: "Models have been exported to CSV file.",
+    });
+  };
+
+  const handleExportHopUps = () => {
+    if (!allHopUps || allHopUps.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "You don't have any hop-up parts to export yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    exportHopUpsToCSV(allHopUps);
+    toast({
+      title: "Export completed",
+      description: "Hop-up parts have been exported to CSV file.",
+    });
   };
 
   return (
@@ -317,6 +363,55 @@ export default function SettingsPage() {
               checked={settings.shuffle}
               onCheckedChange={(checked) => updateSetting('shuffle', checked)}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Export */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="text-lg font-mono flex items-center space-x-2">
+            <Download className="h-5 w-5" />
+            <span>Data Export</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-mono font-medium">Export Models</Label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                  Download all your models data as CSV file
+                </p>
+              </div>
+              <Button 
+                onClick={handleExportModels}
+                variant="outline" 
+                size="sm"
+                className="font-mono"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                CSV
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-mono font-medium">Export Hop-Up Parts</Label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                  Download all your hop-up parts data as CSV file
+                </p>
+              </div>
+              <Button 
+                onClick={handleExportHopUps}
+                variant="outline" 
+                size="sm"
+                className="font-mono"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                CSV
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

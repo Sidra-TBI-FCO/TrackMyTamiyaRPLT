@@ -313,6 +313,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all hop-up parts for a user (for export)
+  app.get('/api/hop-up-parts/all', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const hopUps = await storage.getAllHopUpParts(userId);
+      res.json(hopUps);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Build log routes
   app.get('/api/build-log-entries', async (req, res) => {
     try {
