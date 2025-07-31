@@ -6,16 +6,16 @@ import { Link } from "wouter";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-green-50 dark:to-orange-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-background">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-orange-900/20 dark:text-orange-300">
+            <Badge className="mb-4" style={{backgroundColor: 'var(--theme-primary)', color: 'white', opacity: 0.9}}>
               RC Collection Management
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Track Your <span className="text-green-600 dark:text-orange-400">RC</span>
+              Track Your <span style={{color: 'var(--theme-primary)'}}>RC</span>
               <br />
               <span className="text-gray-600 dark:text-gray-300">Collection</span>
             </h1>
@@ -25,7 +25,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth">
-                <Button size="lg" className="bg-green-600 hover:bg-green-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white">
+                <Button size="lg" className="text-white" style={{backgroundColor: 'var(--theme-primary)'}}>
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -56,9 +56,9 @@ export default function Landing() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-2 hover:border-green-200 dark:hover:border-orange-600 transition-colors">
+            <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <Database className="h-8 w-8 text-green-600 dark:text-orange-400 mb-2" />
+                <Database className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Model Management</CardTitle>
                 <CardDescription>
                   Catalog your entire RC collection with detailed specifications, 

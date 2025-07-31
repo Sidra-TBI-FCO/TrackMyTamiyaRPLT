@@ -8,7 +8,7 @@ export default function Features() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="bg-gradient-to-r from-green-600 to-green-700 dark:from-orange-600 dark:to-orange-700 text-white py-16">
+      <section className="text-white py-16" style={{background: `linear-gradient(to right, var(--theme-primary), var(--theme-secondary))`}}>
         <div className="container mx-auto px-4">
           <Link href="/">
             <Button variant="ghost" className="mb-4 text-white hover:bg-white/20">
@@ -34,7 +34,7 @@ export default function Features() {
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
             <div>
               <div className="flex items-center mb-4">
-                <Database className="h-8 w-8 text-red-600 dark:text-blue-400 dark:text-blue-400 mr-3" />
+                <Database className="h-8 w-8 mr-3" style={{color: 'var(--theme-primary)'}} />
                 <h3 className="text-2xl font-bold">Model Management</h3>
               </div>
               <p className="text-lg text-muted-foreground mb-6">
@@ -43,19 +43,19 @@ export default function Features() {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Automatic data import from TamiyaBase
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Build status tracking (Planning, Building, Built, Maintenance)
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Custom tags and organization
                 </li>
                 <li className="flex items-center">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-blue-400 rounded-full mr-3"></span>
+                  <span className="w-2 h-2 rounded-full mr-3" style={{backgroundColor: 'var(--theme-primary)'}}></span>
                   Cost tracking and investment analysis
                 </li>
               </ul>

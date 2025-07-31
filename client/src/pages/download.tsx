@@ -8,7 +8,7 @@ export default function DownloadPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="bg-gradient-to-r from-green-600 to-green-700 dark:from-orange-600 dark:to-orange-700 text-white py-16">
+      <section className="text-white py-16" style={{background: `linear-gradient(to right, var(--theme-primary), var(--theme-secondary))`}}>
         <div className="container mx-auto px-4">
           <Link href="/screenshots">
             <Button variant="ghost" className="mb-4 text-white hover:bg-white/20">
@@ -70,7 +70,7 @@ export default function DownloadPage() {
                   </div>
                 </div>
                 <Link href="/auth">
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button size="lg" className="text-white" style={{backgroundColor: 'var(--theme-primary)'}}>
                     Launch Web App
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

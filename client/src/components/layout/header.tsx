@@ -45,7 +45,7 @@ export default function Header() {
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-green-600 dark:bg-orange-500 flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)'}}>
+              <div className="w-10 h-10 flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)', backgroundColor: 'var(--theme-primary)'}}>
                 {/* Angular star similar to Tamiya style */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div 
@@ -58,9 +58,9 @@ export default function Header() {
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-wide" style={{fontFamily: 'Bebas Neue, Arial, sans-serif'}}>
-                  <span className="text-green-600 dark:text-orange-500">TRACK</span>
-                  <span className="text-orange-500 dark:text-green-600">MY</span>
-                  <span className="text-green-600 dark:text-orange-500">RC</span>
+                  <span style={{color: 'var(--theme-primary)'}}>TRACK</span>
+                  <span style={{color: 'var(--theme-secondary)'}}>MY</span>
+                  <span style={{color: 'var(--theme-primary)'}}>RC</span>
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                   RC Collection Manager

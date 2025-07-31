@@ -114,7 +114,7 @@ export default function SettingsPage() {
         <div className="flex-1 min-w-0 space-y-6">
           {/* Header */}
           <div className="flex items-center space-x-3 mb-6">
-        <div className="bg-red-600 text-white p-3 rounded-lg">
+        <div className="text-white p-3 rounded-lg" style={{backgroundColor: 'var(--theme-primary)'}}>
           <Settings className="h-6 w-6" />
         </div>
         <div>
@@ -137,7 +137,7 @@ export default function SettingsPage() {
             {user ? (
               <>
                 <div className="flex items-center space-x-3">
-                  <div className="bg-tamiya-red dark:bg-tamiya-blue p-2 rounded-full">
+                  <div className="p-2 rounded-full" style={{backgroundColor: 'var(--theme-primary)'}}>
                     <User className="h-4 w-4 text-white" />
                   </div>
                   <div>
@@ -153,7 +153,8 @@ export default function SettingsPage() {
                   onClick={handleLogout}
                   variant="outline" 
                   size="sm" 
-                  className="w-full font-mono text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200 dark:border-red-800"
+                  className="w-full font-mono border-primary/20 hover:bg-primary/5"
+                  style={{color: 'var(--theme-primary)'}}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out

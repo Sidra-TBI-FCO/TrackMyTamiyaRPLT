@@ -26,19 +26,13 @@
   --ring: hsl(84, 42%, 35%);
   --radius: 0.5rem;
   
-  /* Tamiya brand colors */
+  /* Static color definitions */
   --tamiya-red: hsl(0, 84%, 60%);
   --tamiya-blue: hsl(207, 90%, 54%);
-  --tamiya-dark: hsl(215, 16%, 16%);
-  --tamiya-light: hsl(210, 40%, 96%);
-  
-  /* Military color scheme */
   --military-green: hsl(84, 42%, 35%);
   --military-orange: hsl(24, 100%, 50%);
-  --military-dark: hsl(84, 25%, 20%);
-  --military-light: hsl(84, 15%, 92%);
   
-  /* Theme colors - default to Military */
+  /* Dynamic theme colors - default to Military (green in light, orange in dark) */
   --theme-primary: var(--military-green);
   --theme-secondary: var(--military-orange);
 }
@@ -64,20 +58,12 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(24, 100%, 50%);
   
-  /* Tamiya brand colors swapped for dark mode */
-  --tamiya-red: hsl(207, 90%, 54%);
-  --tamiya-blue: hsl(0, 84%, 60%);
-  
-  /* Military colors swapped for dark mode */
-  --military-green: hsl(24, 100%, 50%);
-  --military-orange: hsl(84, 42%, 35%);
-  
-  /* Theme colors - default to Military dark */
+  /* Dynamic theme colors - default to Military (orange in dark, green secondary) */
   --theme-primary: var(--military-orange);
   --theme-secondary: var(--military-green);
 }
 
-/* Tamiya color scheme classes */
+/* Alternative Tamiya color scheme */
 .tamiya-theme {
   --theme-primary: var(--tamiya-red);
   --theme-secondary: var(--tamiya-blue);
