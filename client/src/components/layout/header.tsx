@@ -89,7 +89,10 @@ export default function Header() {
               variant="ghost"
               size="icon"
               onClick={handlePhotoFrameClick}
-              className="text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400"
+              className="text-gray-600 dark:text-gray-300"
+              style={{'--hover-color': 'var(--theme-primary)'} as React.CSSProperties}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--theme-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = ''}
             >
               <Images className="h-5 w-5" />
             </Button>
@@ -97,7 +100,10 @@ export default function Header() {
               variant="ghost"
               size="icon"
               onClick={toggleDarkMode}
-              className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
+              className="text-gray-600 dark:text-gray-300"
+              style={{'--hover-color': 'var(--theme-secondary)'} as React.CSSProperties}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--theme-secondary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = ''}
             >
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>

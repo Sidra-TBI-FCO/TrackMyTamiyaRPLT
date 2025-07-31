@@ -48,9 +48,10 @@ export default function Navigation() {
                 className={cn(
                   "flex items-center px-3 py-4 text-sm font-mono font-medium border-b-2 transition-colors",
                   item.isActive
-                    ? "border-red-600 text-red-600"
+                    ? "text-white" 
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 )}
+                style={item.isActive ? {borderColor: 'var(--theme-primary)', color: 'var(--theme-primary)'} : {}}
               >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.label}

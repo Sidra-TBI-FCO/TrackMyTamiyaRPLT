@@ -57,7 +57,7 @@ export default function MarketingHeader() {
             </Button>
             
             <Link href="/auth">
-              <Button className="bg-red-600 hover:bg-red-700 text-white">
+              <Button className="text-white" style={{backgroundColor: 'var(--theme-primary)'}}>
                 Login
               </Button>
             </Link>
