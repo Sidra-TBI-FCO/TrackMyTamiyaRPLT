@@ -157,14 +157,15 @@ export default function VoiceRecorder({
                 <Button
                   onClick={handleClear}
                   variant="outline"
-                  className="text-red-600 hover:text-red-700 font-mono"
+                  className="text-destructive hover:text-destructive/80 font-mono"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
                 
                 <Button
                   onClick={startRecording}
-                  className="bg-red-600 hover:bg-red-700 text-white font-mono"
+                  className="text-white font-mono"
+                  style={{backgroundColor: 'var(--theme-primary)'}}
                 >
                   <MicOff className="mr-2 h-4 w-4" />
                   Record Again

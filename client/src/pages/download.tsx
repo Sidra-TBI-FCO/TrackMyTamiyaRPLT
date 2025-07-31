@@ -254,7 +254,7 @@ export default function DownloadPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/api/login">
-              <Button size="lg" className="bg-red-600 hover:bg-red-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white">
+              <Button size="lg" className="text-white" style={{backgroundColor: 'var(--theme-primary)'}}>
                 Launch Web App
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
