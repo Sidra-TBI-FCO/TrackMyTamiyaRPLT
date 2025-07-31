@@ -394,21 +394,24 @@ export default function ModelDetail() {
             <CardContent className="p-3">
               <div className="grid grid-cols-3 gap-2">
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 font-mono text-xs p-3 h-10 flex items-center justify-center"
+                  className="text-white font-mono text-xs p-3 h-10 flex items-center justify-center"
+                  style={{backgroundColor: 'var(--theme-primary)'}}
                   onClick={() => setIsAddPhotoOpen(true)}
                 >
                   <Camera className="h-4 w-4 mr-1" />
                   <span>Photo</span>
                 </Button>
                 <Button 
-                  className="bg-green-600 hover:bg-green-700 font-mono text-xs p-3 h-10 flex items-center justify-center"
+                  className="text-white font-mono text-xs p-3 h-10 flex items-center justify-center"
+                  style={{backgroundColor: 'var(--theme-secondary)'}}
                   onClick={() => setIsAddBuildLogOpen(true)}
                 >
                   <Wrench className="h-4 w-4 mr-1" />
                   <span>Log</span>
                 </Button>
                 <Button 
-                  className="bg-orange-600 hover:bg-orange-700 font-mono text-xs p-3 h-10 flex items-center justify-center"
+                  className="text-white font-mono text-xs p-3 h-10 flex items-center justify-center"
+                  style={{backgroundColor: 'var(--theme-primary)', opacity: 0.8}}
                   onClick={() => setIsAddHopUpOpen(true)}
                 >
                   <Cog className="h-4 w-4 mr-1" />

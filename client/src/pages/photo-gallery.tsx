@@ -259,7 +259,8 @@ export default function PhotoGallery() {
                           <Button
                             variant="link"
                             onClick={() => setLocation(`/models/${photo.model.id}`)}
-                            className="font-mono text-sm p-0 h-auto text-blue-600 hover:text-blue-700"
+                            className="font-mono text-sm p-0 h-auto"
+                            style={{color: 'var(--theme-secondary)'}}
                           >
                             {photo.model.name}
                           </Button>
@@ -269,7 +270,7 @@ export default function PhotoGallery() {
                         </td>
                         <td className="p-3">
                           {photo.isBoxArt ? (
-                            <Badge variant="secondary" className="font-mono text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                            <Badge variant="secondary" className="font-mono text-xs" style={{backgroundColor: 'var(--theme-primary)', color: 'white', opacity: 0.9}}>
                               Box Art
                             </Badge>
                           ) : (
@@ -331,7 +332,7 @@ export default function PhotoGallery() {
                             {photo.originalName}
                           </p>
                           {photo.isBoxArt && (
-                            <Badge variant="secondary" className="font-mono text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 ml-2 flex-shrink-0">
+                            <Badge variant="secondary" className="font-mono text-xs ml-2 flex-shrink-0" style={{backgroundColor: 'var(--theme-primary)', color: 'white', opacity: 0.9}}>
                               Box Art
                             </Badge>
                           )}

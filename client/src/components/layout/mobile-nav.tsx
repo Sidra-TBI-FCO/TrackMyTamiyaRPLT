@@ -30,8 +30,9 @@ export default function MobileNav() {
             <button
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-1 transition-colors min-w-0",
-                item.isActive ? "text-red-600" : "text-gray-400"
+                item.isActive ? "" : "text-gray-400"
               )}
+              style={item.isActive ? {color: 'var(--theme-primary)'} : {}}
             >
               <item.icon className="h-5 w-5" />
               <span className="text-xs font-mono mt-1 truncate">{item.label}</span>
@@ -41,11 +42,11 @@ export default function MobileNav() {
         
         <AddModelDialog
           trigger={
-            <button className="flex flex-col items-center justify-center py-2 px-1 text-red-600 bg-red-50 dark:bg-red-950 rounded-lg">
-              <div className="bg-red-600 rounded-full p-1">
+            <button className="flex flex-col items-center justify-center py-2 px-1 rounded-lg" style={{color: 'var(--theme-primary)', backgroundColor: 'var(--theme-primary)', opacity: 0.1}}>
+              <div className="rounded-full p-1" style={{backgroundColor: 'var(--theme-primary)'}}>
                 <Plus className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xs font-mono mt-1 text-red-600">Add</span>
+              <span className="text-xs font-mono mt-1" style={{color: 'var(--theme-primary)'}}>Add</span>
             </button>
           }
         />

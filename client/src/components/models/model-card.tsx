@@ -143,7 +143,8 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
           <Link href={`/models/${model.id}`} className="flex-1">
             <Button
               size="sm"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-mono"
+              className="w-full text-white font-mono"
+              style={{backgroundColor: 'var(--theme-primary)'}}
             >
               View Details
             </Button>
@@ -161,7 +162,7 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
             variant="outline"
             size="sm"
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+            className="p-2 text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
             title="Delete Model"
           >
             <Trash2 className="h-4 w-4" />
@@ -183,7 +184,7 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
             <AlertDialogAction
               onClick={() => deleteModelMutation.mutate()}
               disabled={deleteModelMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               {deleteModelMutation.isPending ? "Deleting..." : "Delete Model"}
             </AlertDialogAction>
