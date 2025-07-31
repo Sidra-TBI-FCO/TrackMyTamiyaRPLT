@@ -179,3 +179,10 @@ The application is designed to be mobile-first with responsive design, supportin
   - Website now uses default green/orange theme consistently
   - Alternative red/blue theme still available as color scheme option
   - Updated disclaimer to reflect independence from RC manufacturers
+- **Centralized Color System Implementation (July 31, 2025)**:
+  - Completely centralized all color definitions to single-source CSS variables system
+  - Replaced hardcoded colors throughout app with --theme-primary and --theme-secondary variables
+  - Colors now automatically adapt based on selected theme (military/tamiya) + dark/light mode combination
+  - Updated landing page, headers, buttons, icons, feature cards, and CTA sections
+  - Theme switching now works consistently across entire application
+  - Single point of control for all brand colors in index.css

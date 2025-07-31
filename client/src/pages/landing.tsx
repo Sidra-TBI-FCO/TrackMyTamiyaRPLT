@@ -31,7 +31,7 @@ export default function Landing() {
                 </Button>
               </Link>
               <Link href="/features">
-                <Button size="lg" variant="outline">
+                <Button size="lg" variant="outline" className="border-primary/20 hover:bg-primary/5" style={{color: 'var(--theme-primary)'}}>
                   Explore Features
                 </Button>
               </Link>
@@ -67,9 +67,9 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-red-200 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <Camera className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Camera className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Photo Gallery</CardTitle>
                 <CardDescription>
                   Organize build photos with captions, set box art images, 
@@ -78,9 +78,9 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-red-200 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <Clock className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Clock className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Build Logging</CardTitle>
                 <CardDescription>
                   Document your build process with timeline entries, voice notes, 
@@ -89,9 +89,9 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-red-200 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <Settings className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Settings className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Hop-Up Parts</CardTitle>
                 <CardDescription>
                   Track performance upgrades, installation dates, costs, 
@@ -100,9 +100,9 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-red-200 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <Smartphone className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Smartphone className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Mobile Optimized</CardTitle>
                 <CardDescription>
                   Responsive design with touch-friendly interfaces, 
@@ -111,9 +111,9 @@ export default function Landing() {
               </CardHeader>
             </Card>
 
-            <Card className="border-2 hover:border-red-200 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-2 hover:border-primary/30 transition-colors">
               <CardHeader>
-                <Monitor className="h-8 w-8 text-red-600 dark:text-blue-400 mb-2" />
+                <Monitor className="h-8 w-8 mb-2" style={{color: 'var(--theme-primary)'}} />
                 <CardTitle>Cross Platform</CardTitle>
                 <CardDescription>
                   Access your collection from any device - desktop, tablet, 
@@ -148,17 +148,17 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-red-600 dark:bg-blue-600 text-white">
+      <section className="py-20 text-white" style={{background: `linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))`}}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Organize Your Collection?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-            Join RC enthusiasts who trust TrackMyTamiya to manage their collections. 
+            Join RC enthusiasts who trust TrackMyRC to manage their collections. 
             Start tracking your builds today.
           </p>
           <Link href="/auth">
-            <Button size="lg" variant="secondary" className="bg-white text-red-600 dark:text-blue-600 hover:bg-gray-100">
+            <Button size="lg" variant="secondary" className="bg-white hover:bg-gray-100" style={{color: 'var(--theme-primary)'}}>
               Get Started Now
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
