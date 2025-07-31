@@ -184,5 +184,7 @@ The application is designed to be mobile-first with responsive design, supportin
   - Replaced hardcoded colors throughout app with --theme-primary and --theme-secondary variables
   - Colors now automatically adapt based on selected theme (military/tamiya) + dark/light mode combination
   - Updated landing page, headers, buttons, icons, feature cards, and CTA sections
-  - Theme switching now works consistently across entire application
-  - Single point of control for all brand colors in index.css
+  - Fixed features page: all icons, bullet points, and color references now use centralized theme system
+  - Fixed auth/login page: updated app name to TrackMyRC, temporarily disabled OAuth, fixed button colors
+  - Theme switching now works consistently across entire application including authentication
+  - Single point of control for all brand colors in index.css with complete coverage

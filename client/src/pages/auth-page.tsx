@@ -77,7 +77,7 @@ export default function AuthPage() {
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
       toast({
-        title: "Welcome to TrackMyTamiya!",
+        title: "Welcome to TrackMyRC!",
         description: `Account created for ${user.firstName} ${user.lastName}. Please check your email to verify your account.`,
       });
       navigate("/");
@@ -110,7 +110,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-red-50 dark:from-blue-950 dark:via-gray-900 dark:to-red-950">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-2 gap-8 min-h-screen">
           {/* Left side - Authentication Forms */}
@@ -119,11 +119,11 @@ export default function AuthPage() {
               {/* Logo and Title */}
               <div className="text-center space-y-2">
                 <div className="flex items-center justify-center space-x-2">
-                  <div className="bg-tamiya-red dark:bg-tamiya-blue p-2 rounded-lg">
+                  <div className="p-2 rounded-lg" style={{backgroundColor: 'var(--theme-primary)'}}>
                     <Star className="h-6 w-6 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    TrackMyTamiya
+                    TrackMyRC
                   </h1>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -133,32 +133,32 @@ export default function AuthPage() {
 
 
 
-              {/* OAuth Authentication */}
-              <Card className="mb-6">
+              {/* OAuth Authentication - Temporarily Disabled */}
+              <Card className="mb-6 opacity-50">
                 <CardHeader>
                   <CardTitle className="text-center">Quick Sign In</CardTitle>
                   <CardDescription className="text-center">
-                    Sign in with your existing accounts
+                    OAuth authentication temporarily disabled
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = '/api/auth/google'}
+                    disabled
                     className="w-full flex items-center justify-center space-x-2 h-11"
                   >
-                    <SiGoogle className="h-5 w-5 text-red-500" />
-                    <span>Continue with Google</span>
+                    <SiGoogle className="h-5 w-5 text-gray-400" />
+                    <span>Continue with Google (Coming Soon)</span>
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = '/api/auth/replit'}
+                    disabled
                     className="w-full flex items-center justify-center space-x-2 h-11"
                   >
-                    <div className="bg-tamiya-blue p-1 rounded">
+                    <div className="bg-gray-400 p-1 rounded">
                       <Star className="h-3 w-3 text-white" />
                     </div>
-                    <span>Continue with Replit</span>
+                    <span>Continue with Replit (Coming Soon)</span>
                   </Button>
                 </CardContent>
               </Card>
@@ -168,7 +168,7 @@ export default function AuthPage() {
                   <Separator className="w-full" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-gradient-to-br from-blue-50 via-white to-red-50 dark:from-blue-950 dark:via-gray-900 dark:to-red-950 px-2 text-muted-foreground">
+                  <span className="bg-background px-2 text-muted-foreground">
                     Or continue with email
                   </span>
                 </div>
@@ -322,7 +322,7 @@ export default function AuthPage() {
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                           {confirmPassword && confirmPassword !== registerForm.watch("password") && (
-                            <p className="text-sm text-red-600">Passwords do not match</p>
+                            <p className="text-sm text-destructive">Passwords do not match</p>
                           )}
                         </div>
                         <Button 
@@ -348,13 +348,13 @@ export default function AuthPage() {
                   Manage Your RC Collection
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400 max-w-lg">
-                  Track your Tamiya models, document builds, manage hop-up parts, and organize your photos all in one place.
+                  Track your RC models, document builds, manage hop-up parts, and organize your photos all in one place.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-6 max-w-md mx-auto">
                 <div className="text-center space-y-2">
-                  <div className="bg-tamiya-red dark:bg-tamiya-blue p-3 rounded-lg mx-auto w-fit">
+                  <div className="p-3 rounded-lg mx-auto w-fit" style={{backgroundColor: 'var(--theme-primary)'}}>
                     <Car className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Model Tracking</h3>
@@ -364,7 +364,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="text-center space-y-2">
-                  <div className="bg-tamiya-red dark:bg-tamiya-blue p-3 rounded-lg mx-auto w-fit">
+                  <div className="p-3 rounded-lg mx-auto w-fit" style={{backgroundColor: 'var(--theme-primary)'}}>
                     <Settings className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Build Logs</h3>
@@ -374,7 +374,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="text-center space-y-2">
-                  <div className="bg-tamiya-red dark:bg-tamiya-blue p-3 rounded-lg mx-auto w-fit">
+                  <div className="p-3 rounded-lg mx-auto w-fit" style={{backgroundColor: 'var(--theme-primary)'}}>
                     <Wrench className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Hop-Up Parts</h3>
@@ -384,7 +384,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="text-center space-y-2">
-                  <div className="bg-tamiya-red dark:bg-tamiya-blue p-3 rounded-lg mx-auto w-fit">
+                  <div className="p-3 rounded-lg mx-auto w-fit" style={{backgroundColor: 'var(--theme-primary)'}}>
                     <Star className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Photo Gallery</h3>
