@@ -10,6 +10,8 @@ import BuildLogEntryDialog from "./build-log-entry-dialog";
 import BuildLogEntry from "./build-log-entry";
 import { BuildLogEntryWithPhotos } from "@shared/schema";
 import { format } from "date-fns";
+import { exportBuildLogsToPDF } from "@/lib/export-utils";
+import { toast } from "@/hooks/use-toast";
 
 interface BuildLogListProps {
   modelId: number;
@@ -31,6 +33,29 @@ export default function BuildLogList({ modelId, modelName }: BuildLogListProps) 
     entry.content?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const handleExportPDF = () => {
+    if (!filteredEntries || filteredEntries.length === 0) {
+      toast({
+        title: "No data to export",
+        description: "You don't have any build log entries to export yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Transform entries to match the expected format for export
+    const entriesWithModel = filteredEntries.map(entry => ({
+      ...entry,
+      model: { id: modelId, name: modelName }
+    }));
+    
+    exportBuildLogsToPDF(entriesWithModel);
+    toast({
+      title: "Export completed",
+      description: `Build logs for ${modelName} have been exported to PDF file.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header - Mobile & Desktop */}
@@ -44,11 +69,20 @@ export default function BuildLogList({ modelId, modelName }: BuildLogListProps) 
           </p>
         </div>
         
-        {/* Desktop Add Button */}
-        <div className="hidden sm:block">
+        {/* Desktop Buttons */}
+        <div className="hidden sm:flex gap-2">
+          <Button
+            onClick={handleExportPDF}
+            variant="outline"
+            className="font-mono"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
           <Button
             onClick={() => setShowAddDialog(true)}
-            className="bg-red-600 hover:bg-red-700 text-white font-mono"
+            style={{backgroundColor: 'var(--theme-primary)'}}
+            className="hover:opacity-90 text-white font-mono"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Entry #{nextEntryNumber}
@@ -68,11 +102,20 @@ export default function BuildLogList({ modelId, modelName }: BuildLogListProps) 
         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
       </div>
 
-      {/* Mobile Add Button */}
-      <div className="sm:hidden">
+      {/* Mobile Buttons */}
+      <div className="sm:hidden flex gap-2">
+        <Button
+          onClick={handleExportPDF}
+          variant="outline"
+          className="flex-1 font-mono"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          Export PDF
+        </Button>
         <Button
           onClick={() => setShowAddDialog(true)}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-mono"
+          style={{backgroundColor: 'var(--theme-primary)'}}
+          className="flex-1 hover:opacity-90 text-white font-mono"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Entry #{nextEntryNumber}

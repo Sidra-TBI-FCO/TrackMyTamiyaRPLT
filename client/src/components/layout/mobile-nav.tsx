@@ -42,11 +42,19 @@ export default function MobileNav() {
         
         <AddModelDialog
           trigger={
-            <button className="flex flex-col items-center justify-center py-2 px-1 rounded-lg" style={{color: 'var(--theme-primary)', backgroundColor: 'var(--theme-primary)', opacity: 0.1}}>
-              <div className="rounded-full p-1" style={{backgroundColor: 'var(--theme-primary)'}}>
+            <button className="flex flex-col items-center justify-center py-2 px-1 rounded-lg">
+              <div 
+                className="rounded-full p-1" 
+                style={{backgroundColor: 'var(--theme-primary)'}}
+              >
                 <Plus className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xs font-mono mt-1" style={{color: 'var(--theme-primary)'}}>Add</span>
+              <span 
+                className="text-xs font-mono mt-1" 
+                style={{color: 'var(--theme-primary)'}}
+              >
+                Add
+              </span>
             </button>
           }
         />
