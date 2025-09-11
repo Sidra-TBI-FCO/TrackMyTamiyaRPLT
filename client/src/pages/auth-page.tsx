@@ -133,22 +133,23 @@ export default function AuthPage() {
 
 
 
-              {/* OAuth Authentication - Temporarily Disabled */}
-              <Card className="mb-6 opacity-50">
+              {/* OAuth Authentication */}
+              <Card className="mb-6">
                 <CardHeader>
                   <CardTitle className="text-center">Quick Sign In</CardTitle>
                   <CardDescription className="text-center">
-                    OAuth authentication temporarily disabled
+                    Sign in with your Google account
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button
                     variant="outline"
-                    disabled
+                    onClick={() => window.location.href = '/api/auth/google'}
                     className="w-full flex items-center justify-center space-x-2 h-11"
+                    data-testid="button-google-login"
                   >
-                    <SiGoogle className="h-5 w-5 text-gray-400" />
-                    <span>Continue with Google (Coming Soon)</span>
+                    <SiGoogle className="h-5 w-5 text-[#4285F4]" />
+                    <span>Continue with Google</span>
                   </Button>
                   <Button
                     variant="outline"
