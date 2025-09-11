@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSlideshowSettings } from "@/lib/settings";
 import ImageFallback from "@/components/ui/image-fallback";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface Photo {
   id: number;
@@ -187,7 +188,7 @@ export default function PhotoSlideshow({
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Main Image - Full screen on mobile */}
         <ImageFallback
-          src={currentPhoto.url}
+          src={addStorageFallbackParam(currentPhoto.url)}
           alt={currentPhoto.caption || `${currentPhoto.model.name} photo`}
           className="w-full h-full object-contain md:max-w-full md:max-h-full"
           fallbackText="Photo not available in this environment"
@@ -299,7 +300,7 @@ export default function PhotoSlideshow({
                     }`}
                   >
                     <img
-                      src={photo.url}
+                      src={addStorageFallbackParam(photo.url)}
                       alt=""
                       className="w-full h-full object-cover"
                     />
@@ -322,7 +323,7 @@ export default function PhotoSlideshow({
                     }`}
                   >
                     <img
-                      src={photo.url}
+                      src={addStorageFallbackParam(photo.url)}
                       alt=""
                       className="w-full h-full object-cover"
                     />

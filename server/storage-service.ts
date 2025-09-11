@@ -199,6 +199,13 @@ class HybridFileStorage implements FileStorageService {
   // Configuration setting to enable/disable Replit fallback for testing
   private enableReplitFallback = process.env.ENABLE_REPLIT_FALLBACK !== 'false';
 
+  // Constructor that allows overriding fallback setting for per-request basis
+  constructor(enableFallback?: boolean) {
+    if (enableFallback !== undefined) {
+      this.enableReplitFallback = enableFallback;
+    }
+  }
+
   async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
     // Always upload to Google Cloud Storage if available
     if (googleStorage) {
@@ -309,6 +316,9 @@ class HybridFileStorage implements FileStorageService {
 
 // Use hybrid storage to support migration from Replit to Google Cloud Storage
 export const fileStorage: FileStorageService = new HybridFileStorage();
+
+// Export the class for per-request usage
+export { HybridFileStorage };
 
 // Log which storage system is being used
 if (googleStorage) {

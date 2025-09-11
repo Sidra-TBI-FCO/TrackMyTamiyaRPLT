@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface Photo {
   id: number;
@@ -97,7 +98,7 @@ export default function BoxArtSelector({ modelId, photos, open, onOpenChange }: 
                 >
                   <div className="aspect-square">
                     <img
-                      src={photo.url}
+                      src={addStorageFallbackParam(photo.url)}
                       alt={photo.originalName}
                       className="w-full h-full object-cover"
                     />

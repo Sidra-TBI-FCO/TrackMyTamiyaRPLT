@@ -13,11 +13,13 @@ export type ColorScheme = 'tamiya' | 'military';
 export interface AppSettings {
   colorScheme: ColorScheme;
   darkMode: boolean;
+  enableReplitFallback: boolean;
 }
 
 export const defaultAppSettings: AppSettings = {
   colorScheme: 'military',
   darkMode: false,
+  enableReplitFallback: true,
 };
 
 export const defaultSlideshowSettings: SlideshowSettings = {

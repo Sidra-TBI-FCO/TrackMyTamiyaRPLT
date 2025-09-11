@@ -4,9 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, HardDrive } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme } from "@/lib/settings";
+import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme, getAppSettings, saveAppSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme-context";
 import { exportModelsToCSV, exportHopUpsToCSV } from "@/lib/export-utils";
@@ -15,6 +15,7 @@ import { ModelWithRelations, HopUpPart } from "@/types";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
+  const [appSettings, setAppSettings] = useState(getAppSettings());
   const { user } = useAuth();
   const { colorScheme, darkMode, setColorScheme, toggleDarkMode } = useTheme();
 
@@ -37,6 +38,19 @@ export default function SettingsPage() {
     toast({
       title: "Settings saved",
       description: "Your slideshow preferences have been updated.",
+    });
+  };
+
+  const updateAppSetting = <K extends keyof typeof appSettings>(
+    key: K,
+    value: typeof appSettings[K]
+  ) => {
+    const newSettings = { ...appSettings, [key]: value };
+    setAppSettings(newSettings);
+    saveAppSettings({ [key]: value });
+    toast({
+      title: "Settings saved",
+      description: `${key === 'enableReplitFallback' ? 'Storage settings' : 'App settings'} have been updated.`,
     });
   };
 
@@ -260,6 +274,52 @@ export default function SettingsPage() {
                 ? 'Default green (light mode) and orange (dark mode) theme'
                 : 'Alternative red and blue colors'
               }
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Storage Settings */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-lg font-mono">
+            <Database className="h-5 w-5" />
+            <span>Storage Settings</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Replit Storage Fallback */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label className="text-sm font-mono font-medium flex items-center space-x-2">
+                <HardDrive className="h-4 w-4" />
+                <span>Enable Replit Storage Fallback</span>
+              </Label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                When enabled, photos will fallback to Replit storage if not found in Google Cloud Storage. 
+                Disable to test Google Cloud Storage only.
+              </p>
+            </div>
+            <Switch
+              checked={appSettings.enableReplitFallback}
+              onCheckedChange={(checked) => updateAppSetting('enableReplitFallback', checked)}
+            />
+          </div>
+
+          {/* Storage Status Info */}
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-mono font-medium">Primary: Google Cloud Storage</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${appSettings.enableReplitFallback ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
+              <span className="text-sm font-mono">
+                Fallback: Replit Object Storage ({appSettings.enableReplitFallback ? 'Enabled' : 'Disabled'})
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-mono mt-2">
+              New uploads always go to Google Cloud Storage. Existing photos have been migrated from Replit storage.
             </p>
           </div>
         </CardContent>

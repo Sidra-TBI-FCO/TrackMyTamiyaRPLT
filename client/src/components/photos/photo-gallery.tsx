@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Edit2, Trash2, Star } from "lucide-react";
 import { Photo } from "@/types";
 import ImageFallback from "@/components/ui/image-fallback";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 import {
   Dialog,
   DialogContent,
@@ -58,7 +59,7 @@ export default function PhotoGallery({
           <Card key={photo.id} className="overflow-hidden group relative">
             <div onClick={() => setSelectedPhoto(photo)}>
               <ImageFallback
-                src={photo.url}
+                src={addStorageFallbackParam(photo.url)}
                 alt={photo.caption || "RC model photo"}
                 className="w-full aspect-square object-cover cursor-pointer"
                 fallbackText="Photo not available in this environment"
@@ -125,7 +126,7 @@ export default function PhotoGallery({
                 
                 <div className="flex-1 flex items-center justify-center p-4">
                   <img
-                    src={selectedPhoto.url}
+                    src={addStorageFallbackParam(selectedPhoto.url)}
                     alt={selectedPhoto.caption || "RC model photo"}
                     className="max-w-full max-h-full object-contain rounded"
                   />
@@ -160,7 +161,7 @@ export default function PhotoGallery({
                       }`}
                     >
                       <ImageFallback
-                        src={photo.url}
+                        src={addStorageFallbackParam(photo.url)}
                         alt={photo.caption || "RC model photo"}
                         className="w-full h-full object-cover"
                         fallbackText="N/A"
