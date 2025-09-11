@@ -26,8 +26,7 @@ if (isProduction) {
 export const pool = new pg.Pool({ 
   connectionString,
   ssl: isProduction ? { 
-    require: true,
-    rejectUnauthorized: false  // Allow self-signed certificates for managed databases
+    rejectUnauthorized: false  // Accept self-signed certificates for managed databases
   } : false
 });
 export const db = drizzle(pool, { schema });
