@@ -80,8 +80,8 @@ async function migrateAllFiles(): Promise<void> {
 // Export for use in routes or manual execution
 export { migrateAllFiles, getAllPhotoFilenames };
 
-// Allow direct execution
-if (require.main === module) {
+// Allow direct execution (ES module compatible)
+if (import.meta.url === `file://${process.argv[1]}`) {
   migrateAllFiles()
     .then(() => {
       console.log("Migration script completed");
