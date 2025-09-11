@@ -73,18 +73,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
+    // First check if a user with this email already exists
+    const existingUser = await this.getUserByEmail(userData.email);
+    
+    if (existingUser) {
+      // Update the existing user with Google auth data (link accounts)
+      const [user] = await db
+        .update(users)
+        .set({
+          // Update with new Google data but preserve existing fields
+          firstName: userData.firstName || existingUser.firstName,
+          lastName: userData.lastName || existingUser.lastName,
+          profileImageUrl: userData.profileImageUrl || existingUser.profileImageUrl,
+          // Set auth provider to Google if coming from Google OAuth
+          authProvider: userData.authProvider || existingUser.authProvider,
           updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+        })
+        .where(eq(users.email, userData.email))
+        .returning();
+      
+      return user;
+    } else {
+      // Create new user if no existing user with this email
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return user;
+    }
   }
 
   async verifyUserEmail(userId: string): Promise<void> {
