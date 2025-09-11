@@ -38,16 +38,17 @@ export function setupGoogleAuth(app: Express) {
         authProvider: 'google' as const
       };
 
-      await storage.upsertUser(userData);
+      const linkedUser = await storage.upsertUser(userData);
       
-      // Create user session object
+      // Create user session object using the ACTUAL user ID from database
+      // This ensures we use the existing account ID, not Google's ID
       const user = {
-        id: profile.id,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        profileImageUrl: userData.profileImageUrl,
-        authProvider: 'google'
+        id: linkedUser.id,  // Use the actual database user ID, not Google's profile.id
+        email: linkedUser.email,
+        firstName: linkedUser.firstName,
+        lastName: linkedUser.lastName,
+        profileImageUrl: linkedUser.profileImageUrl,
+        authProvider: linkedUser.authProvider
       };
 
       console.log(`Google OAuth success for user: ${userData.email}`);
