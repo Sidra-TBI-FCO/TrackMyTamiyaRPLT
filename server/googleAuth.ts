@@ -21,6 +21,9 @@ export function setupGoogleAuth(app: Express) {
   const callbackURL = `${protocol}://${domain}/api/auth/google/callback`;
   
   console.log(`Google OAuth callback URL: ${callbackURL}`);
+  console.log(`🚨 IMPORTANT: For deployed apps, you may also need to add:`);
+  console.log(`   https://[YOUR-APP-NAME].replit.app/api/auth/google/callback`);
+  console.log(`   to your Google Cloud Console OAuth redirect URIs`);
 
   passport.use(new GoogleStrategy({
     clientID: clientId,
