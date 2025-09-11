@@ -97,6 +97,7 @@ export function setupTraditionalAuth(app: Express) {
       
       // Find user by email
       const user = await storage.getUserByEmail(validatedData.email);
+      console.log(`🔍 Login attempt for ${validatedData.email}, user found:`, user ? `authProvider=${user.authProvider}` : 'NOT FOUND');
       
       // If user doesn't exist, suggest registration or Google Sign-In
       if (!user) {
@@ -107,6 +108,7 @@ export function setupTraditionalAuth(app: Express) {
       
       // If user exists but uses Google OAuth, direct them to Google Sign-In
       if (user.authProvider === "google") {
+        console.log(`🔄 Redirecting Google user to OAuth: ${user.email}`);
         return res.status(401).json({ 
           message: "This email is registered with Google. Please use 'Sign in with Google' instead." 
         });
