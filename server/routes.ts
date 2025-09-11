@@ -617,6 +617,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Migration route (admin only - be careful!)
+  app.post('/api/migrate-storage', async (req, res) => {
+    try {
+      console.log("🚀 Starting storage migration...");
+      
+      // Import the migration function
+      const { migrateAllFiles } = await import('./migrate-storage');
+      
+      // Run the migration
+      await migrateAllFiles();
+      
+      res.json({ 
+        success: true, 
+        message: "Migration completed successfully" 
+      });
+    } catch (error: any) {
+      console.error("Migration failed:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Migration failed", 
+        error: error.message 
+      });
+    }
+  });
+
   // Helper function to parse data from URL when scraping fails
   function parseDataFromUrl(url: string) {
     const urlParsedData: any = {

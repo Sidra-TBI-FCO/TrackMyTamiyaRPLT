@@ -195,6 +195,9 @@ class ReplitObjectStorage implements FileStorageService {
 class HybridFileStorage implements FileStorageService {
   private googleCloudStorage = new GoogleCloudStorage();
   private replitObjectStorage = new ReplitObjectStorage();
+  
+  // Configuration setting to enable/disable Replit fallback for testing
+  private enableReplitFallback = process.env.ENABLE_REPLIT_FALLBACK !== 'false';
 
   async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
     // Always upload to Google Cloud Storage if available
@@ -210,7 +213,7 @@ class HybridFileStorage implements FileStorageService {
     if (googleStorage) {
       await this.googleCloudStorage.deleteFile(filename);
     }
-    if (replitStorage) {
+    if (this.enableReplitFallback && replitStorage) {
       await this.replitObjectStorage.deleteFile(filename);
     }
   }
@@ -221,21 +224,86 @@ class HybridFileStorage implements FileStorageService {
   }
 
   async downloadFile(filename: string): Promise<Buffer> {
-    // Try Google Cloud Storage first, fall back to Replit Object Storage
+    // Try Google Cloud Storage first, optionally fall back to Replit Object Storage
     if (googleStorage) {
       try {
         return await this.googleCloudStorage.downloadFile(filename);
       } catch (error) {
-        console.log(`File not found in Google Cloud Storage, trying Replit Object Storage: ${filename}`);
-        // Fall back to Replit Object Storage for existing files
-        if (replitStorage) {
+        if (this.enableReplitFallback && replitStorage) {
+          console.log(`File not found in Google Cloud Storage, trying Replit Object Storage: ${filename}`);
           return await this.replitObjectStorage.downloadFile(filename);
+        } else {
+          console.log(`File not found in Google Cloud Storage and Replit fallback is disabled: ${filename}`);
+          throw error;
         }
-        throw error;
       }
     } else {
-      return await this.replitObjectStorage.downloadFile(filename);
+      if (this.enableReplitFallback && replitStorage) {
+        return await this.replitObjectStorage.downloadFile(filename);
+      } else {
+        throw new Error('No storage systems available');
+      }
     }
+  }
+
+  // Migration helper methods
+  async listReplitFiles(): Promise<string[]> {
+    if (!replitStorage) return [];
+    
+    try {
+      // Replit Object Storage doesn't have a native list function
+      // We'll need to get filenames from the database
+      return [];
+    } catch (error) {
+      console.error('Failed to list Replit files:', error);
+      return [];
+    }
+  }
+
+  async migrateFileToGoogleCloud(filename: string): Promise<boolean> {
+    if (!googleStorage || !replitStorage) {
+      console.log('Migration skipped: Missing storage clients');
+      return false;
+    }
+
+    try {
+      console.log(`Migrating file: ${filename}`);
+      
+      // Download from Replit Object Storage
+      const buffer = await this.replitObjectStorage.downloadFile(filename);
+      
+      // Upload to Google Cloud Storage
+      const bucket = googleStorage.bucket('trackmyrc-bucket');
+      const file = bucket.file(filename);
+      
+      await file.save(buffer, {
+        metadata: {
+          contentType: this.getContentTypeFromFilename(filename),
+        },
+        resumable: false
+      });
+
+      console.log(`✅ Successfully migrated: ${filename}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to migrate ${filename}:`, error);
+      return false;
+    }
+  }
+
+  private getContentTypeFromFilename(filename: string): string {
+    const ext = filename.toLowerCase().split('.').pop();
+    const contentTypes: { [key: string]: string } = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'pdf': 'application/pdf'
+    };
+    return contentTypes[ext || ''] || 'application/octet-stream';
   }
 }
 
@@ -244,7 +312,8 @@ export const fileStorage: FileStorageService = new HybridFileStorage();
 
 // Log which storage system is being used
 if (googleStorage) {
-  console.log('File storage: Google Cloud Storage (primary) with Replit Object Storage (fallback)');
+  const fallbackStatus = process.env.ENABLE_REPLIT_FALLBACK !== 'false' ? '(fallback enabled)' : '(fallback disabled)';
+  console.log(`File storage: Google Cloud Storage (primary) with Replit Object Storage ${fallbackStatus}`);
 } else {
   console.log('File storage: Replit Object Storage only');
 }
