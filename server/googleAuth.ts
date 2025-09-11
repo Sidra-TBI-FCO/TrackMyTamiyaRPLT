@@ -15,10 +15,17 @@ export function setupGoogleAuth(app: Express) {
 
   console.log("Setting up Google OAuth authentication...");
 
+  // Get the current domain from REPLIT_DOMAINS or fallback to localhost
+  const domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+  const protocol = domain.includes('localhost') ? 'http' : 'https';
+  const callbackURL = `${protocol}://${domain}/api/auth/google/callback`;
+  
+  console.log(`Google OAuth callback URL: ${callbackURL}`);
+
   passport.use(new GoogleStrategy({
     clientID: clientId,
     clientSecret: clientSecret,
-    callbackURL: "/api/auth/google/callback"
+    callbackURL: callbackURL
   }, async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
     try {
       // Create or update user from Google profile
