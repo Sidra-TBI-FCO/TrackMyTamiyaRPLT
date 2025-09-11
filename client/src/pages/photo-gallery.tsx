@@ -9,6 +9,7 @@ import { Camera, Search, Filter, Eye, Download, Trash2, Image } from "lucide-rea
 import { ModelWithRelations } from "@/types";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface PhotoWithModel {
   id: number;
@@ -237,10 +238,10 @@ export default function PhotoGallery() {
                       <tr key={photo.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="p-3">
                           <img
-                            src={photo.url}
+                            src={addStorageFallbackParam(photo.url)}
                             alt={photo.originalName}
                             className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform"
-                            onClick={() => window.open(photo.url, '_blank')}
+                            onClick={() => window.open(addStorageFallbackParam(photo.url), '_blank')}
                           />
                         </td>
                         <td className="p-3">
@@ -294,7 +295,7 @@ export default function PhotoGallery() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => window.open(photo.url, '_blank')}
+                              onClick={() => window.open(addStorageFallbackParam(photo.url), '_blank')}
                               className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
@@ -351,7 +352,7 @@ export default function PhotoGallery() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => window.open(photo.url, '_blank')}
+                            onClick={() => window.open(addStorageFallbackParam(photo.url), '_blank')}
                             className="h-8 w-8 p-0"
                           >
                             <Eye className="h-4 w-4" />

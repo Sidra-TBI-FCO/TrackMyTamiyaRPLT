@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BuildLogEntryWithPhotos } from "@shared/schema";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface BuildLogEntryProps {
   entry: BuildLogEntryWithPhotos;
@@ -111,7 +112,7 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
                   >
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                       <img
-                        src={photoWrapper.photo.url}
+                        src={addStorageFallbackParam(photoWrapper.photo.url)}
                         alt={photoWrapper.photo.caption || "Build photo"}
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
                       />
@@ -160,7 +161,7 @@ export default function BuildLogEntry({ entry, onEdit, onDelete }: BuildLogEntry
           {selectedPhoto && (
             <div className="p-6 pt-0">
               <img
-                src={selectedPhoto}
+                src={addStorageFallbackParam(selectedPhoto || '')}
                 alt="Build photo"
                 className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
               />

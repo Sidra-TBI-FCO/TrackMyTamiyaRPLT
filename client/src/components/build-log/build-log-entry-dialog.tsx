@@ -25,6 +25,7 @@ import { insertBuildLogEntrySchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 const formSchema = insertBuildLogEntrySchema.extend({
   title: z.string().min(1, "Title is required"),
@@ -435,7 +436,7 @@ export default function BuildLogEntryDialog({
                           }}
                         >
                           <img
-                            src={photo.url}
+                            src={addStorageFallbackParam(photo.url)}
                             alt={photo.caption || 'Model photo'}
                             className="w-full h-20 object-cover"
                           />
@@ -466,7 +467,7 @@ export default function BuildLogEntryDialog({
                         return (
                           <div key={selectedPhoto.id} className="flex items-center space-x-3 p-2 border rounded">
                             <img
-                              src={photo?.url}
+                              src={addStorageFallbackParam(photo?.url || '')}
                               alt=""
                               className="w-12 h-12 object-cover rounded"
                             />

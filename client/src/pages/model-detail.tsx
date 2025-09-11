@@ -29,6 +29,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSlideshow } from "@/lib/slideshow-context";
 import { useState, useEffect } from "react";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 export default function ModelDetail() {
   const { id } = useParams();
@@ -344,7 +345,7 @@ export default function ModelDetail() {
               {boxArtPhoto ? (
                 <>
                   <img
-                    src={boxArtPhoto.url}
+                    src={addStorageFallbackParam(boxArtPhoto.url)}
                     alt={model.name}
                     className="w-full h-64 lg:h-96 object-cover rounded-lg cursor-pointer hover:scale-105 transition-transform"
                     onClick={() => handlePhotoClick(boxArtPhoto.id)}
@@ -459,7 +460,7 @@ export default function ModelDetail() {
                   {otherPhotos.map((photo) => (
                     <Card key={photo.id} className="overflow-hidden relative group cursor-pointer">
                       <img
-                        src={photo.url}
+                        src={addStorageFallbackParam(photo.url)}
                         alt={photo.caption || "Model photo"}
                         className="w-full h-32 object-cover hover:scale-105 transition-transform"
                         onClick={() => handlePhotoClick(photo.id)}

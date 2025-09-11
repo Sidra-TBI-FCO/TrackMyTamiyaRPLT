@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import BuildLogList from "@/components/build-log/build-log-list";
 import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
 import { format } from "date-fns";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 import { useState } from "react";
 import { exportBuildLogsToPDF } from "@/lib/export-utils";
 import { toast } from "@/hooks/use-toast";
@@ -234,7 +235,7 @@ export default function BuildLogs() {
                           {entry.photos.slice(0, 4).map((photoLink, index) => (
                             <div key={`${index}`} className="flex-shrink-0">
                               <img
-                                src={photoLink.photo.url}
+                                src={addStorageFallbackParam(photoLink.photo.url)}
                                 alt={photoLink.photo.caption || 'Build log photo'}
                                 className="w-16 h-16 object-cover rounded border"
                               />

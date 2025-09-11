@@ -25,6 +25,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface ModelCardProps {
   model: ModelWithRelations;
@@ -81,7 +82,7 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
       {boxArtPhoto ? (
         <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
           <img
-            src={boxArtPhoto.url}
+            src={addStorageFallbackParam(boxArtPhoto.url)}
             alt={model.name}
             className="max-w-full max-h-full object-contain"
             onError={(e) => {
