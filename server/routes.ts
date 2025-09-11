@@ -575,99 +575,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File serving endpoint for Replit Object Storage
+  // File serving endpoint for Google Cloud Storage and Replit Object Storage
   app.get('/api/files/:filename', async (req, res) => {
     try {
       const { filename } = req.params;
       console.log(`Attempting to serve file: ${filename}`);
       
-      const { Client } = await import('@replit/object-storage');
-      const client = new Client();
-      
-      // Get raw bytes from Replit Object Storage
-      console.log(`Downloading file: ${filename}`);
-      
-      // The downloadAsBytes returns a wrapped response
-      const result = await client.downloadAsBytes(filename);
-      console.log('Raw result type:', typeof result);
-      console.log('Array check:', Array.isArray(result));
-      console.log('Result keys:', Object.keys(result || {}));
-      
-      let buffer: Buffer;
-      
-      // The result appears to be an object that directly contains the Buffer data array
-      if (result && typeof result === 'object' && Array.isArray(result) && result.length > 0 && result[0].type === 'Buffer' && result[0].data) {
-        // Direct array format: [{"type":"Buffer","data":[...]}]
-        buffer = Buffer.from(result[0].data);
-        console.log(`Successfully extracted buffer from array, size: ${buffer.length} bytes`);
-      } else if (result && typeof result === 'object' && (result as any).ok && (result as any).value) {
-        // Wrapped format: {"ok":true,"value": Buffer } - the value might be a Buffer directly
-        console.log('Found wrapped format with ok and value');
-        const value = (result as any).value;
-        console.log('Value is array:', Array.isArray(value));
-        
-        if (Buffer.isBuffer(value)) {
-          // Value is directly a Buffer
-          buffer = value;
-          console.log(`Successfully extracted buffer directly from value, size: ${buffer.length} bytes`);
-        } else if (value instanceof Uint8Array) {
-          // Value is a Uint8Array  
-          buffer = Buffer.from(value);
-          console.log(`Successfully converted Uint8Array to buffer, size: ${buffer.length} bytes`);
-        } else if (Array.isArray(value) && value.length === 1) {
-          // Value is an array with one element - extract the buffer from the array
-          const bufferData = value[0];
-          if (Buffer.isBuffer(bufferData)) {
-            buffer = bufferData;
-            console.log(`Successfully extracted buffer from array element, size: ${buffer.length} bytes`);
-          } else if (bufferData instanceof Uint8Array) {
-            buffer = Buffer.from(bufferData);
-            console.log(`Successfully converted Uint8Array from array, size: ${buffer.length} bytes`);
-          } else {
-            // Try to create buffer from the array element data  
-            try {
-              buffer = Buffer.from(bufferData);
-              console.log(`Successfully created buffer from array element, size: ${buffer.length} bytes`);
-            } catch (error) {
-              console.error('Failed to create buffer from array element:', typeof bufferData);
-              throw new Error('Unable to process array element as buffer');
-            }
-          }
-        } else {
-          // Try to interpret as raw bytes
-          try {
-            buffer = Buffer.from(value);
-            console.log(`Successfully created buffer from raw data, size: ${buffer.length} bytes`);
-          } catch (error) {
-            console.error('Failed to create buffer from value:', {
-              valueType: typeof value,
-              isArray: Array.isArray(value),
-              valueConstructor: value?.constructor?.name
-            });
-            throw new Error('Unable to process value as buffer data');
-          }
-        }
-      } else if (result && typeof result === 'object' && !Array.isArray(result)) {
-        // The result is an object, let's check if it contains the buffer data directly
-        const keys = Object.keys(result);
-        console.log('Object keys:', keys);
-        
-        // Check if this is the Buffer object format with type and data properties
-        if ((result as any).type === 'Buffer' && (result as any).data) {
-          buffer = Buffer.from((result as any).data);
-          console.log(`Successfully extracted buffer from object, size: ${buffer.length} bytes`);
-        } else {
-          console.error('Unexpected object structure:', JSON.stringify(result).substring(0, 200));
-          throw new Error('Unable to parse buffer from storage response');
-        }
-      } else if (result instanceof Uint8Array) {
-        buffer = Buffer.from(result);
-      } else if (Buffer.isBuffer(result)) {
-        buffer = result;
-      } else {
-        console.error('Unexpected result structure:', typeof result, Object.keys(result || {}));
-        throw new Error('Unable to process file data from storage');
-      }
+      // Use the hybrid storage service which handles both Google Cloud Storage and Replit Object Storage
+      const buffer = await fileStorage.downloadFile(filename);
       
       // Set appropriate content type based on file extension
       const ext = path.extname(filename).toLowerCase();
