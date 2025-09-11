@@ -9,10 +9,25 @@ if (!process.env.DATABASE_URL) {
 }
 
 // For Google Cloud SQL, we need to handle SSL properly
-const connectionString = process.env.DATABASE_URL?.replace('?sslmode=require', '?sslmode=disable') || process.env.DATABASE_URL;
+let connectionString = process.env.DATABASE_URL;
+
+// Check if we're in a production environment (deployed on Replit)
+const isProduction = process.env.REPLIT_DOMAINS || process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  // Ensure SSL is enabled for production
+  if (connectionString && !connectionString.includes('sslmode=')) {
+    const separator = connectionString.includes('?') ? '&' : '?';
+    connectionString += `${separator}sslmode=require`;
+  }
+  console.log('🔒 Production environment detected - enforcing SSL for database connection');
+}
 
 export const pool = new pg.Pool({ 
   connectionString,
-  ssl: false  // Disable SSL for now to avoid certificate issues
+  ssl: isProduction ? { 
+    require: true,
+    rejectUnauthorized: false  // Allow self-signed certificates for managed databases
+  } : false
 });
 export const db = drizzle(pool, { schema });
