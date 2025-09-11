@@ -97,7 +97,23 @@ export function setupTraditionalAuth(app: Express) {
       
       // Find user by email
       const user = await storage.getUserByEmail(validatedData.email);
-      if (!user || user.authProvider !== "email" || !user.password) {
+      
+      // If user doesn't exist, suggest registration or Google Sign-In
+      if (!user) {
+        return res.status(401).json({ 
+          message: "No account found with this email. Please register a new account or try signing in with Google if you have a Google account." 
+        });
+      }
+      
+      // If user exists but uses Google OAuth, direct them to Google Sign-In
+      if (user.authProvider === "google") {
+        return res.status(401).json({ 
+          message: "This email is registered with Google. Please use 'Sign in with Google' instead." 
+        });
+      }
+      
+      // If user exists but doesn't have email/password auth set up
+      if (user.authProvider !== "email" || !user.password) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
