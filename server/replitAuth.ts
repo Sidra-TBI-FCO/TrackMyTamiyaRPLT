@@ -27,11 +27,19 @@ const getOidcConfig = memoize(
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
-  // Use same SSL-disabled connection string as main database
-  const connectionString = process.env.DATABASE_URL?.replace('?sslmode=require', '?sslmode=disable') || process.env.DATABASE_URL;
+  
+  // Use DATABASE_URL with SSL settings that match the main database connection
+  let connectionString = process.env.DATABASE_URL;
+  const isProduction = process.env.REPLIT_DOMAINS || process.env.NODE_ENV === 'production';
+  
+  if (isProduction && connectionString && !connectionString.includes('sslmode=')) {
+    const separator = connectionString.includes('?') ? '&' : '?';
+    connectionString += `${separator}sslmode=require`;
+  }
+  
   const sessionStore = new pgStore({
     conString: connectionString,
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
   });
