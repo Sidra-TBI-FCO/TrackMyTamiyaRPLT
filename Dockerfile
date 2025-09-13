@@ -22,8 +22,7 @@ FROM node:20-alpine AS builder
     RUN chown -R nodejs:nodejs /app
     USER nodejs
     
-    # Expose port 5000 (your app's port)
-    EXPOSE 5000
+    # Cloud Run will handle port assignment dynamically via PORT env var
     
     # Start the application
     CMD ["npm", "start"]
