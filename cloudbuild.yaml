@@ -26,8 +26,6 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
-      - '--port'
-      - '5000'
       - '--set-env-vars'
       - 'NODE_ENV=production'
 
