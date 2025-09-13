@@ -15,18 +15,15 @@ let connectionString = process.env.DATABASE_URL;
 const isProduction = process.env.REPLIT_DOMAINS || process.env.NODE_ENV === 'production';
 
 if (isProduction) {
-  // Ensure SSL is enabled for production
-  if (connectionString && !connectionString.includes('sslmode=')) {
-    const separator = connectionString.includes('?') ? '&' : '?';
-    connectionString += `${separator}sslmode=require`;
-  }
+  // For production, ensure SSL mode is set but don't force it in the URL since we'll handle it in the pool config
   console.log('🔒 Production environment detected - enforcing SSL for database connection');
 }
 
 export const pool = new pg.Pool({ 
   connectionString,
   ssl: isProduction ? { 
-    rejectUnauthorized: false  // Accept self-signed certificates for managed databases
+    rejectUnauthorized: false,  // Accept self-signed certificates for managed databases
+    require: false              // Don't require SSL in connection string, handle it here
   } : false
 });
 export const db = drizzle(pool, { schema });
