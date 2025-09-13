@@ -25,12 +25,7 @@ const requiresSSL = connectionString && (
   )
 );
 
-if (requiresSSL) {
-  // Ensure SSL is required in the connection string
-  const url = new URL(connectionString);
-  url.searchParams.set('sslmode', 'require');
-  connectionString = url.toString();
-}
+// Don't modify the connection string - let the ssl object handle SSL configuration
 
 // Configure SSL options
 let sslConfig: boolean | object = false;
