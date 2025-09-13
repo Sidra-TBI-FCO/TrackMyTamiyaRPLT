@@ -10,9 +10,7 @@ import { storage } from "./storage";
 import { setupTraditionalAuth } from "./traditionalAuth";
 import { setupGoogleAuth } from "./googleAuth";
 
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
-}
+
 
 const getOidcConfig = memoize(
   async () => {
@@ -82,117 +80,121 @@ export async function setupAuth(app: Express) {
   // Set up Google OAuth authentication
   setupGoogleAuth(app);
   
-  // Force development mode - use email authentication only
-  const forceDevMode = false; // Set to false for production Replit auth
-  
-  // Check if we're in a deployed environment (has REPLIT_DOMAINS with real domain)
-  const isDeployedProduction = !forceDevMode && 
-                              process.env.REPLIT_DOMAINS && 
-                              !process.env.REPLIT_DOMAINS.includes("localhost") &&
-                              (process.env.REPLIT_DOMAINS.includes("replit.dev") || process.env.REPLIT_DOMAINS.includes("picard.replit.dev"));
-  
-  console.log(`Environment check: REPLIT_DOMAINS=${process.env.REPLIT_DOMAINS}, forceDevMode=${forceDevMode}, isDeployedProduction=${isDeployedProduction}`);
-  
-  if (isDeployedProduction) {
-    console.log("Setting up production Replit authentication...");
-  } else {
-    console.log("Setting up development authentication (email/password only)...");
-    setupDevAuth(app);
-    return;
-  }
-  
-  console.log("Setting up production authentication...");
-
-  try {
-    const config = await getOidcConfig();
-
-    const verify: VerifyFunction = async (
-      tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
-      verified: passport.AuthenticateCallback
-    ) => {
-      const user = {};
-      updateUserSession(user, tokens);
-      await upsertUser(tokens.claims());
-      verified(null, user);
-    };
-
-    // Register strategies for all domains, including localhost for development
-    const domains = process.env.REPLIT_DOMAINS!.split(",");
-    const allDomains = [...domains, "localhost"];
-
-    for (const domain of allDomains) {
-      // Use http for localhost, https for production domains
-      const protocol = domain === "localhost" ? "http" : "https";
-      const port = domain === "localhost" ? ":5000" : "";
-      
-      const strategy = new Strategy(
-        {
-          name: `replitauth:${domain}`,
-          config,
-          scope: "openid email profile offline_access",
-          callbackURL: `${protocol}://${domain}${port}/api/callback`,
-        },
-        verify,
-      );
-      passport.use(strategy);
-      console.log(`Registered auth strategy for domain: ${domain} (${protocol}://${domain}${port})`);
+  if (process.env.REPLIT_DOMAINS) {
+    // Force development mode - use email authentication only
+    const forceDevMode = false; // Set to false for production Replit auth
+    
+    // Check if we're in a deployed environment (has REPLIT_DOMAINS with real domain)
+    const isDeployedProduction = !forceDevMode && 
+                                process.env.REPLIT_DOMAINS && 
+                                !process.env.REPLIT_DOMAINS.includes("localhost") &&
+                                (process.env.REPLIT_DOMAINS.includes("replit.dev") || process.env.REPLIT_DOMAINS.includes("picard.replit.dev"));
+    
+    console.log(`Environment check: REPLIT_DOMAINS=${process.env.REPLIT_DOMAINS}, forceDevMode=${forceDevMode}, isDeployedProduction=${isDeployedProduction}`);
+    
+    if (isDeployedProduction) {
+      console.log("Setting up production Replit authentication...");
+    } else {
+      console.log("Setting up development authentication (email/password only)...");
+      setupDevAuth(app);
+      return;
     }
-  } catch (error) {
-    console.error("Failed to setup OIDC authentication:", error);
-    console.log("Authentication will be disabled");
-  }
+    
+    console.log("Setting up production authentication...");
 
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
-
-  app.get("/api/login", (req, res, next) => {
-    try {
-      const hostname = req.hostname || "localhost";
-      console.log(`Login attempt for hostname: ${hostname}`);
-      
-      passport.authenticate(`replitauth:${hostname}`, {
-        prompt: "login consent",
-        scope: ["openid", "email", "profile", "offline_access"],
-      })(req, res, next);
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Authentication setup failed", error: String(error) });
-    }
-  });
-
-  app.get("/api/callback", (req, res, next) => {
-    try {
-      const hostname = req.hostname || "localhost";
-      console.log(`Callback for hostname: ${hostname}`);
-      
-      passport.authenticate(`replitauth:${hostname}`, {
-        successReturnToOrRedirect: "/",
-        failureRedirect: "/api/login",
-      })(req, res, next);
-    } catch (error) {
-      console.error("Callback error:", error);
-      res.status(500).json({ message: "Authentication callback failed", error: String(error) });
-    }
-  });
-
-  app.get("/api/logout", async (req, res) => {
     try {
       const config = await getOidcConfig();
-      req.logout(() => {
-        res.redirect(
-          client.buildEndSessionUrl(config, {
-            client_id: process.env.REPL_ID!,
-            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-          }).href
+
+      const verify: VerifyFunction = async (
+        tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
+        verified: passport.AuthenticateCallback
+      ) => {
+        const user = {};
+        updateUserSession(user, tokens);
+        await upsertUser(tokens.claims());
+        verified(null, user);
+      };
+
+      // Register strategies for all domains, including localhost for development
+      const domains = process.env.REPLIT_DOMAINS!.split(",");
+      const allDomains = [...domains, "localhost"];
+
+      for (const domain of allDomains) {
+        // Use http for localhost, https for production domains
+        const protocol = domain === "localhost" ? "http" : "https";
+        const port = domain === "localhost" ? ":5000" : "";
+        
+        const strategy = new Strategy(
+          {
+            name: `replitauth:${domain}`,
+            config,
+            scope: "openid email profile offline_access",
+            callbackURL: `${protocol}://${domain}${port}/api/callback`,
+          },
+          verify,
         );
-      });
+        passport.use(strategy);
+        console.log(`Registered auth strategy for domain: ${domain} (${protocol}://${domain}${port})`);
+      }
     } catch (error) {
-      console.error("Logout error:", error);
-      req.logout(() => {
-        res.redirect("/");
-      });
+      console.error("Failed to setup OIDC authentication:", error);
+      console.log("Authentication will be disabled");
     }
-  });
+
+    passport.serializeUser((user: Express.User, cb) => cb(null, user));
+    passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+
+    app.get("/api/login", (req, res, next) => {
+      try {
+        const hostname = req.hostname || "localhost";
+        console.log(`Login attempt for hostname: ${hostname}`);
+        
+        passport.authenticate(`replitauth:${hostname}`, {
+          prompt: "login consent",
+          scope: ["openid", "email", "profile", "offline_access"],
+        })(req, res, next);
+      } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({ message: "Authentication setup failed", error: String(error) });
+      }
+    });
+
+    app.get("/api/callback", (req, res, next) => {
+      try {
+        const hostname = req.hostname || "localhost";
+        console.log(`Callback for hostname: ${hostname}`);
+        
+        passport.authenticate(`replitauth:${hostname}`, {
+          successReturnToOrRedirect: "/",
+          failureRedirect: "/api/login",
+        })(req, res, next);
+      } catch (error) {
+        console.error("Callback error:", error);
+        res.status(500).json({ message: "Authentication callback failed", error: String(error) });
+      }
+    });
+
+    app.get("/api/logout", async (req, res) => {
+      try {
+        const config = await getOidcConfig();
+        req.logout(() => {
+          res.redirect(
+            client.buildEndSessionUrl(config, {
+              client_id: process.env.REPL_ID!,
+              post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+            }).href
+          );
+        });
+      } catch (error) {
+        console.error("Logout error:", error);
+        req.logout(() => {
+          res.redirect("/");
+        });
+      }
+    });
+  } else {
+    setupDevAuth(app);
+  }
 }
 
 // Development authentication for localhost testing - using email/password only
