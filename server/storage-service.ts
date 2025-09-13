@@ -25,15 +25,24 @@ try {
   console.log('Falling back to Replit Object Storage');
 }
 
-try {
-  // Initialize Replit Object Storage as fallback
-  replitStorage = new Client();
-  console.log('Replit Object Storage initialized successfully');
-} catch (error) {
-  console.error('Failed to initialize Replit Object Storage:', error);
-  if (!googleStorage) {
-    throw new Error('No storage service is available');
+// Only initialize Replit Object Storage if we're running on Replit platform
+// (has REPLIT_DOMAINS) AND we don't have Google Cloud Storage
+const isReplitEnvironment = !!process.env.REPLIT_DOMAINS;
+const shouldUseReplitStorage = isReplitEnvironment && !googleStorage;
+
+if (shouldUseReplitStorage) {
+  try {
+    // Initialize Replit Object Storage as fallback
+    replitStorage = new Client();
+    console.log('Replit Object Storage initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Replit Object Storage:', error);
+    if (!googleStorage) {
+      throw new Error('No storage service is available');
+    }
   }
+} else {
+  console.log('Replit Object Storage skipped (running outside Replit platform or Google Cloud Storage available)');
 }
 
 export interface FileStorageService {
@@ -322,8 +331,14 @@ export { HybridFileStorage };
 
 // Log which storage system is being used
 if (googleStorage) {
-  const fallbackStatus = process.env.ENABLE_REPLIT_FALLBACK !== 'false' ? '(fallback enabled)' : '(fallback disabled)';
-  console.log(`File storage: Google Cloud Storage (primary) with Replit Object Storage ${fallbackStatus}`);
-} else {
+  if (replitStorage) {
+    const fallbackStatus = process.env.ENABLE_REPLIT_FALLBACK !== 'false' ? '(fallback enabled)' : '(fallback disabled)';
+    console.log(`File storage: Google Cloud Storage (primary) with Replit Object Storage ${fallbackStatus}`);
+  } else {
+    console.log('File storage: Google Cloud Storage only');
+  }
+} else if (replitStorage) {
   console.log('File storage: Replit Object Storage only');
+} else {
+  console.log('File storage: No storage systems available');
 }
