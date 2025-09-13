@@ -8,22 +8,34 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// For Google Cloud SQL, we need to handle SSL properly
-const isProduction = process.env.REPLIT_DOMAINS || process.env.NODE_ENV === 'production';
-
-// Ensure SSL is required in the connection string for production
+// Always configure SSL for any database connection that requires it
 let connectionString = process.env.DATABASE_URL;
-if (isProduction && connectionString) {
+
+// Check if this is a managed database that requires SSL (most hosted databases do)
+const requiresSSL = connectionString && (
+  (connectionString.includes('postgres://') || connectionString.includes('postgresql://')) && (
+    connectionString.includes('.neon.') || 
+    connectionString.includes('cloud') || 
+    connectionString.includes('amazonaws.com') ||
+    connectionString.includes('googleusercontent.com') ||
+    connectionString.includes('.gcp.') ||
+    process.env.REPLIT_DOMAINS ||
+    // Default to requiring SSL for any remote database
+    !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1')
+  )
+);
+
+if (requiresSSL) {
+  // Ensure SSL is required in the connection string
   const url = new URL(connectionString);
-  // Set sslmode to require SSL but we'll handle certificate verification in the pool config
   url.searchParams.set('sslmode', 'require');
   connectionString = url.toString();
 }
 
-// Configure SSL for production environments
+// Configure SSL options
 let sslConfig: boolean | object = false;
 
-if (isProduction) {
+if (requiresSSL) {
   // Check for SSL CA certificate
   const sslCa = process.env.DATABASE_SSL_CA || 
     (process.env.DATABASE_SSL_CA_B64 ? 
@@ -35,14 +47,16 @@ if (isProduction) {
   
   if (sslCa) {
     sslConfig = { ca: sslCa, rejectUnauthorized: true };
-    console.log('🔒 Production SSL: Using CA certificate verification');
+    console.log('🔒 SSL: Using CA certificate verification');
   } else if (disableVerify) {
     sslConfig = { rejectUnauthorized: false };
-    console.log('🔒 Production SSL: Verification disabled (temporary)');
+    console.log('🔒 SSL: Verification disabled (temporary)');
   } else {
-    sslConfig = true;
-    console.log('🔒 Production SSL: Standard verification enabled');
+    sslConfig = { rejectUnauthorized: false };  // Default to allow self-signed for managed DBs
+    console.log('🔒 SSL: Self-signed certificates allowed');
   }
+} else {
+  console.log('🔒 SSL: Disabled for local development');
 }
 
 export const pool = new pg.Pool({ 
