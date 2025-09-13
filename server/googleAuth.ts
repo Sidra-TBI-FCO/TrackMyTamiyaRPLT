@@ -4,9 +4,9 @@ import type { Express } from "express";
 import { storage } from "./storage";
 
 export function setupGoogleAuth(app: Express) {
-  // Set credentials if not already configured
-  const clientId = process.env.GOOGLE_CLIENT_ID || '33888285862-hlf5472d8r9b0tdtb2fl7nmcqsg6bn6q.apps.googleusercontent.com';
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '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';
+  // Require credentials from environment variables only
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   
   if (!clientId || !clientSecret) {
     console.log("Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
