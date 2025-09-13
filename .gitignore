@@ -4,3 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Sensitive user assets - contains screenshots, personal images, and sensitive data
+attached_assets/
