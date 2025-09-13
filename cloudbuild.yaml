@@ -27,7 +27,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=${_DATABASE_URL},GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID},GOOGLE_CLIENT_SECRET=${_GOOGLE_CLIENT_SECRET},GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON=${_GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON}'
+      - 'NODE_ENV=production'
 
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
@@ -37,11 +37,3 @@ options:
   machineType: 'E2_HIGHCPU_8'
 
 timeout: '1200s'
-
-substitutions:
-  # These will be provided when running gcloud builds submit
-  # You can get these values from your Replit environment or set them when deploying
-  _DATABASE_URL: 'REPLACE_WITH_YOUR_DATABASE_URL'
-  _GOOGLE_CLIENT_ID: 'REPLACE_WITH_YOUR_GOOGLE_CLIENT_ID'  # Optional for OAuth
-  _GOOGLE_CLIENT_SECRET: 'REPLACE_WITH_YOUR_GOOGLE_CLIENT_SECRET'  # Optional for OAuth
-  _GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: 'REPLACE_WITH_YOUR_GCS_JSON'  # Optional for file storage
