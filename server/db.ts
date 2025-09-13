@@ -2,49 +2,56 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Prefer DATABASE_URL if available, as it contains the working connection info
 if (!process.env.DATABASE_URL && !process.env.PGHOST) {
   throw new Error(
-    "Either DATABASE_URL or Google Cloud SQL credentials (PGHOST, PGUSER, PGPASSWORD, PGDATABASE) must be set",
+    "Either DATABASE_URL or Google Cloud SQL credentials must be set",
   );
+}
+
+function parsePostgresUrl(url: string) {
+  const parsed = new URL(url);
+  return {
+    host: parsed.hostname,
+    port: parseInt(parsed.port || '5432'),
+    database: parsed.pathname.slice(1), // Remove leading /
+    user: parsed.username,
+    password: parsed.password,
+  };
 }
 
 let poolConfig: pg.PoolConfig;
 
 if (process.env.DATABASE_URL) {
-  // Use DATABASE_URL (preferred - contains working IP/hostname)
-  const needsSSL = process.env.DATABASE_URL.includes('googleusercontent.com') || 
-                   process.env.DATABASE_URL.includes('.gcp.') ||
-                   process.env.DATABASE_URL.includes('neon.') ||
-                   (!process.env.DATABASE_URL.includes('localhost') && !process.env.DATABASE_URL.includes('127.0.0.1'));
+  // Parse DATABASE_URL manually to avoid env var conflicts
+  const dbConfig = parsePostgresUrl(process.env.DATABASE_URL);
   
+  // Build explicit config that overrides any env SSL settings
   poolConfig = {
-    connectionString: process.env.DATABASE_URL,
-    ssl: needsSSL ? { rejectUnauthorized: false } : false
-  };
-  console.log('🔒 Database: Connected via DATABASE_URL with SSL:', needsSSL);
-} else {
-  // Fallback to PG* variables
-  const pgHost = process.env.PGHOST;
-  
-  // Guard against Cloud SQL connection names (which aren't hostnames)
-  if (pgHost && pgHost.includes(':')) {
-    throw new Error(
-      `PGHOST appears to be a Cloud SQL connection name (${pgHost}). Please use DATABASE_URL instead or set PGHOST to the actual IP address.`
-    );
-  }
-  
-  poolConfig = {
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    database: process.env.PGDATABASE,
-    host: pgHost,
-    port: parseInt(process.env.PGPORT || '5432'),
+    host: dbConfig.host,
+    port: dbConfig.port,
+    database: dbConfig.database,
+    user: dbConfig.user,
+    password: dbConfig.password,
     ssl: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,  // Force disable certificate verification
+      minVersion: 'TLSv1.2'
     }
   };
-  console.log('🔒 Database: Connected via PG* variables with SSL');
+  console.log('🔒 Database: Connected with explicit SSL config (rejectUnauthorized: false)');
+} else {
+  // Fallback to PG* variables with explicit SSL config
+  poolConfig = {
+    host: process.env.PGHOST,
+    port: parseInt(process.env.PGPORT || '5432'),
+    database: process.env.PGDATABASE,
+    user: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
+    ssl: {
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2'
+    }
+  };
+  console.log('🔒 Database: Connected via PG* variables with explicit SSL config');
 }
 
 export const pool = new pg.Pool(poolConfig);
