@@ -27,3 +27,4 @@ FROM node:20-alpine AS builder
     
     # Start the application
     CMD ["npm", "start"]
+# Trigger new build
