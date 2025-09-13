@@ -95,8 +95,11 @@ export function setupTraditionalAuth(app: Express) {
     try {
       const validatedData = loginUserSchema.parse(req.body);
       
+      console.log(`🔍 Looking for user with email: ${validatedData.email}`);
+      
       // Find user by email
       const user = await storage.getUserByEmail(validatedData.email);
+      console.log(`👤 User found:`, user ? { id: user.id, email: user.email, authProvider: user.authProvider } : 'NONE');
       
       // If user doesn't exist, suggest registration or Google Sign-In
       if (!user) {
