@@ -11,11 +11,12 @@ if (!process.env.DATABASE_URL) {
 // For Google Cloud SQL, we need to handle SSL properly
 const isProduction = process.env.REPLIT_DOMAINS || process.env.NODE_ENV === 'production';
 
-// Clean the connection string by removing conflicting sslmode parameters
+// Ensure SSL is required in the connection string for production
 let connectionString = process.env.DATABASE_URL;
 if (isProduction && connectionString) {
   const url = new URL(connectionString);
-  url.searchParams.delete('sslmode');
+  // Set sslmode to require SSL but we'll handle certificate verification in the pool config
+  url.searchParams.set('sslmode', 'require');
   connectionString = url.toString();
 }
 
