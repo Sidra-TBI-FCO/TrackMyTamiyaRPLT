@@ -1,36 +1,53 @@
 steps:
-  # Build Docker image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build',
-      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA',
-      '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:latest',
-      '.'
-    ]
+# Grant the Cloud Run service account access to the secret
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'secrets'
+    - 'add-iam-policy-binding'
+    - 'db-connection-string'
+    - '--member'
+    - 'serviceAccount:trackmyrc@appspot.gserviceaccount.com'
+    - '--role'
+    - 'roles/secretmanager.secretAccessor'
 
-  # Push to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA']
+# Build Docker image
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '-t'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
+  - '-t'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:latest'
+  - '.'
 
-  # Deploy to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - 'run'
-      - 'deploy'
-      - 'trackmyrc'
-      - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--set-env-vars'
-      - 'NODE_ENV=production'
+# Push to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'push'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
+
+# Deploy to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'run'
+    - 'deploy'
+    - 'trackmyrc'
+    - '--image'
+    - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
+    - '--region'
+    - 'us-central1'
+    - '--platform'
+    - 'managed'
+    - '--allow-unauthenticated'
+    - '--port'
+    - '5000'
+    - '--set-secrets'
+    - 'DATABASE_URL=db-connection-string:latest'
 
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
+- 'us-central1-docker.pkg.dev/$PROJECT_ID/trackmyrc/app:$COMMIT_SHA'
 
 options:
   logging: CLOUD_LOGGING_ONLY
