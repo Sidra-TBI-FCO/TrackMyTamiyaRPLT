@@ -9,20 +9,43 @@ if (!process.env.DATABASE_URL) {
 }
 
 // For Google Cloud SQL, we need to handle SSL properly
-let connectionString = process.env.DATABASE_URL;
-
-// Check if we're in a production environment (deployed on Replit)
 const isProduction = process.env.REPLIT_DOMAINS || process.env.NODE_ENV === 'production';
 
+// Clean the connection string by removing conflicting sslmode parameters
+let connectionString = process.env.DATABASE_URL;
+if (isProduction && connectionString) {
+  const url = new URL(connectionString);
+  url.searchParams.delete('sslmode');
+  connectionString = url.toString();
+}
+
+// Configure SSL for production environments
+let sslConfig: boolean | object = false;
+
 if (isProduction) {
-  // For production, ensure SSL mode is set but don't force it in the URL since we'll handle it in the pool config
-  console.log('🔒 Production environment detected - enforcing SSL for database connection');
+  // Check for SSL CA certificate
+  const sslCa = process.env.DATABASE_SSL_CA || 
+    (process.env.DATABASE_SSL_CA_B64 ? 
+      Buffer.from(process.env.DATABASE_SSL_CA_B64, 'base64').toString('utf8') : 
+      undefined);
+  
+  // Check if verification should be disabled (temporary debugging)
+  const disableVerify = process.env.DB_SSL_DISABLE_VERIFY === 'true';
+  
+  if (sslCa) {
+    sslConfig = { ca: sslCa, rejectUnauthorized: true };
+    console.log('🔒 Production SSL: Using CA certificate verification');
+  } else if (disableVerify) {
+    sslConfig = { rejectUnauthorized: false };
+    console.log('🔒 Production SSL: Verification disabled (temporary)');
+  } else {
+    sslConfig = true;
+    console.log('🔒 Production SSL: Standard verification enabled');
+  }
 }
 
 export const pool = new pg.Pool({ 
   connectionString,
-  ssl: isProduction ? { 
-    rejectUnauthorized: false  // Accept self-signed certificates for managed databases
-  } : false
+  ssl: sslConfig
 });
 export const db = drizzle(pool, { schema });
