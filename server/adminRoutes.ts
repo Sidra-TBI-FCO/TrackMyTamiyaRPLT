@@ -11,6 +11,18 @@ import crypto from "crypto";
 
 const router = Router();
 
+// Helper function to get user ID from either auth type
+function getUserId(req: any): string {
+  const userId = req.user?.claims?.sub || req.user?.id;
+  console.log('🆔 getUserId in adminRoutes:', { 
+    userId, 
+    hasClaims: !!req.user?.claims,
+    hasId: !!req.user?.id,
+    user: req.user 
+  });
+  return userId;
+}
+
 // Helper function to log admin actions
 async function logAdminAction(
   adminId: string,
@@ -140,7 +152,7 @@ router.post("/users/:userId/grant-models", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
     const { modelCount } = req.body;
-    const adminUser = req.user as any;
+    const adminId = getUserId(req);
     
     if (!modelCount || modelCount <= 0) {
       return res.status(400).json({ message: "Invalid model count" });
@@ -157,7 +169,7 @@ router.post("/users/:userId/grant-models", requireAdmin, async (req, res) => {
     
     // Log the action
     await logAdminAction(
-      adminUser.id,
+      adminId,
       "grant_models",
       userId,
       { modelCount },
@@ -175,7 +187,7 @@ router.post("/users/:userId/grant-models", requireAdmin, async (req, res) => {
 router.post("/users/:userId/reset-password", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
-    const adminUser = req.user as any;
+    const adminId = getUserId(req);
     
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!user) {
@@ -199,7 +211,7 @@ router.post("/users/:userId/reset-password", requireAdmin, async (req, res) => {
     
     // Log the action
     await logAdminAction(
-      adminUser.id,
+      adminId,
       "reset_password",
       userId,
       { email: user.email },
@@ -217,7 +229,7 @@ router.post("/users/:userId/reset-password", requireAdmin, async (req, res) => {
 router.delete("/users/:userId", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
-    const adminUser = req.user as any;
+    const adminId = getUserId(req);
     
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!user) {
@@ -229,7 +241,7 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
     
     // Log the action
     await logAdminAction(
-      adminUser.id,
+      adminId,
       "delete_user",
       userId,
       { email: user.email },
@@ -247,13 +259,13 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
 router.post("/users/:userId/make-admin", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
-    const adminUser = req.user as any;
+    const adminId = getUserId(req);
     
     await db.update(users).set({ isAdmin: true }).where(eq(users.id, userId));
     
     // Log the action
     await logAdminAction(
-      adminUser.id,
+      adminId,
       "make_admin",
       userId,
       {},
@@ -271,10 +283,10 @@ router.post("/users/:userId/make-admin", requireAdmin, async (req, res) => {
 router.post("/users/:userId/remove-admin", requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
-    const adminUser = req.user as any;
+    const adminId = getUserId(req);
     
     // Prevent removing own admin access
-    if (userId === adminUser.id) {
+    if (userId === adminId) {
       return res.status(400).json({ message: "Cannot remove your own admin privileges" });
     }
     
@@ -282,7 +294,7 @@ router.post("/users/:userId/remove-admin", requireAdmin, async (req, res) => {
     
     // Log the action
     await logAdminAction(
-      adminUser.id,
+      adminId,
       "remove_admin",
       userId,
       {},
@@ -311,7 +323,7 @@ router.get("/pricing", requireAdmin, async (req, res) => {
 router.put("/pricing/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const adminUser = req.user as any;
+    const adminId = getUserId(req);
     const validated = insertPricingTierSchema.parse(req.body);
     
     await db
@@ -328,7 +340,7 @@ router.put("/pricing/:id", requireAdmin, async (req, res) => {
     
     // Log the action
     await logAdminAction(
-      adminUser.id,
+      adminId,
       "update_pricing",
       null,
       { tierId: id, ...validated },
