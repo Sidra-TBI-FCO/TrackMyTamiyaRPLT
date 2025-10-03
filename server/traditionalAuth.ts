@@ -46,17 +46,14 @@ export function setupTraditionalAuth(app: Express) {
       // Send verification email
       sendVerificationEmail(validatedData.email, verificationToken);
 
-      // Log the user in
+      // Log the user in with same structure as Google OAuth
       req.login({
-        claims: {
-          sub: user.id,
-          email: user.email,
-          first_name: user.firstName,
-          last_name: user.lastName,
-          profile_image_url: user.profileImageUrl
-        },
-        access_token: "email-auth-token",
-        expires_at: Math.floor(Date.now() / 1000) + 86400 // 24 hours
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        authProvider: user.authProvider
       }, (err) => {
         if (err) {
           console.error("Registration login error:", err);
@@ -116,17 +113,14 @@ export function setupTraditionalAuth(app: Express) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
-      // Log the user in
+      // Log the user in with same structure as Google OAuth
       req.login({
-        claims: {
-          sub: user.id,
-          email: user.email,
-          first_name: user.firstName,
-          last_name: user.lastName,
-          profile_image_url: user.profileImageUrl
-        },
-        access_token: "email-auth-token",
-        expires_at: Math.floor(Date.now() / 1000) + 86400 // 24 hours
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        authProvider: user.authProvider
       }, (err) => {
         if (err) {
           console.error("Login error:", err);

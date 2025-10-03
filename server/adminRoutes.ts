@@ -11,16 +11,9 @@ import crypto from "crypto";
 
 const router = Router();
 
-// Helper function to get user ID from either auth type
+// Helper function to get user ID from authenticated user
 function getUserId(req: any): string {
-  const userId = req.user?.claims?.sub || req.user?.id;
-  console.log('🆔 getUserId in adminRoutes:', { 
-    userId, 
-    hasClaims: !!req.user?.claims,
-    hasId: !!req.user?.id,
-    user: req.user 
-  });
-  return userId;
+  return req.user?.id;
 }
 
 // Helper function to log admin actions
@@ -236,7 +229,25 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Delete user (cascade will handle models, photos, etc.)
+    // Get all user's models to delete associated data
+    const userModels = await db.select({ id: models.id }).from(models).where(eq(models.userId, userId));
+    const modelIds = userModels.map(m => m.id);
+    
+    // Delete all associated data in correct order
+    if (modelIds.length > 0) {
+      // Delete build log photos, build log entries, hop-up parts, and photos for each model
+      for (const modelId of modelIds) {
+        await db.delete(photos).where(eq(photos.modelId, modelId));
+      }
+      // Delete all models
+      await db.delete(models).where(eq(models.userId, userId));
+    }
+    
+    // Delete user's purchases and activity logs
+    await db.delete(purchases).where(eq(purchases.userId, userId));
+    await db.delete(userActivityLog).where(eq(userActivityLog.userId, userId));
+    
+    // Finally, delete the user
     await db.delete(users).where(eq(users.id, userId));
     
     // Log the action
@@ -244,11 +255,11 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
       adminId,
       "delete_user",
       userId,
-      { email: user.email },
+      { email: user.email, modelsDeleted: modelIds.length },
       getClientIP(req)
     );
     
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: "User and all associated data deleted successfully" });
   } catch (error) {
     console.error("Delete user error:", error);
     res.status(500).json({ message: "Failed to delete user" });

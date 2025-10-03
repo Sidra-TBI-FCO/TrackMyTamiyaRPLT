@@ -3,9 +3,9 @@ import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-// Helper function to get user ID from either auth type
+// Helper function to get user ID from authenticated user
 function getUserId(req: any): string {
-  return req.user.claims?.sub || req.user.id;
+  return req.user?.id;
 }
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction) {

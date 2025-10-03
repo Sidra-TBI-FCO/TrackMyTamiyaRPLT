@@ -69,9 +69,9 @@ const upload = multer({
   }
 });
 
-// Helper function to get user ID from either auth type
+// Helper function to get user ID from authenticated user
 function getUserId(req: any): string {
-  return req.user.claims?.sub || req.user.id;
+  return req.user?.id;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
