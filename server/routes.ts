@@ -13,6 +13,7 @@ import { JSDOM } from "jsdom";
 import { db } from "./db";
 import { models, photos, buildLogEntries } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import adminRoutes from "./adminRoutes";
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -75,6 +76,9 @@ function getUserId(req: any): string {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   await setupAuth(app);
+  
+  // Register admin routes
+  app.use("/api/admin", adminRoutes);
   
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
