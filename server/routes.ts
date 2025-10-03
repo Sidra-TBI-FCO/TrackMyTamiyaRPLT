@@ -15,6 +15,15 @@ import { models, photos, buildLogEntries } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
 import { logUserActivity } from "./activityLogger";
+import Stripe from "stripe";
+
+// Initialize Stripe (blueprint:javascript_stripe)
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-09-30.clover",
+});
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -141,13 +150,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { tierId, paymentId, amount } = req.body;
+      const { tierId, paymentId } = req.body;
 
-      if (!tierId || !amount) {
+      if (!tierId || !paymentId) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Get the tier info
+      // CRITICAL: Verify payment with Stripe before granting models
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
+
+      // Verify payment succeeded
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ message: "Payment has not succeeded" });
+      }
+
+      // Verify payment belongs to this user
+      if (paymentIntent.metadata.userId !== userId) {
+        return res.status(403).json({ message: "Payment does not belong to this user" });
+      }
+
+      // Verify payment matches the requested tier
+      if (paymentIntent.metadata.tierId !== tierId.toString()) {
+        return res.status(400).json({ message: "Payment does not match requested tier" });
+      }
+
+      // Get the tier info from database
       const [tier] = await db.select().from(pricingTiers)
         .where(eq(pricingTiers.id, parseInt(tierId)))
         .limit(1);
@@ -156,14 +183,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Pricing tier not found" });
       }
 
-      // Record the purchase
+      // Verify payment amount matches tier price
+      const expectedAmount = Math.round(parseFloat(tier.finalPrice) * 100);
+      if (paymentIntent.amount !== expectedAmount) {
+        return res.status(400).json({ message: "Payment amount does not match tier price" });
+      }
+
+      // Verify currency
+      if (paymentIntent.currency !== 'usd') {
+        return res.status(400).json({ message: "Invalid payment currency" });
+      }
+
+      // Check if this payment was already processed
+      const existingPurchase = await db.select().from(purchases)
+        .where(eq(purchases.paymentId, paymentId))
+        .limit(1);
+
+      if (existingPurchase.length > 0) {
+        return res.status(400).json({ message: "Payment already processed" });
+      }
+
+      // All validations passed - record the purchase
       await db.insert(purchases).values({
         userId,
         modelCount: tier.modelCount,
-        amount: amount.toString(),
+        amount: tier.finalPrice,
         currency: "USD",
         paymentProvider: "stripe",
-        paymentId: paymentId || null,
+        paymentId: paymentId,
         status: "completed",
       });
 
@@ -186,7 +233,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await logUserActivity(userId, 'purchase_completed', {
         tierId: tier.id,
         modelCount: tier.modelCount,
-        amount: amount
+        amount: tier.finalPrice,
+        paymentId: paymentId
       }, req);
 
       res.json({ 
@@ -196,6 +244,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Purchase complete error:", error);
       res.status(500).json({ message: "Failed to complete purchase" });
+    }
+  });
+
+  // Stripe payment intent creation (blueprint:javascript_stripe)
+  app.post('/api/create-payment-intent', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { tierId } = req.body;
+
+      if (!tierId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Fetch tier from database to get authoritative price
+      const [tier] = await db.select().from(pricingTiers)
+        .where(eq(pricingTiers.id, parseInt(tierId)))
+        .limit(1);
+
+      if (!tier || !tier.isActive) {
+        return res.status(404).json({ message: "Pricing tier not found or inactive" });
+      }
+
+      // Use server-side price to prevent tampering
+      const amount = parseFloat(tier.finalPrice);
+
+      // Create Stripe payment intent with authoritative price
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          userId,
+          tierId: tierId.toString(),
+          modelCount: tier.modelCount.toString(),
+        },
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Payment intent creation error:", error);
+      res.status(500).json({ message: "Error creating payment intent: " + error.message });
     }
   });
 

@@ -18,8 +18,18 @@ import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorSc
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/lib/theme-context";
 import { exportModelsToCSV, exportHopUpsToCSV } from "@/lib/export-utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ModelWithRelations, HopUpPart } from "@/types";
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import StripeCheckoutForm from "@/components/checkout/StripeCheckoutForm";
+import { apiRequest } from "@/lib/queryClient";
+
+// Initialize Stripe (blueprint:javascript_stripe)
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 // Storage Status Component
 interface StorageStatusResponse {
@@ -104,8 +114,11 @@ export default function SettingsPage() {
   const [appSettings, setAppSettings] = useState(getAppSettings());
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
+  const [clientSecret, setClientSecret] = useState<string>("");
+  const [showCheckout, setShowCheckout] = useState(false);
   const { user } = useAuth();
   const { colorScheme, darkMode, setColorScheme, toggleDarkMode } = useTheme();
+  const queryClient = useQueryClient();
 
   // Fetch data for exports
   const { data: models } = useQuery<ModelWithRelations[]>({
@@ -120,6 +133,74 @@ export default function SettingsPage() {
   const { data: pricingTiers, isLoading: loadingPricing } = useQuery<PricingTier[]>({
     queryKey: ["/api/pricing-tiers"],
   });
+
+  // Create payment intent mutation
+  const createPaymentIntentMutation = useMutation({
+    mutationFn: async ({ tierId }: { tierId: number }) => {
+      const response = await apiRequest("POST", "/api/create-payment-intent", { tierId });
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      setClientSecret(data.clientSecret);
+      setShowCheckout(true);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to initialize payment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Complete purchase mutation
+  const completePurchaseMutation = useMutation({
+    mutationFn: async ({ tierId, paymentId }: { tierId: number; paymentId: string }) => {
+      const response = await apiRequest("POST", "/api/purchase/complete", { tierId, paymentId });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      toast({
+        title: "Purchase successful!",
+        description: "Your model limit has been increased. You can now add more models.",
+      });
+      setShowPurchaseDialog(false);
+      setShowCheckout(false);
+      setSelectedTier(null);
+      setClientSecret("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to complete purchase",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePurchaseClick = () => {
+    if (selectedTier) {
+      createPaymentIntentMutation.mutate({
+        tierId: selectedTier.id,
+      });
+    }
+  };
+
+  const handlePaymentSuccess = (paymentIntentId: string) => {
+    if (selectedTier) {
+      completePurchaseMutation.mutate({
+        tierId: selectedTier.id,
+        paymentId: paymentIntentId,
+      });
+    }
+  };
+
+  const handleCancelCheckout = () => {
+    setShowCheckout(false);
+    setClientSecret("");
+  };
 
   const updateSetting = <K extends keyof SlideshowSettings>(
     key: K,
@@ -660,15 +741,37 @@ export default function SettingsPage() {
       </div>
 
       {/* Purchase Model Packs Dialog */}
-      <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+      <Dialog open={showPurchaseDialog} onOpenChange={(open) => {
+        setShowPurchaseDialog(open);
+        if (!open) {
+          setShowCheckout(false);
+          setSelectedTier(null);
+          setClientSecret("");
+        }
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="font-mono">Purchase Model Packs</DialogTitle>
+            <DialogTitle className="font-mono">
+              {showCheckout ? "Complete Payment" : "Purchase Model Packs"}
+            </DialogTitle>
             <DialogDescription className="font-mono">
-              Select a model pack to expand your collection. All purchases are one-time payments.
+              {showCheckout 
+                ? "Enter your payment details to complete your purchase."
+                : "Select a model pack to expand your collection. All purchases are one-time payments."
+              }
             </DialogDescription>
           </DialogHeader>
           
+          {showCheckout && clientSecret ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <StripeCheckoutForm
+                amount={selectedTier ? parseFloat(selectedTier.finalPrice) : 0}
+                modelCount={selectedTier?.modelCount || 0}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handleCancelCheckout}
+              />
+            </Elements>
+          ) : (
           <div className="space-y-4 py-4">
             {loadingPricing ? (
               <div className="flex items-center justify-center py-8">
@@ -724,38 +827,42 @@ export default function SettingsPage() {
               </p>
             )}
           </div>
+          )}
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowPurchaseDialog(false);
-                setSelectedTier(null);
-              }}
-              className="font-mono"
-              data-testid="button-cancel-purchase"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (selectedTier) {
-                  // Will implement Stripe checkout in backend routes task
-                  toast({
-                    title: "Coming soon",
-                    description: "Stripe payment integration will be completed in the next task.",
-                  });
-                }
-              }}
-              disabled={!selectedTier}
-              className="font-mono"
-              style={{backgroundColor: 'var(--theme-primary)'}}
-              data-testid="button-confirm-purchase"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Purchase {selectedTier ? `${selectedTier.modelCount} Models` : 'Selected Pack'}
-            </Button>
-          </DialogFooter>
+          {!showCheckout && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPurchaseDialog(false);
+                  setSelectedTier(null);
+                }}
+                className="font-mono"
+                data-testid="button-cancel-purchase"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handlePurchaseClick}
+                disabled={!selectedTier || createPaymentIntentMutation.isPending}
+                className="font-mono text-white"
+                style={{backgroundColor: 'var(--theme-primary)'}}
+                data-testid="button-confirm-purchase"
+              >
+                {createPaymentIntentMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Purchase {selectedTier ? `${selectedTier.modelCount} Models` : 'Selected Pack'}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>
