@@ -223,7 +223,17 @@ export default function AuthPage() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Password</FormLabel>
+                              <div className="flex items-center justify-between">
+                                <FormLabel>Password</FormLabel>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate("/forgot-password")}
+                                  className="text-xs text-[var(--theme-primary)] hover:underline"
+                                  data-testid="link-forgot-password"
+                                >
+                                  Forgot password?
+                                </button>
+                              </div>
                               <FormControl>
                                 <Input {...field} type="password" placeholder="••••••••" />
                               </FormControl>

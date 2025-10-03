@@ -25,6 +25,8 @@ import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
 import SettingsPage from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 import Header from "@/components/layout/header";
@@ -43,6 +45,8 @@ function Router() {
       <Route path="/download" component={DownloadPage} />
       <Route path="/disclaimer" component={DisclaimerPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       
       {/* Protected application routes */}
       {isLoading || !isAuthenticated ? (
