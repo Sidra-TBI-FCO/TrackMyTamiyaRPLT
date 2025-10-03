@@ -99,8 +99,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protect all API routes except auth routes
   app.use('/api', (req, res, next) => {
-    // Skip auth for auth routes and file serving
-    if (req.path.startsWith('/auth/') || req.path === '/login' || req.path === '/logout' || req.path === '/callback' || req.path.startsWith('/files/')) {
+    // Skip auth for auth routes, file serving, and storage status
+    if (req.path.startsWith('/auth/') || req.path === '/login' || req.path === '/logout' || req.path === '/callback' || req.path.startsWith('/files/') || req.path === '/storage/status') {
       return next();
     }
     
