@@ -247,6 +247,10 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
     await db.delete(purchases).where(eq(purchases.userId, userId));
     await db.delete(userActivityLog).where(eq(userActivityLog.userId, userId));
     
+    // Delete admin audit logs where user is admin or target
+    await db.delete(adminAuditLog).where(eq(adminAuditLog.adminId, userId));
+    await db.delete(adminAuditLog).where(eq(adminAuditLog.targetUserId, userId));
+    
     // Finally, delete the user
     await db.delete(users).where(eq(users.id, userId));
     
