@@ -23,11 +23,15 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   // Traditional auth fields
   password: varchar("password"), // Hashed password for email/password auth
-  authProvider: varchar("auth_provider").notNull().default("email"), // "replit" or "email"
+  authProvider: varchar("auth_provider").notNull().default("email"), // "replit" or "email" or "google"
   isVerified: boolean("is_verified").default(false),
   verificationToken: varchar("verification_token"),
   resetPasswordToken: varchar("reset_password_token"),
   resetPasswordExpires: timestamp("reset_password_expires"),
+  // Admin and subscription fields
+  isAdmin: boolean("is_admin").default(false),
+  modelLimit: integer("model_limit").default(2), // Free tier: 2 models
+  manuallyGrantedModels: integer("manually_granted_models").default(0), // Admin can grant extra models
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -116,9 +120,58 @@ export const hopUpParts = pgTable("hop_up_parts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Pricing tiers - admin configurable pricing for model packs
+export const pricingTiers = pgTable("pricing_tiers", {
+  id: serial("id").primaryKey(),
+  modelCount: integer("model_count").notNull().unique(), // 10, 20, 50, 100
+  basePrice: numeric("base_price", { precision: 10, scale: 2 }).notNull(), // Price without discount
+  discountPercent: integer("discount_percent").notNull().default(0), // 0, 5, 10, 20, 30
+  finalPrice: numeric("final_price", { precision: 10, scale: 2 }).notNull(), // Calculated price after discount
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Purchase history - track all model pack purchases
+export const purchases = pgTable("purchases", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  modelCount: integer("model_count").notNull(), // Number of models purchased
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(), // Amount paid
+  currency: varchar("currency").notNull().default("USD"),
+  paymentProvider: varchar("payment_provider").notNull(), // "stripe", "playstore", "appstore"
+  paymentId: varchar("payment_id"), // External payment ID from provider
+  status: varchar("status").notNull().default("completed"), // "pending", "completed", "failed", "refunded"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Admin audit log - track all admin actions
+export const adminAuditLog = pgTable("admin_audit_log", {
+  id: serial("id").primaryKey(),
+  adminId: varchar("admin_id").references(() => users.id).notNull(),
+  action: varchar("action").notNull(), // "grant_models", "reset_password", "delete_user", "make_admin", etc.
+  targetUserId: varchar("target_user_id").references(() => users.id),
+  details: jsonb("details"), // Additional context about the action
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User activity log - track logins and model operations
+export const userActivityLog = pgTable("user_activity_log", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  activityType: varchar("activity_type").notNull(), // "login", "model_created", "model_deleted", "photo_uploaded"
+  details: jsonb("details"), // Additional context
+  ipAddress: varchar("ip_address"),
+  userAgent: varchar("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   models: many(models),
+  purchases: many(purchases),
+  activityLogs: many(userActivityLog),
 }));
 
 export const modelsRelations = relations(models, ({ one, many }) => ({
@@ -167,6 +220,31 @@ export const hopUpPartsRelations = relations(hopUpParts, ({ one }) => ({
   photo: one(photos, {
     fields: [hopUpParts.photoId],
     references: [photos.id],
+  }),
+}));
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  user: one(users, {
+    fields: [purchases.userId],
+    references: [users.id],
+  }),
+}));
+
+export const adminAuditLogRelations = relations(adminAuditLog, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminAuditLog.adminId],
+    references: [users.id],
+  }),
+  targetUser: one(users, {
+    fields: [adminAuditLog.targetUserId],
+    references: [users.id],
+  }),
+}));
+
+export const userActivityLogRelations = relations(userActivityLog, ({ one }) => ({
+  user: one(users, {
+    fields: [userActivityLog.userId],
+    references: [users.id],
   }),
 }));
 
@@ -223,6 +301,32 @@ export const insertHopUpPartSchema = createInsertSchema(hopUpParts, {
   createdAt: true,
 });
 
+export const insertPricingTierSchema = createInsertSchema(pricingTiers, {
+  basePrice: z.coerce.number(),
+  finalPrice: z.coerce.number(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPurchaseSchema = createInsertSchema(purchases, {
+  amount: z.coerce.number(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserActivityLogSchema = createInsertSchema(userActivityLog).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -237,6 +341,14 @@ export type BuildLogEntry = typeof buildLogEntries.$inferSelect;
 export type InsertHopUpPart = z.infer<typeof insertHopUpPartSchema>;
 export type HopUpPart = typeof hopUpParts.$inferSelect;
 export type BuildLogPhoto = typeof buildLogPhotos.$inferSelect;
+export type PricingTier = typeof pricingTiers.$inferSelect;
+export type InsertPricingTier = z.infer<typeof insertPricingTierSchema>;
+export type Purchase = typeof purchases.$inferSelect;
+export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
+export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
+export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
+export type UserActivityLog = typeof userActivityLog.$inferSelect;
+export type InsertUserActivityLog = z.infer<typeof insertUserActivityLogSchema>;
 
 // Extended types with relations
 export type ModelWithRelations = Model & {
@@ -247,4 +359,14 @@ export type ModelWithRelations = Model & {
 
 export type BuildLogEntryWithPhotos = BuildLogEntry & {
   photos: { photo: Photo }[];
+};
+
+export type UserWithStats = User & {
+  modelCount: number;
+  storageUsed: number;
+  totalSpent: number;
+};
+
+export type PurchaseWithUser = Purchase & {
+  user: User;
 };
