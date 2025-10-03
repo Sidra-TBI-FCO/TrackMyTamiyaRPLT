@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema } from "@shared/schema";
+import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, pricingTiers, purchases, users } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -12,7 +12,7 @@ import { fileStorage } from "./storage-service";
 import { JSDOM } from "jsdom";
 import { db } from "./db";
 import { models, photos, buildLogEntries } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
 import { logUserActivity } from "./activityLogger";
 
@@ -117,6 +117,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     return isAuthenticated(req, res, next);
+  });
+
+  // Pricing Tiers route - for all authenticated users
+  app.get('/api/pricing-tiers', async (req, res) => {
+    try {
+      const tiers = await db.select().from(pricingTiers)
+        .where(eq(pricingTiers.isActive, true))
+        .orderBy(pricingTiers.modelCount);
+      res.json(tiers);
+    } catch (error) {
+      console.error("Pricing tiers error:", error);
+      res.status(500).json({ message: "Failed to fetch pricing tiers" });
+    }
+  });
+
+  // Purchase complete route - records purchase after Stripe payment succeeds
+  app.post('/api/purchase/complete', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { tierId, paymentId, amount } = req.body;
+
+      if (!tierId || !amount) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Get the tier info
+      const [tier] = await db.select().from(pricingTiers)
+        .where(eq(pricingTiers.id, parseInt(tierId)))
+        .limit(1);
+
+      if (!tier) {
+        return res.status(404).json({ message: "Pricing tier not found" });
+      }
+
+      // Record the purchase
+      await db.insert(purchases).values({
+        userId,
+        modelCount: tier.modelCount,
+        amount: amount.toString(),
+        currency: "USD",
+        paymentProvider: "stripe",
+        paymentId: paymentId || null,
+        status: "completed",
+      });
+
+      // Get current user model limit
+      const [currentUser] = await db.select().from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      // Update user's model limit
+      await db.update(users)
+        .set({
+          modelLimit: sql`${users.modelLimit} + ${tier.modelCount}`,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+
+      const newModelLimit = (currentUser?.modelLimit || 0) + tier.modelCount;
+
+      // Log the activity
+      await logUserActivity(userId, 'purchase_completed', {
+        tierId: tier.id,
+        modelCount: tier.modelCount,
+        amount: amount
+      }, req);
+
+      res.json({ 
+        message: "Purchase completed successfully",
+        newModelLimit: newModelLimit
+      });
+    } catch (error) {
+      console.error("Purchase complete error:", error);
+      res.status(500).json({ message: "Failed to complete purchase" });
+    }
   });
 
   // Models routes

@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Search, Plus, Trash2, RotateCw, Shield, ShieldOff } from "lucide-react";
+import { Search, Plus, Trash2, RotateCw, Shield, ShieldOff, CheckCircle2, XCircle } from "lucide-react";
 
 interface UserWithStats {
   id: string;
@@ -30,6 +30,7 @@ interface UserWithStats {
   firstName: string;
   lastName: string;
   isAdmin: boolean;
+  isVerified: boolean;
   modelLimit: number;
   manuallyGrantedModels: number;
   modelCount: number;
@@ -154,6 +155,7 @@ export function AdminUsers() {
               <TableRow>
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Verified</TableHead>
                 <TableHead>Models</TableHead>
                 <TableHead>Storage</TableHead>
                 <TableHead>Spent</TableHead>
@@ -173,6 +175,13 @@ export function AdminUsers() {
                     </TableCell>
                     <TableCell>
                       {user.firstName} {user.lastName}
+                    </TableCell>
+                    <TableCell>
+                      {user.isVerified ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" data-testid={`status-verified-${user.id}`} />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" data-testid={`status-unverified-${user.id}`} />
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.modelCount} / {user.modelLimit}
@@ -239,7 +248,7 @@ export function AdminUsers() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     No users found
                   </TableCell>
                 </TableRow>

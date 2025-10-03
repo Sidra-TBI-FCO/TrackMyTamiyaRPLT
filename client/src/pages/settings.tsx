@@ -4,7 +4,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme, getAppSettings, saveAppSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -83,9 +91,19 @@ function StorageStatus() {
   );
 }
 
+interface PricingTier {
+  id: number;
+  modelCount: number;
+  basePrice: string;
+  discountPercent: number;
+  finalPrice: string;
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
   const [appSettings, setAppSettings] = useState(getAppSettings());
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const { user } = useAuth();
   const { colorScheme, darkMode, setColorScheme, toggleDarkMode } = useTheme();
 
@@ -96,6 +114,11 @@ export default function SettingsPage() {
 
   const { data: allHopUps } = useQuery<(HopUpPart & { model: { name: string } })[]>({
     queryKey: ["/api/hop-up-parts/all"],
+  });
+
+  // Fetch pricing tiers
+  const { data: pricingTiers, isLoading: loadingPricing } = useQuery<PricingTier[]>({
+    queryKey: ["/api/pricing-tiers"],
   });
 
   const updateSetting = <K extends keyof SlideshowSettings>(
@@ -349,6 +372,64 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Model Management */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-lg font-mono">
+            <Package className="h-5 w-5" />
+            <span>Model Management</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-mono text-gray-500 dark:text-gray-400">Current Models</Label>
+                <p className="text-2xl font-mono font-bold" style={{color: 'var(--theme-primary)'}}>
+                  {models?.length || 0}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-mono text-gray-500 dark:text-gray-400">Model Limit</Label>
+                <p className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
+                  {(user as any)?.modelLimit || 2}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-mono text-gray-500 dark:text-gray-400">Remaining</Label>
+                <p className="text-2xl font-mono font-bold text-gray-600 dark:text-gray-300">
+                  {Math.max(0, ((user as any)?.modelLimit || 2) - (models?.length || 0))}
+                </p>
+              </div>
+            </div>
+
+            {(user as any)?.manuallyGrantedModels > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <p className="text-xs font-mono text-green-700 dark:text-green-300">
+                  You have {(user as any).manuallyGrantedModels} admin-granted models
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <p className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                Free tier includes 2 models. Purchase model packs to expand your collection.
+              </p>
+              <Button
+                onClick={() => setShowPurchaseDialog(true)}
+                className="w-full font-mono"
+                style={{backgroundColor: 'var(--theme-primary)'}}
+                data-testid="button-purchase-models"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Purchase Model Packs
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Storage Status */}
       <Card className="bg-white dark:bg-gray-800">
         <CardHeader>
@@ -577,6 +658,106 @@ export default function SettingsPage() {
       </Card>
         </div>
       </div>
+
+      {/* Purchase Model Packs Dialog */}
+      <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Purchase Model Packs</DialogTitle>
+            <DialogDescription className="font-mono">
+              Select a model pack to expand your collection. All purchases are one-time payments.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {loadingPricing ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" style={{color: 'var(--theme-primary)'}} />
+              </div>
+            ) : pricingTiers && pricingTiers.length > 0 ? (
+              <div className="grid gap-4">
+                {pricingTiers.map((tier) => (
+                  <button
+                    key={tier.id}
+                    onClick={() => setSelectedTier(tier)}
+                    className={`relative p-4 rounded-lg border-2 transition-all text-left ${
+                      selectedTier?.id === tier.id
+                        ? 'border-[var(--theme-primary)] bg-green-50 dark:bg-green-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-[var(--theme-primary)] hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                    data-testid={`tier-option-${tier.modelCount}`}
+                  >
+                    {tier.discountPercent > 0 && (
+                      <div className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-mono font-bold text-white" style={{backgroundColor: 'var(--theme-secondary)'}}>
+                        {tier.discountPercent}% OFF
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="font-mono font-bold text-lg">{tier.modelCount} Models</p>
+                        <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
+                          {tier.discountPercent > 0 ? (
+                            <>
+                              <span className="line-through mr-2">${tier.basePrice}</span>
+                              <span className="font-bold" style={{color: 'var(--theme-primary)'}}>
+                                ${tier.finalPrice}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="font-bold">${tier.finalPrice}</span>
+                          )}
+                        </p>
+                        <p className="font-mono text-xs text-gray-500 dark:text-gray-500">
+                          ${(parseFloat(tier.finalPrice) / tier.modelCount).toFixed(2)} per model
+                        </p>
+                      </div>
+                      {selectedTier?.id === tier.id && (
+                        <CheckCircle2 className="h-6 w-6" style={{color: 'var(--theme-primary)'}} />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400 font-mono py-8">
+                No pricing tiers available
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPurchaseDialog(false);
+                setSelectedTier(null);
+              }}
+              className="font-mono"
+              data-testid="button-cancel-purchase"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedTier) {
+                  // Will implement Stripe checkout in backend routes task
+                  toast({
+                    title: "Coming soon",
+                    description: "Stripe payment integration will be completed in the next task.",
+                  });
+                }
+              }}
+              disabled={!selectedTier}
+              className="font-mono"
+              style={{backgroundColor: 'var(--theme-primary)'}}
+              data-testid="button-confirm-purchase"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Purchase {selectedTier ? `${selectedTier.modelCount} Models` : 'Selected Pack'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
