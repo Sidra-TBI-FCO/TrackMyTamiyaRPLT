@@ -3,19 +3,9 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { registerUserSchema, loginUserSchema, RegisterUser, LoginUser } from "@shared/schema";
 import { storage } from "./storage";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./emailService";
 
-// Simple email sending simulation (in production, use a real email service)
-function sendVerificationEmail(email: string, token: string) {
-  const baseUrl = process.env.REPLIT_DOMAINS?.split(',')[0] 
-    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` 
-    : 'http://localhost:5000';
-  
-  console.log(`📧 Verification email would be sent to: ${email}`);
-  console.log(`🔗 Verification link: ${baseUrl}/api/auth/verify-email?token=${token}`);
-  console.log(`✨ In production, integrate with SendGrid, AWS SES, or similar service`);
-}
-
-function generateVerificationToken(): string {
+function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
@@ -39,7 +29,7 @@ export function setupTraditionalAuth(app: Express) {
       const userId = crypto.randomUUID();
 
       // Generate verification token
-      const verificationToken = generateVerificationToken();
+      const verificationToken = generateToken();
 
       // Create user
       const user = await storage.upsertUser({
@@ -205,15 +195,88 @@ export function setupTraditionalAuth(app: Express) {
       }
 
       // Generate new verification token
-      const newToken = generateVerificationToken();
+      const newToken = generateToken();
       await storage.updateUserVerificationToken(user.id, newToken);
       
       // Send verification email
-      sendVerificationEmail(email, newToken);
+      await sendVerificationEmail(email, newToken);
       
       res.json({ message: "Verification email sent" });
     } catch (error) {
       console.error("Resend verification error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Request password reset endpoint
+  app.post("/api/auth/request-password-reset", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // For security, always return success even if user doesn't exist
+      // This prevents email enumeration attacks
+      if (!user) {
+        return res.json({ message: "If an account exists with this email, a password reset link has been sent" });
+      }
+
+      // Generate reset token and expiry (1 hour from now)
+      const resetToken = generateToken();
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Save token to database
+      await storage.updateResetPasswordToken(user.id, resetToken, resetExpires);
+      
+      // Send password reset email
+      await sendPasswordResetEmail(email, resetToken);
+      
+      res.json({ message: "If an account exists with this email, a password reset link has been sent" });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Reset password with token endpoint
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      // Validate password strength (basic check)
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      }
+
+      // Find user by reset token
+      const user = await storage.getUserByResetToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Check if token has expired
+      if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+        return res.status(400).json({ message: "Reset token has expired. Please request a new one" });
+      }
+
+      // Hash new password
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update user password and clear reset token
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      res.json({ message: "Password has been reset successfully. You can now log in with your new password" });
+    } catch (error) {
+      console.error("Password reset error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
