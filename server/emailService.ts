@@ -10,7 +10,7 @@ if (!EMAIL_USER || !EMAIL_APP_PASSWORD) {
 
 // Create nodemailer transporter
 const transporter = EMAIL_USER && EMAIL_APP_PASSWORD 
-  ? nodemailer.createTransporter({
+  ? nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: EMAIL_USER,
