@@ -24,6 +24,7 @@ import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
 import SettingsPage from "@/pages/settings";
+import AdminPage from "@/pages/admin";
 import AuthPage from "@/pages/auth-page";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -62,6 +63,7 @@ function Router() {
           <Route path="/photo-gallery" component={PhotoGallery} />
           <Route path="/photo-frame" component={PhotoFrame} />
           <Route path="/settings" component={SettingsPage} />
+          <Route path="/admin" component={AdminPage} />
         </>
       )}
       <Route component={NotFound} />

@@ -1,4 +1,4 @@
-import { Search, Images, Moon, Sun, Settings, Star } from "lucide-react";
+import { Search, Images, Moon, Sun, Settings, Star, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -17,6 +17,11 @@ export default function Header() {
   // Get all models for global slideshow
   const { data: models } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
+  });
+  
+  // Check if user is admin
+  const { data: user } = useQuery<{ isAdmin?: boolean }>({
+    queryKey: ["/api/auth/user"],
   });
 
   const handlePhotoFrameClick = () => {
@@ -107,6 +112,20 @@ export default function Header() {
             >
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
+            {user?.isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation("/admin")}
+                className="text-gray-600 dark:text-gray-300"
+                style={{'--hover-color': 'var(--theme-primary)'} as React.CSSProperties}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--theme-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                data-testid="button-admin-panel"
+              >
+                <Shield className="h-5 w-5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
