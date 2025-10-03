@@ -1,14 +1,11 @@
 import { Storage } from '@google-cloud/storage';
-import { Client } from '@replit/object-storage';
 import fs from 'fs';
 import path from 'path';
 
 // Initialize Google Cloud Storage
 let googleStorage: Storage | null = null;
-let replitStorage: Client | null = null;
 
 try {
-  // Parse the service account JSON from environment variable
   const serviceAccountJson = process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson) {
     const credentials = JSON.parse(serviceAccountJson);
@@ -16,33 +13,14 @@ try {
       projectId: credentials.project_id,
       credentials: credentials
     });
-    console.log('Google Cloud Storage initialized successfully');
+    console.log('✅ Google Cloud Storage initialized successfully');
   } else {
-    console.log('Google Cloud Storage credentials not found, falling back to Replit Object Storage');
+    console.error('❌ Google Cloud Storage credentials not found - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON missing');
+    throw new Error('Google Cloud Storage is required but not configured');
   }
 } catch (error) {
-  console.error('Failed to initialize Google Cloud Storage:', error);
-  console.log('Falling back to Replit Object Storage');
-}
-
-// Only initialize Replit Object Storage if we're running on Replit platform
-// (has REPLIT_DOMAINS) AND we don't have Google Cloud Storage
-const isReplitEnvironment = !!process.env.REPLIT_DOMAINS;
-const shouldUseReplitStorage = isReplitEnvironment && !googleStorage;
-
-if (shouldUseReplitStorage) {
-  try {
-    // Initialize Replit Object Storage as fallback
-    replitStorage = new Client();
-    console.log('Replit Object Storage initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize Replit Object Storage:', error);
-    if (!googleStorage) {
-      throw new Error('No storage service is available');
-    }
-  }
-} else {
-  console.log('Replit Object Storage skipped (running outside Replit platform or Google Cloud Storage available)');
+  console.error('❌ Failed to initialize Google Cloud Storage:', error);
+  throw error;
 }
 
 export interface FileStorageService {
@@ -65,7 +43,6 @@ class GoogleCloudStorage implements FileStorageService {
     const fileObj = bucket.file(filename);
     
     try {
-      // Upload to Google Cloud Storage
       await fileObj.save(fileBuffer, {
         metadata: {
           contentType: file.mimetype || 'application/octet-stream',
@@ -76,28 +53,31 @@ class GoogleCloudStorage implements FileStorageService {
       // Clean up local temp file
       fs.unlinkSync(file.path);
 
+      console.log(`✅ Uploaded file to GCS: ${filename} (${fileBuffer.length} bytes)`);
       return filename;
     } catch (error) {
-      console.error('Google Cloud Storage upload error:', error);
+      console.error('❌ Google Cloud Storage upload error:', error);
       throw new Error(`Failed to upload file to Google Cloud Storage: ${(error as any).message}`);
     }
   }
 
   async deleteFile(filename: string): Promise<void> {
-    if (!googleStorage) return;
+    if (!googleStorage) {
+      throw new Error('Google Cloud Storage not initialized');
+    }
 
     try {
       const bucket = googleStorage.bucket(this.bucketName);
       await bucket.file(filename).delete();
+      console.log(`✅ Deleted file from GCS: ${filename}`);
     } catch (error) {
-      console.error('Google Cloud Storage delete error:', error);
+      console.error('❌ Google Cloud Storage delete error:', error);
       // Don't throw error for delete failures
     }
   }
 
   getFileUrl(filename: string): string {
-    // For Google Cloud Storage, we'll serve files through our own endpoint
-    // to maintain consistent authentication and access control
+    // Serve files through our own endpoint for authentication and access control
     return `/api/files/${filename}`;
   }
 
@@ -110,235 +90,32 @@ class GoogleCloudStorage implements FileStorageService {
       const bucket = googleStorage.bucket(this.bucketName);
       const file = bucket.file(filename);
       const [buffer] = await file.download();
+      console.log(`✅ Downloaded file from GCS: ${filename} (${buffer.length} bytes)`);
       return buffer;
     } catch (error) {
-      console.error('Google Cloud Storage download error:', error);
+      console.error(`❌ Failed to download file from GCS: ${filename}`, error);
       throw new Error(`Failed to download file from Google Cloud Storage: ${(error as any).message}`);
     }
   }
-}
 
-class ReplitObjectStorage implements FileStorageService {
-  private bucketName = 'MyTamTrackPhotos';
-
-  async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
-    if (!replitStorage) {
-      throw new Error('Replit Object Storage not initialized');
-    }
-
-    const fileBuffer = fs.readFileSync(file.path);
-    
-    try {
-      // Upload to Replit Object Storage
-      await replitStorage.uploadFromBytes(filename, fileBuffer);
-
-      // Clean up local temp file
-      fs.unlinkSync(file.path);
-
-      return filename;
-    } catch (error) {
-      console.error('Replit storage upload error:', error);
-      throw new Error(`Failed to upload file to Replit storage: ${(error as any).message}`);
-    }
-  }
-
-  async deleteFile(filename: string): Promise<void> {
-    if (!replitStorage) return;
-
-    try {
-      await replitStorage.delete(filename);
-    } catch (error) {
-      console.error('Replit storage delete error:', error);
-      // Don't throw error for delete failures
-    }
-  }
-
-  getFileUrl(filename: string): string {
-    return `/api/files/${filename}`;
-  }
-
-  async downloadFile(filename: string): Promise<Buffer> {
-    if (!replitStorage) {
-      throw new Error('Replit Object Storage not initialized');
+  async listFiles(prefix?: string): Promise<string[]> {
+    if (!googleStorage) {
+      throw new Error('Google Cloud Storage not initialized');
     }
 
     try {
-      const result = await replitStorage.downloadAsBytes(filename);
-      
-      let buffer: Buffer;
-      
-      // Handle different response formats from Replit Object Storage
-      if (result && typeof result === 'object' && Array.isArray(result) && result.length > 0 && result[0].type === 'Buffer' && result[0].data) {
-        buffer = Buffer.from(result[0].data);
-      } else if (result && typeof result === 'object' && (result as any).ok && (result as any).value) {
-        const value = (result as any).value;
-        if (Buffer.isBuffer(value)) {
-          buffer = value;
-        } else if (value instanceof Uint8Array) {
-          buffer = Buffer.from(value);
-        } else if (Array.isArray(value) && value.length === 1) {
-          const bufferData = value[0];
-          if (Buffer.isBuffer(bufferData)) {
-            buffer = bufferData;
-          } else if (bufferData instanceof Uint8Array) {
-            buffer = Buffer.from(bufferData);
-          } else {
-            throw new Error('Unable to parse buffer from Replit Object Storage response');
-          }
-        } else {
-          throw new Error('Unable to parse buffer from Replit Object Storage response');
-        }
-      } else {
-        throw new Error('Invalid response format from Replit Object Storage');
-      }
-
-      return buffer;
+      const bucket = googleStorage.bucket(this.bucketName);
+      const [files] = await bucket.getFiles(prefix ? { prefix } : {});
+      return files.map(file => file.name);
     } catch (error) {
-      console.error('Replit storage download error:', error);
-      throw new Error(`Failed to download file from Replit storage: ${(error as any).message}`);
+      console.error('❌ Google Cloud Storage list files error:', error);
+      throw new Error(`Failed to list files from Google Cloud Storage: ${(error as any).message}`);
     }
   }
 }
 
-// Hybrid storage that tries Google Cloud Storage first, falls back to Replit Object Storage
-class HybridFileStorage implements FileStorageService {
-  private googleCloudStorage = new GoogleCloudStorage();
-  private replitObjectStorage = new ReplitObjectStorage();
-  
-  // Configuration setting to enable/disable Replit fallback for testing
-  private enableReplitFallback = process.env.ENABLE_REPLIT_FALLBACK !== 'false';
+// Export singleton instance
+export const fileStorage: FileStorageService = new GoogleCloudStorage();
 
-  // Constructor that allows overriding fallback setting for per-request basis
-  constructor(enableFallback?: boolean) {
-    if (enableFallback !== undefined) {
-      this.enableReplitFallback = enableFallback;
-    }
-  }
-
-  async uploadFile(file: Express.Multer.File, filename: string): Promise<string> {
-    // Always upload to Google Cloud Storage if available
-    if (googleStorage) {
-      return await this.googleCloudStorage.uploadFile(file, filename);
-    } else {
-      return await this.replitObjectStorage.uploadFile(file, filename);
-    }
-  }
-
-  async deleteFile(filename: string): Promise<void> {
-    // Try to delete from both storage systems (for migration purposes)
-    if (googleStorage) {
-      await this.googleCloudStorage.deleteFile(filename);
-    }
-    if (this.enableReplitFallback && replitStorage) {
-      await this.replitObjectStorage.deleteFile(filename);
-    }
-  }
-
-  getFileUrl(filename: string): string {
-    // Always use the same URL format for consistency
-    return `/api/files/${filename}`;
-  }
-
-  async downloadFile(filename: string): Promise<Buffer> {
-    // Try Google Cloud Storage first, optionally fall back to Replit Object Storage
-    if (googleStorage) {
-      try {
-        return await this.googleCloudStorage.downloadFile(filename);
-      } catch (error) {
-        if (this.enableReplitFallback && replitStorage) {
-          console.log(`File not found in Google Cloud Storage, trying Replit Object Storage: ${filename}`);
-          return await this.replitObjectStorage.downloadFile(filename);
-        } else {
-          console.log(`File not found in Google Cloud Storage and Replit fallback is disabled: ${filename}`);
-          throw error;
-        }
-      }
-    } else {
-      if (this.enableReplitFallback && replitStorage) {
-        return await this.replitObjectStorage.downloadFile(filename);
-      } else {
-        throw new Error('No storage systems available');
-      }
-    }
-  }
-
-  // Migration helper methods
-  async listReplitFiles(): Promise<string[]> {
-    if (!replitStorage) return [];
-    
-    try {
-      // Replit Object Storage doesn't have a native list function
-      // We'll need to get filenames from the database
-      return [];
-    } catch (error) {
-      console.error('Failed to list Replit files:', error);
-      return [];
-    }
-  }
-
-  async migrateFileToGoogleCloud(filename: string): Promise<boolean> {
-    if (!googleStorage || !replitStorage) {
-      console.log('Migration skipped: Missing storage clients');
-      return false;
-    }
-
-    try {
-      console.log(`Migrating file: ${filename}`);
-      
-      // Download from Replit Object Storage
-      const buffer = await this.replitObjectStorage.downloadFile(filename);
-      
-      // Upload to Google Cloud Storage
-      const bucket = googleStorage.bucket('trackmyrc-bucket');
-      const file = bucket.file(filename);
-      
-      await file.save(buffer, {
-        metadata: {
-          contentType: this.getContentTypeFromFilename(filename),
-        },
-        resumable: false
-      });
-
-      console.log(`✅ Successfully migrated: ${filename}`);
-      return true;
-    } catch (error) {
-      console.error(`❌ Failed to migrate ${filename}:`, error);
-      return false;
-    }
-  }
-
-  private getContentTypeFromFilename(filename: string): string {
-    const ext = filename.toLowerCase().split('.').pop();
-    const contentTypes: { [key: string]: string } = {
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'png': 'image/png',
-      'gif': 'image/gif',
-      'webp': 'image/webp',
-      'mp3': 'audio/mpeg',
-      'wav': 'audio/wav',
-      'pdf': 'application/pdf'
-    };
-    return contentTypes[ext || ''] || 'application/octet-stream';
-  }
-}
-
-// Use hybrid storage to support migration from Replit to Google Cloud Storage
-export const fileStorage: FileStorageService = new HybridFileStorage();
-
-// Export the class for per-request usage
-export { HybridFileStorage };
-
-// Log which storage system is being used
-if (googleStorage) {
-  if (replitStorage) {
-    const fallbackStatus = process.env.ENABLE_REPLIT_FALLBACK !== 'false' ? '(fallback enabled)' : '(fallback disabled)';
-    console.log(`File storage: Google Cloud Storage (primary) with Replit Object Storage ${fallbackStatus}`);
-  } else {
-    console.log('File storage: Google Cloud Storage only');
-  }
-} else if (replitStorage) {
-  console.log('File storage: Replit Object Storage only');
-} else {
-  console.log('File storage: No storage systems available');
-}
+// Export the class for testing purposes
+export { GoogleCloudStorage };

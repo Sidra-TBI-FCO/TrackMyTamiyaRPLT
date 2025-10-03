@@ -575,21 +575,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File serving endpoint for Google Cloud Storage and Replit Object Storage
+  // File serving endpoint for Google Cloud Storage
   app.get('/api/files/:filename', async (req, res) => {
     try {
       const { filename } = req.params;
+      console.log(`📥 Serving file from GCS: ${filename}`);
       
-      // Check user's fallback preference from query parameter
-      const userFallbackPreference = req.query.fallback === 'true';
-      console.log(`Attempting to serve file: ${filename}, fallback: ${userFallbackPreference}`);
-      
-      // Create storage instance with user's preference
-      const { HybridFileStorage } = await import('./storage-service');
-      const userStorage = new HybridFileStorage(userFallbackPreference);
-      
-      // Use the user-configured storage service to download the file
-      const buffer = await userStorage.downloadFile(filename);
+      // Download file from Google Cloud Storage
+      const buffer = await fileStorage.downloadFile(filename);
       
       // Set appropriate content type based on file extension
       const ext = path.extname(filename).toLowerCase();
@@ -618,16 +611,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Accept-Ranges', 'bytes');
       res.setHeader('Content-Length', buffer.length.toString());
       
-      console.log(`Successfully serving file: ${filename}, type: ${contentType}, size: ${buffer.length} bytes, fallback: ${userFallbackPreference}`);
       res.send(buffer);
     } catch (error: any) {
-      console.error('File serving error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        filename: req.params.filename,
-        fallbackEnabled: req.query.fallback
-      });
+      console.error(`❌ File serving error for ${req.params.filename}:`, error.message);
       res.status(404).json({ message: 'File not found', error: error.message });
     }
   });
