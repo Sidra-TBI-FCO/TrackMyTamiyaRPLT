@@ -3,13 +3,19 @@ import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
+// Helper function to get user ID from either auth type
+function getUserId(req: any): string {
+  return req.user.claims?.sub || req.user.id;
+}
+
 export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized - Please log in" });
   }
 
   const user = req.user as any;
-  const userId = user?.id;
+  const userId = getUserId(req);
+  
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized - Invalid user" });
   }
