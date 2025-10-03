@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, HardDrive } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme, getAppSettings, saveAppSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,68 @@ import { useTheme } from "@/lib/theme-context";
 import { exportModelsToCSV, exportHopUpsToCSV } from "@/lib/export-utils";
 import { useQuery } from "@tanstack/react-query";
 import { ModelWithRelations, HopUpPart } from "@/types";
+
+// Storage Status Component
+function StorageStatus() {
+  const { data: status, isLoading, error } = useQuery({
+    queryKey: ['/api/storage/status'],
+    refetchInterval: 30000, // Check every 30 seconds
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+        <div>
+          <p className="text-sm font-mono font-medium">Checking storage...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">Verifying connection to Google Cloud Storage</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !status || status.status === 'error') {
+    const errorMessage = status?.message || (error as any)?.message || 'Unable to connect to storage';
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center space-x-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-mono font-medium text-red-900 dark:text-red-100">Storage Error</p>
+            <p className="text-xs text-red-700 dark:text-red-300 font-mono mt-1">{errorMessage}</p>
+          </div>
+        </div>
+        <div className="text-xs text-gray-600 dark:text-gray-400 font-mono space-y-1 pl-4">
+          <p>• Check that GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON is configured</p>
+          <p>• Verify the service account has access to bucket: trackmyrc-bucket</p>
+          <p>• Ensure the bucket exists in Google Cloud Storage</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center space-x-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-mono font-medium text-green-900 dark:text-green-100">Storage Connected</p>
+          <p className="text-xs text-green-700 dark:text-green-300 font-mono mt-1">{status.message}</p>
+        </div>
+      </div>
+      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono text-gray-600 dark:text-gray-400">Provider:</span>
+          <span className="text-xs font-mono font-medium">{status.provider}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono text-gray-600 dark:text-gray-400">Bucket:</span>
+          <span className="text-xs font-mono font-medium">{status.bucket}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
@@ -50,7 +112,7 @@ export default function SettingsPage() {
     saveAppSettings({ [key]: value });
     toast({
       title: "Settings saved",
-      description: `${key === 'enableReplitFallback' ? 'Storage settings' : 'App settings'} have been updated.`,
+      description: "App settings have been updated.",
     });
   };
 
@@ -279,49 +341,16 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Storage Settings */}
+      {/* Storage Status */}
       <Card className="bg-white dark:bg-gray-800">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 text-lg font-mono">
             <Database className="h-5 w-5" />
-            <span>Storage Settings</span>
+            <span>Storage Status</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Replit Storage Fallback */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label className="text-sm font-mono font-medium flex items-center space-x-2">
-                <HardDrive className="h-4 w-4" />
-                <span>Enable Replit Storage Fallback</span>
-              </Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                When enabled, photos will fallback to Replit storage if not found in Google Cloud Storage. 
-                Disable to test Google Cloud Storage only.
-              </p>
-            </div>
-            <Switch
-              checked={appSettings.enableReplitFallback}
-              onCheckedChange={(checked) => updateAppSetting('enableReplitFallback', checked)}
-            />
-          </div>
-
-          {/* Storage Status Info */}
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-mono font-medium">Primary: Google Cloud Storage</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${appSettings.enableReplitFallback ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
-              <span className="text-sm font-mono">
-                Fallback: Replit Object Storage ({appSettings.enableReplitFallback ? 'Enabled' : 'Disabled'})
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-mono mt-2">
-              New uploads always go to Google Cloud Storage. Existing photos have been migrated from Replit storage.
-            </p>
-          </div>
+        <CardContent>
+          <StorageStatus />
         </CardContent>
       </Card>
 

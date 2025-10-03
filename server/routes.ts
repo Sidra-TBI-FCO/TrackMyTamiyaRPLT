@@ -618,27 +618,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Migration route (admin only - be careful!)
-  app.post('/api/migrate-storage', async (req, res) => {
+  // Storage status check endpoint
+  app.get('/api/storage/status', async (req, res) => {
     try {
-      console.log("🚀 Starting storage migration...");
+      const { GoogleCloudStorage } = await import('./storage-service');
+      const gcsStorage = new GoogleCloudStorage();
       
-      // Import the migration function
-      const { migrateAllFiles } = await import('./migrate-storage');
+      // Try to list files to verify connection works
+      await gcsStorage.listFiles();
       
-      // Run the migration
-      await migrateAllFiles();
-      
-      res.json({ 
-        success: true, 
-        message: "Migration completed successfully" 
+      res.json({
+        status: 'ok',
+        provider: 'Google Cloud Storage',
+        bucket: 'trackmyrc-bucket',
+        message: 'Storage is connected and working properly'
       });
     } catch (error: any) {
-      console.error("Migration failed:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Migration failed", 
-        error: error.message 
+      console.error('Storage status check failed:', error);
+      res.status(500).json({
+        status: 'error',
+        provider: 'Google Cloud Storage',
+        bucket: 'trackmyrc-bucket',
+        message: error.message || 'Storage connection failed',
+        error: error.message
       });
     }
   });
