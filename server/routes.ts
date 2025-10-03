@@ -14,6 +14,7 @@ import { db } from "./db";
 import { models, photos, buildLogEntries } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
+import { logUserActivity } from "./activityLogger";
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -149,6 +150,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const modelData = insertModelSchema.parse({ ...req.body, userId });
       const model = await storage.createModel(modelData);
+      
+      // Log model creation activity
+      await logUserActivity(userId, 'model_created', { 
+        modelId: model.id,
+        modelName: model.name,
+        itemNumber: model.itemNumber
+      }, req);
+      
       res.status(201).json(model);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -180,10 +189,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const id = parseInt(req.params.id);
+      
+      // Get model details before deletion for logging
+      const model = await storage.getModel(id, userId);
+      
       const deleted = await storage.deleteModel(id, userId);
       if (!deleted) {
         return res.status(404).json({ message: 'Model not found' });
       }
+      
+      // Log model deletion activity
+      if (model) {
+        await logUserActivity(userId, 'model_deleted', { 
+          modelId: id,
+          modelName: model.name,
+          itemNumber: model.itemNumber
+        }, req);
+      }
+      
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
