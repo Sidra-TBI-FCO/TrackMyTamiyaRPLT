@@ -14,34 +14,24 @@ export function setupGoogleAuth(app: Express) {
   }
 
   console.log("Setting up Google OAuth authentication...");
-
-  // Determine the callback URL based on environment
+  
+  // Determine callback URL
+  // Priority: OAUTH_CALLBACK_URL > REPLIT_DOMAINS > localhost
   let callbackURL: string;
   
   if (process.env.OAUTH_CALLBACK_URL) {
-    // Explicit callback URL (for Google Cloud Run and other deployments)
     callbackURL = process.env.OAUTH_CALLBACK_URL;
-    console.log(`Google OAuth callback URL (explicit): ${callbackURL}`);
-  } else if (process.env.K_SERVICE) {
-    // Google Cloud Run deployment detected
-    // Note: You need to set OAUTH_CALLBACK_URL env var with your actual Cloud Run URL
-    console.warn('⚠️  Running on Google Cloud Run but OAUTH_CALLBACK_URL not set!');
-    console.warn('⚠️  Please add OAUTH_CALLBACK_URL environment variable to your Cloud Run service');
-    console.warn('⚠️  Example: https://trackmyrc-XXXXX-uc.a.run.app/api/auth/google/callback');
-    callbackURL = 'http://localhost:5000/api/auth/google/callback'; // Fallback (will fail)
+    console.log(`✅ Using explicit OAUTH_CALLBACK_URL: ${callbackURL}`);
   } else if (process.env.REPLIT_DOMAINS) {
-    // Replit deployment
-    const domain = process.env.REPLIT_DOMAINS.split(',')[0];
-    const protocol = domain.includes('localhost') ? 'http' : 'https';
-    callbackURL = `${protocol}://${domain}/api/auth/google/callback`;
-    console.log(`Google OAuth callback URL (Replit): ${callbackURL}`);
+    const domains = process.env.REPLIT_DOMAINS.split(',');
+    // Find first non-localhost domain
+    const domain = domains.find(d => !d.includes('localhost')) || domains[0];
+    callbackURL = `https://${domain}/api/auth/google/callback`;
+    console.log(`✅ Using REPLIT_DOMAINS: ${callbackURL}`);
   } else {
-    // Local development
     callbackURL = 'http://localhost:5000/api/auth/google/callback';
-    console.log(`Google OAuth callback URL (local dev): ${callbackURL}`);
+    console.log(`✅ Using localhost: ${callbackURL}`);
   }
-  
-  console.log(`🔐 Google OAuth callback configured: ${callbackURL}`);
 
   passport.use(new GoogleStrategy({
     clientID: clientId,
