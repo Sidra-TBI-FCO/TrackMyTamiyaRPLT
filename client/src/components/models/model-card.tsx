@@ -111,9 +111,22 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
         </div>
 
         {/* Item number - fixed height */}
-        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-3">
+        <p className="text-sm font-mono text-gray-500 dark:text-gray-400 mb-2">
           Item #{model.itemNumber}
         </p>
+
+        {/* Chassis type - prominent display */}
+        {model.chassis && (
+          <div className="mb-3">
+            <Badge 
+              className="font-mono text-sm px-3 py-1 text-white font-semibold"
+              style={{backgroundColor: 'var(--theme-primary)'}}
+              data-testid={`badge-chassis-${model.id}`}
+            >
+              {model.chassis}
+            </Badge>
+          </div>
+        )}
 
         {/* Tags section - flexible content but consistent spacing */}
         <div className="flex flex-wrap gap-1 mb-3 min-h-[28px]">
