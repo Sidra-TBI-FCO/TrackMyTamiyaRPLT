@@ -14,8 +14,16 @@ import { useQuery } from "@tanstack/react-query";
 import { ModelWithRelations, HopUpPart } from "@/types";
 
 // Storage Status Component
+interface StorageStatusResponse {
+  status: 'ok' | 'error';
+  provider: string;
+  bucket: string;
+  message: string;
+  error?: string;
+}
+
 function StorageStatus() {
-  const { data: status, isLoading, error } = useQuery({
+  const { data: status, isLoading, error } = useQuery<StorageStatusResponse>({
     queryKey: ['/api/storage/status'],
     refetchInterval: 30000, // Check every 30 seconds
   });
