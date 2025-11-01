@@ -429,9 +429,13 @@ export class DatabaseStorage implements IStorage {
     
     if (!model) return [];
 
-    return await db.select().from(hopUpParts)
-      .where(eq(hopUpParts.modelId, modelId))
-      .orderBy(desc(hopUpParts.createdAt));
+    return await db.query.hopUpParts.findMany({
+      where: eq(hopUpParts.modelId, modelId),
+      with: {
+        photo: true,
+      },
+      orderBy: desc(hopUpParts.createdAt),
+    });
   }
 
   async createHopUpPart(part: InsertHopUpPart): Promise<HopUpPart> {

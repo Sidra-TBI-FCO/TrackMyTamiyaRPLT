@@ -12,11 +12,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, ExternalLink } from "lucide-react";
+import { Edit, Trash2, ExternalLink, ImageIcon } from "lucide-react";
 import { HopUpPart } from "@/types";
 import { SiAmazon, SiEbay } from "react-icons/si";
 import { Globe } from "lucide-react";
 import { useState } from "react";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface HopUpCardProps {
   part: HopUpPart;
@@ -125,6 +126,21 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
     <>
       <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
         <CardContent className="p-4">
+          {/* Product Photo */}
+          {part.photo && (
+            <div 
+              className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => onImageClick?.(part)}
+            >
+              <img
+                src={addStorageFallbackParam(part.photo.url)}
+                alt={part.name}
+                className="w-full h-48 object-contain p-2"
+                loading="lazy"
+              />
+            </div>
+          )}
+          
           {/* Mobile: Full detailed layout */}
           <div className="block lg:hidden">
             {/* Header */}
