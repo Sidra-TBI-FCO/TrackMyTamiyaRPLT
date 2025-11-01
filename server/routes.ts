@@ -720,7 +720,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const parts = await storage.getHopUpParts(modelId, userId);
-      console.log('🔧 Hop-up parts:', parts.map(p => ({ id: p.id, name: p.name, photoId: p.photoId, hasPhoto: !!p.photo })));
+      console.log('🔧 Hop-up parts:', JSON.stringify(parts, null, 2));
+      // Disable cache to force fresh data
+      res.setHeader('Cache-Control', 'no-store');
       res.json(parts);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
