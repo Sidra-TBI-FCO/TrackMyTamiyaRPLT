@@ -4,7 +4,7 @@ import {
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
   type BuildLogEntry, type InsertBuildLogEntry, type BuildLogEntryWithPhotos,
-  type HopUpPart, type InsertHopUpPart,
+  type HopUpPart, type InsertHopUpPart, type HopUpPartWithPhoto,
   type BuildLogPhoto
 } from "@shared/schema";
 import { db } from "./db";
@@ -44,7 +44,7 @@ export interface IStorage {
   addPhotosToEntry(entryId: number, photoIds: number[]): Promise<BuildLogPhoto[]>;
 
   // Hop-up parts methods
-  getHopUpParts(modelId: number, userId: string): Promise<HopUpPart[]>;
+  getHopUpParts(modelId: number, userId: string): Promise<HopUpPartWithPhoto[]>;
   createHopUpPart(part: InsertHopUpPart): Promise<HopUpPart>;
   updateHopUpPart(id: number, userId: string, part: Partial<InsertHopUpPart>): Promise<HopUpPart | undefined>;
   deleteHopUpPart(id: number, userId: string): Promise<boolean>;
@@ -424,7 +424,7 @@ export class DatabaseStorage implements IStorage {
     return await db.insert(buildLogPhotos).values(values).returning();
   }
 
-  async getHopUpParts(modelId: number, userId: string): Promise<HopUpPart[]> {
+  async getHopUpParts(modelId: number, userId: string): Promise<HopUpPartWithPhoto[]> {
     // Verify model belongs to user
     const model = await db.query.models.findFirst({
       where: and(eq(models.id, modelId), eq(models.userId, userId)),
