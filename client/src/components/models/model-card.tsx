@@ -71,8 +71,10 @@ export default function ModelCard({ model, onAddPhoto }: ModelCardProps) {
     },
   });
 
-  const boxArtPhoto = model.photos.find(p => p.isBoxArt) || model.photos[0];
-  const photoCount = model.photos.length;
+  // Filter out hop-up product photos
+  const modelPhotosOnly = model.photos.filter(p => p.caption !== 'Product photo');
+  const boxArtPhoto = modelPhotosOnly.find(p => p.isBoxArt) || modelPhotosOnly[0];
+  const photoCount = modelPhotosOnly.length;
   const hopUpCount = model.hopUpParts.length;
 
 

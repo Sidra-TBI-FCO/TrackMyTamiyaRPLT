@@ -291,16 +291,18 @@ export default function Home() {
       {/* Photo Slideshow */}
       <PhotoSlideshow
         photos={models?.flatMap(model => 
-          model.photos.map(photo => ({
-            ...photo,
-            isBoxArt: photo.isBoxArt || false,
-            model: {
-              id: model.id,
-              name: model.name,
-              chassisType: model.chassis,
-              tags: model.tags || []
-            }
-          }))
+          model.photos
+            .filter(photo => photo.caption !== 'Product photo') // Exclude hop-up product photos
+            .map(photo => ({
+              ...photo,
+              isBoxArt: photo.isBoxArt || false,
+              model: {
+                id: model.id,
+                name: model.name,
+                chassisType: model.chassis,
+                tags: model.tags || []
+              }
+            }))
         ) || []}
         isOpen={isSlideshowOpen}
         onClose={closeSlideshow}
