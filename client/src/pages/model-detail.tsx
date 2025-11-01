@@ -214,11 +214,14 @@ export default function ModelDetail() {
     );
   }
 
-  const boxArtPhoto = model?.photos?.find(p => p.isBoxArt) || model?.photos?.[0];
-  const otherPhotos = model?.photos?.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id) || [];
+  // Filter out hop-up product photos (they're just for display in hop-up cards)
+  const modelPhotosOnly = model?.photos?.filter(p => p.caption !== 'Product photo') || [];
   
-  // Prepare photos for slideshow with model data
-  const slideshowPhotos = model?.photos?.map(photo => ({
+  const boxArtPhoto = modelPhotosOnly?.find(p => p.isBoxArt) || modelPhotosOnly?.[0];
+  const otherPhotos = modelPhotosOnly?.filter(p => !p.isBoxArt || p.id !== boxArtPhoto?.id) || [];
+  
+  // Prepare photos for slideshow with model data (excluding hop-up product photos)
+  const slideshowPhotos = modelPhotosOnly?.map(photo => ({
     ...photo,
     isBoxArt: photo.isBoxArt || false,
     model: {
@@ -230,9 +233,11 @@ export default function ModelDetail() {
   })) || [];
 
   const handlePhotoClick = (photoId: number) => {
-    const photoIndex = model?.photos.findIndex(p => p.id === photoId) || 0;
-    setSlideshowStartIndex(photoIndex);
-    setIsSlideshowOpen(true);
+    const photoIndex = modelPhotosOnly?.findIndex(p => p.id === photoId);
+    if (photoIndex !== undefined && photoIndex >= 0) {
+      setSlideshowStartIndex(photoIndex);
+      setIsSlideshowOpen(true);
+    }
   };
 
   return (
@@ -1030,7 +1035,7 @@ export default function ModelDetail() {
 
       <BoxArtSelector
         modelId={model.id}
-        photos={model.photos.map(photo => ({
+        photos={modelPhotosOnly.map(photo => ({
           ...photo,
           isBoxArt: photo.isBoxArt || false
         }))}
