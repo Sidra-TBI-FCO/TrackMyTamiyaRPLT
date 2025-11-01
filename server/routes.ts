@@ -462,6 +462,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`Successfully uploaded ${photos.length} photos`);
+      
+      // Log activity for photo upload
+      await logUserActivity(userId, 'photo_uploaded', {
+        modelId,
+        photoCount: photos.length,
+        photoIds: photos.map(p => p.id)
+      }, req);
+      
       res.status(201).json(photos);
     } catch (error: any) {
       console.error('Photo upload error:', error);

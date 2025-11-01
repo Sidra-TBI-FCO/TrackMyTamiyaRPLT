@@ -6,6 +6,7 @@ import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
 import AddModelDialogDesktop from "@/components/models/add-model-dialog-desktop";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
+import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,13 +26,16 @@ export default function Models() {
   const [filterTag, setFilterTag] = useState<string>("all");
   const [isAddModelOpen, setIsAddModelOpen] = useState(false);
   const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+  const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
+  const [selectedModelForPhoto, setSelectedModelForPhoto] = useState<number | null>(null);
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
   });
 
   const handleAddPhoto = (modelId: number) => {
-    console.log(`Adding photo to model ${modelId}`);
+    setSelectedModelForPhoto(modelId);
+    setIsAddPhotoOpen(true);
   };
 
   // Get all unique tags from models for filtering
@@ -419,6 +423,15 @@ export default function Models() {
                   isOpen={isSlideshowOpen}
                   onClose={() => setIsSlideshowOpen(false)}
                 />
+
+                {/* Add Photo Dialog */}
+                {selectedModelForPhoto && (
+                  <AddPhotoDialog
+                    modelId={selectedModelForPhoto}
+                    open={isAddPhotoOpen}
+                    onOpenChange={setIsAddPhotoOpen}
+                  />
+                )}
               </>
             );
           })()}
