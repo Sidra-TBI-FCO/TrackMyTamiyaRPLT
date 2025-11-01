@@ -463,6 +463,9 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         color: part.color || "",
         material: part.material || "",
       });
+      // Clear photo state when editing (existing parts don't show upload preview)
+      setProductPhoto(null);
+      setProductPhotoPreview(null);
     } else {
       form.reset({
         modelId,
@@ -482,8 +485,19 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
         color: "",
         material: "",
       });
+      // Clear photo state when creating new part
+      setProductPhoto(null);
+      setProductPhotoPreview(null);
     }
   }, [part, modelId, form]);
+
+  // Clear photo state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setProductPhoto(null);
+      setProductPhotoPreview(null);
+    }
+  }, [open]);
 
   // Watch Official Tamiya Part toggle and handle manufacturer logic
   useEffect(() => {
