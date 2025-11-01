@@ -773,7 +773,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const part = await storage.createHopUpPart(partData);
-      res.status(201).json(part);
+      
+      // Fetch the part with photo relation to return complete data
+      const partWithPhoto = await db.query.hopUpParts.findFirst({
+        where: eq(hopUpParts.id, part.id),
+        with: {
+          photo: true,
+        },
+      });
+      
+      res.status(201).json(partWithPhoto);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
@@ -848,7 +857,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!part) {
         return res.status(404).json({ message: 'Hop-up part not found' });
       }
-      res.json(part);
+      
+      // Fetch the part with photo relation to return complete data
+      const partWithPhoto = await db.query.hopUpParts.findFirst({
+        where: eq(hopUpParts.id, id),
+        with: {
+          photo: true,
+        },
+      });
+      
+      res.json(partWithPhoto);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
