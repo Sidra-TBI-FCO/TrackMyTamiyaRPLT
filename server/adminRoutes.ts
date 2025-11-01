@@ -9,8 +9,13 @@ import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAdmin, getClientIP } from "./adminMiddleware";
 import { sendPasswordResetEmail } from "./emailService";
 import crypto from "crypto";
+import multer from "multer";
+import { fileStorage } from "./storage-service";
 
 const router = Router();
+
+// Multer configuration for screenshot uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Helper function to get user ID from authenticated user
 function getUserId(req: any): string {
@@ -449,6 +454,36 @@ router.get("/purchases", requireAdmin, async (req, res) => {
 });
 
 // Screenshot Management Routes
+
+// POST /api/admin/upload-screenshot - Upload screenshot file
+router.post("/upload-screenshot", requireAdmin, upload.single("screenshot"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    
+    const adminId = getUserId(req);
+    const filename = `screenshot-${Date.now()}-${Math.random().toString(36).substring(7)}.${req.file.originalname.split('.').pop()}`;
+    
+    // Upload to Replit Object Storage
+    const savedFilename = await fileStorage.uploadFile(req.file as any, filename);
+    const url = fileStorage.getFileUrl(savedFilename);
+    
+    // Log the action
+    await logAdminAction(
+      adminId,
+      "upload_screenshot",
+      null,
+      { filename, url },
+      getClientIP(req)
+    );
+    
+    res.json({ url, filename });
+  } catch (error: any) {
+    console.error("Screenshot upload error:", error);
+    res.status(500).json({ message: error.message || "Failed to upload screenshot" });
+  }
+});
 
 // GET /api/admin/screenshots - Get all screenshots
 router.get("/screenshots", requireAdmin, async (req, res) => {

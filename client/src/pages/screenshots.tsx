@@ -1,70 +1,34 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Download, Smartphone, Monitor, Calendar, Camera, Settings, BarChart3, Wrench, Star } from "lucide-react";
+import { ArrowLeft, Smartphone, Monitor, Star } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-// Real Screenshot Capture Function
-function CaptureScreenshot({ route, title }: { route: string; title: string }) {
-  return (
-    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-      <div className="text-muted-foreground mb-2">{title}</div>
-      <div className="text-sm text-muted-foreground mb-4">
-        Real screenshots coming soon - capturing from live app
-      </div>
-      <div className="text-xs text-blue-600 dark:text-blue-400">
-        Route: {route}
-      </div>
-    </div>
-  );
+interface Screenshot {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string;
+  imageUrl: string;
+  route: string | null;
+  sortOrder: number;
+  isActive: boolean;
 }
 
 export default function Screenshots() {
-  const [selectedCategory, setSelectedCategory] = useState<"all" | "mobile" | "desktop">("all");
+  const [selectedCategory, setSelectedCategory] = useState<"all" | "mobile" | "desktop" | "admin">("all");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const screenshots = [
-    {
-      title: "Dashboard Overview",
-      description: "Main dashboard showing collection statistics and recent activity",
-      category: "desktop",
-      route: "/home"
-    },
-    {
-      title: "Model Management",
-      description: "Comprehensive model catalog with filtering and search",
-      category: "desktop", 
-      route: "/models"
-    },
-    {
-      title: "Photo Gallery",
-      description: "Organized photo galleries with lightbox viewing",
-      category: "mobile",
-      route: "/photo-gallery"
-    },
-    {
-      title: "Build Logging",
-      description: "Timeline-based build documentation with voice notes",
-      category: "mobile",
-      route: "/build-logs"
-    },
-    {
-      title: "Hop-Up Parts",
-      description: "Performance parts tracking and cost analysis",
-      category: "desktop",
-      route: "/parts"
-    },
-    {
-      title: "Mobile Experience",
-      description: "Touch-optimized interface for on-the-go management",
-      category: "mobile",
-      route: "/models"
-    }
-  ];
+  const { data: screenshots = [], isLoading } = useQuery<Screenshot[]>({
+    queryKey: ["/api/screenshots"],
+  });
 
+  const activeScreenshots = screenshots.filter(s => s.isActive);
   const filteredScreenshots = selectedCategory === "all" 
-    ? screenshots 
-    : screenshots.filter(s => s.category === selectedCategory);
+    ? activeScreenshots 
+    : activeScreenshots.filter(s => s.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,38 +82,88 @@ export default function Screenshots() {
       {/* Screenshots Grid */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredScreenshots.map((screenshot, index) => (
-              <div key={index} className="group">
-                <div className="relative overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-blue-600 transition-colors">
-                  <div className="aspect-[4/3] bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-                    <CaptureScreenshot route={screenshot.route} title={screenshot.title} />
-                  </div>
-                  <Badge 
-                    className={`absolute top-3 right-3 ${
-                      screenshot.category === "mobile" 
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
-                        : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
-                    }`}
-                  >
-                    {screenshot.category === "mobile" ? "Mobile" : "Desktop"}
-                  </Badge>
-                </div>
-                <div className="mt-4">
-                  <h3 className="font-semibold text-lg mb-2">{screenshot.title}</h3>
-                  <p className="text-sm text-muted-foreground">{screenshot.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredScreenshots.length === 0 && (
+          {isLoading ? (
             <div className="text-center py-16">
-              <p className="text-muted-foreground">No screenshots found for the selected category.</p>
+              <p className="text-muted-foreground">Loading screenshots...</p>
             </div>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredScreenshots.map((screenshot) => (
+                  <div key={screenshot.id} className="group" data-testid={`screenshot-${screenshot.id}`}>
+                    <div 
+                      className="relative overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-[var(--theme-primary)] dark:hover:border-[var(--theme-secondary)] transition-colors cursor-pointer"
+                      onClick={() => setSelectedImage(screenshot.imageUrl)}
+                    >
+                      <div className="aspect-[4/3] bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+                        <img 
+                          src={screenshot.imageUrl} 
+                          alt={screenshot.title}
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                      <Badge 
+                        className={`absolute top-3 right-3 ${
+                          screenshot.category === "mobile" 
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
+                            : screenshot.category === "admin"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300"
+                            : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
+                        }`}
+                      >
+                        {screenshot.category === "mobile" ? (
+                          <>
+                            <Smartphone className="w-3 h-3 mr-1" />
+                            Mobile
+                          </>
+                        ) : screenshot.category === "admin" ? (
+                          "Admin"
+                        ) : (
+                          <>
+                            <Monitor className="w-3 h-3 mr-1" />
+                            Desktop
+                          </>
+                        )}
+                      </Badge>
+                    </div>
+                    <div className="mt-4">
+                      <h3 className="font-semibold text-lg mb-2">{screenshot.title}</h3>
+                      {screenshot.description && (
+                        <p className="text-sm text-muted-foreground">{screenshot.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filteredScreenshots.length === 0 && !isLoading && (
+                <div className="text-center py-16">
+                  <p className="text-muted-foreground">
+                    {selectedCategory === "all" 
+                      ? "No screenshots available yet." 
+                      : "No screenshots found for the selected category."}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
+
+      {/* Lightbox */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <img 
+            src={selectedImage} 
+            alt="Screenshot"
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      )}
 
       {/* Features Highlight */}
       <section className="py-20 bg-gray-50 dark:bg-gray-900/50">

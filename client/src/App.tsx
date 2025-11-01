@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Features from "@/pages/features";
 import Screenshots from "@/pages/screenshots";
+import PricingPage from "@/pages/pricing";
 import DownloadPage from "@/pages/download";
 import DisclaimerPage from "@/pages/disclaimer";
 
@@ -43,6 +44,7 @@ function Router() {
       {/* Marketing pages - always accessible */}
       <Route path="/features" component={Features} />
       <Route path="/screenshots" component={Screenshots} />
+      <Route path="/pricing" component={PricingPage} />
       <Route path="/download" component={DownloadPage} />
       <Route path="/disclaimer" component={DisclaimerPage} />
       <Route path="/auth" component={AuthPage} />
