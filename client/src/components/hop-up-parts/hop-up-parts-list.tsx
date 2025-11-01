@@ -10,7 +10,7 @@ import HopUpPartDialog from "./hop-up-part-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, ExternalLink, CheckCircle2, Clock, X, Filter, Edit, Trash2 } from "lucide-react";
 import { SiTamiya, SiAmazon, SiEbay } from "react-icons/si";
-import type { HopUpPart } from "@shared/schema";
+import type { HopUpPartWithPhoto } from "@shared/schema";
 
 interface HopUpPartsListProps {
   modelId: number;
@@ -18,7 +18,7 @@ interface HopUpPartsListProps {
 
 export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPart, setEditingPart] = useState<HopUpPart | null>(null);
+  const [editingPart, setEditingPart] = useState<HopUpPartWithPhoto | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -29,9 +29,9 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
 
   const { data: parts = [], isLoading } = useQuery({
     queryKey: ["/api/models", modelId, "hop-up-parts"],
-    queryFn: async (): Promise<HopUpPart[]> => {
+    queryFn: async (): Promise<HopUpPartWithPhoto[]> => {
       const response = await fetch(`/api/models/${modelId}/hop-up-parts`);
-      if (!response.ok) throw new Error("Failed to fetch hop-up parts");
+      if (!response.ok) throw new Error("Failed to fetch hop-up-parts");
       return response.json();
     },
   });

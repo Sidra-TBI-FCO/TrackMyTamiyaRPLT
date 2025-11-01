@@ -53,19 +53,6 @@ export default function ModelDetail() {
     enabled: !!id,
   });
 
-  // DEBUG: Log hop-up parts data
-  useEffect(() => {
-    if (model?.hopUpParts) {
-      console.log('🔧 Model Detail - Hop-up parts received:', model.hopUpParts.map(p => ({
-        id: p.id,
-        name: p.name,
-        photoId: p.photoId,
-        hasPhoto: !!p.photo,
-        photoData: p.photo
-      })));
-    }
-  }, [model?.hopUpParts]);
-
   // Fetch build log entries for this model
   const { data: buildLogEntries, isLoading: isLoadingBuildLog } = useQuery<BuildLogEntryWithPhotos[]>({
     queryKey: [`/api/models/${id}/build-log-entries`],
