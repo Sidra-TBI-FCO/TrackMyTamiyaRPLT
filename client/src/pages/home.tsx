@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Camera, Mic, Play, Search } from "lucide-react";
+import { Plus, Camera, Mic, Play, Search, Package, ShoppingCart, Trash2, Image as ImageIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { ModelWithRelations } from "@/types";
 import CollectionStats from "@/components/stats/collection-stats";
@@ -14,6 +14,15 @@ import { useState } from "react";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import { useSlideshow } from "@/lib/slideshow-context";
 import DeploymentNotice from "@/components/ui/deployment-notice";
+import { formatDistanceToNow } from "date-fns";
+
+type ActivityLog = {
+  id: number;
+  userId: string;
+  activityType: string;
+  details: any;
+  createdAt: string;
+};
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -25,6 +34,41 @@ export default function Home() {
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
   });
+
+  const { data: activities, isLoading: isActivitiesLoading, isError: isActivitiesError } = useQuery<ActivityLog[]>({
+    queryKey: ["/api/recent-activity"],
+  });
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'model_created':
+        return <Package className="h-5 w-5 text-green-600" />;
+      case 'model_deleted':
+        return <Trash2 className="h-5 w-5 text-red-600" />;
+      case 'photo_uploaded':
+        return <ImageIcon className="h-5 w-5 text-blue-600" />;
+      case 'purchase_completed':
+        return <ShoppingCart className="h-5 w-5 text-purple-600" />;
+      default:
+        return <Package className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getActivityMessage = (activity: ActivityLog) => {
+    switch (activity.activityType) {
+      case 'model_created':
+        return `Added new model${activity.details?.modelName ? `: ${activity.details.modelName}` : ''}`;
+      case 'model_deleted':
+        return `Deleted model${activity.details?.modelName ? `: ${activity.details.modelName}` : ''}`;
+      case 'photo_uploaded':
+        const count = activity.details?.photoCount || 1;
+        return `Uploaded ${count} photo${count > 1 ? 's' : ''}`;
+      case 'purchase_completed':
+        return `Purchased ${activity.details?.modelCount} model slot${activity.details?.modelCount > 1 ? 's' : ''}`;
+      default:
+        return 'Activity recorded';
+    }
+  };
 
   const handleQuickPhoto = () => {
     // This would open camera interface
@@ -140,7 +184,7 @@ export default function Home() {
 
             <Card className="bg-white dark:bg-gray-800">
               <CardContent className="divide-y divide-gray-200 dark:divide-gray-700 p-0">
-                {isLoading ? (
+                {isActivitiesLoading ? (
                   <div className="space-y-4 p-4">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="flex items-start space-x-4">
@@ -148,6 +192,28 @@ export default function Home() {
                         <div className="space-y-2 flex-1">
                           <Skeleton className="h-4 w-3/4" />
                           <Skeleton className="h-3 w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : isActivitiesError ? (
+                  <div className="p-4 text-center text-red-500 dark:text-red-400 font-mono">
+                    Failed to load recent activity
+                  </div>
+                ) : activities && activities.length > 0 ? (
+                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {activities.slice(0, 5).map((activity) => (
+                      <div key={activity.id} className="p-4 flex items-start space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                          {getActivityIcon(activity.activityType)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-mono text-gray-900 dark:text-white">
+                            {getActivityMessage(activity)}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
+                            {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
+                          </p>
                         </div>
                       </div>
                     ))}
