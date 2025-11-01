@@ -11,8 +11,8 @@ import fs from "fs";
 import { fileStorage } from "./storage-service";
 import { JSDOM } from "jsdom";
 import { db } from "./db";
-import { models, photos, buildLogEntries } from "@shared/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { models, photos, buildLogEntries, userActivityLog } from "@shared/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
 import { logUserActivity } from "./activityLogger";
 import Stripe from "stripe";
@@ -779,6 +779,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getCollectionStats(userId);
       res.json(stats);
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/recent-activity', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const activities = await db.select()
+        .from(userActivityLog)
+        .where(eq(userActivityLog.userId, userId))
+        .orderBy(desc(userActivityLog.createdAt))
+        .limit(limit);
+      
+      res.json(activities);
+    } catch (error: any) {
+      console.error('Recent activity error:', error);
       res.status(500).json({ message: error.message });
     }
   });
