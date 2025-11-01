@@ -29,6 +29,13 @@ interface HopUpCardProps {
 export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopUpCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
+  console.log('🔧 HopUpCard render:', { 
+    partName: part.name, 
+    photoId: part.photoId, 
+    hasPhoto: !!part.photo,
+    photoUrl: part.photo?.url 
+  });
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "installed":
