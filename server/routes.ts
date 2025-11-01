@@ -1425,6 +1425,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public endpoint for fetching screenshots (for marketing /screenshots page)
+  app.get('/api/public/screenshots', async (req, res) => {
+    try {
+      const { featureScreenshots } = await import("@shared/schema");
+      const { desc } = await import("drizzle-orm");
+      
+      const screenshots = await db
+        .select()
+        .from(featureScreenshots)
+        .where(eq(featureScreenshots.isActive, true))
+        .orderBy(featureScreenshots.sortOrder, desc(featureScreenshots.createdAt));
+      
+      res.json(screenshots);
+    } catch (error: any) {
+      console.error('Get public screenshots error:', error);
+      res.status(500).json({ message: 'Failed to load screenshots' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

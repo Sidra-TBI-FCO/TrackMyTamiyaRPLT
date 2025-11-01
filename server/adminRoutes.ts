@@ -2,7 +2,8 @@ import { Router } from "express";
 import { db } from "./db";
 import { 
   users, models, photos, purchases, pricingTiers, adminAuditLog, userActivityLog,
-  insertPricingTierSchema, insertPurchaseSchema, insertAdminAuditLogSchema
+  featureScreenshots, insertPricingTierSchema, insertPurchaseSchema, insertAdminAuditLogSchema,
+  insertFeatureScreenshotSchema
 } from "@shared/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAdmin, getClientIP } from "./adminMiddleware";
@@ -444,6 +445,114 @@ router.get("/purchases", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Get purchases error:", error);
     res.status(500).json({ message: "Failed to load purchases" });
+  }
+});
+
+// Screenshot Management Routes
+
+// GET /api/admin/screenshots - Get all screenshots
+router.get("/screenshots", requireAdmin, async (req, res) => {
+  try {
+    const screenshots = await db
+      .select()
+      .from(featureScreenshots)
+      .orderBy(featureScreenshots.sortOrder, desc(featureScreenshots.createdAt));
+    
+    res.json(screenshots);
+  } catch (error) {
+    console.error("Get screenshots error:", error);
+    res.status(500).json({ message: "Failed to load screenshots" });
+  }
+});
+
+// POST /api/admin/screenshots - Create screenshot
+router.post("/screenshots", requireAdmin, async (req, res) => {
+  try {
+    const adminId = getUserId(req);
+    const validated = insertFeatureScreenshotSchema.parse(req.body);
+    
+    const [screenshot] = await db
+      .insert(featureScreenshots)
+      .values(validated)
+      .returning();
+    
+    // Log the action
+    await logAdminAction(
+      adminId,
+      "create_screenshot",
+      null,
+      { screenshotId: screenshot.id, title: validated.title },
+      getClientIP(req)
+    );
+    
+    res.status(201).json(screenshot);
+  } catch (error) {
+    console.error("Create screenshot error:", error);
+    res.status(500).json({ message: "Failed to create screenshot" });
+  }
+});
+
+// PUT /api/admin/screenshots/:id - Update screenshot
+router.put("/screenshots/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = getUserId(req);
+    const validated = insertFeatureScreenshotSchema.partial().parse(req.body);
+    
+    const [updated] = await db
+      .update(featureScreenshots)
+      .set({ ...validated, updatedAt: new Date() })
+      .where(eq(featureScreenshots.id, parseInt(id)))
+      .returning();
+    
+    if (!updated) {
+      return res.status(404).json({ message: "Screenshot not found" });
+    }
+    
+    // Log the action
+    await logAdminAction(
+      adminId,
+      "update_screenshot",
+      null,
+      { screenshotId: id, changes: validated },
+      getClientIP(req)
+    );
+    
+    res.json(updated);
+  } catch (error) {
+    console.error("Update screenshot error:", error);
+    res.status(500).json({ message: "Failed to update screenshot" });
+  }
+});
+
+// DELETE /api/admin/screenshots/:id - Delete screenshot
+router.delete("/screenshots/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = getUserId(req);
+    
+    const [deleted] = await db
+      .delete(featureScreenshots)
+      .where(eq(featureScreenshots.id, parseInt(id)))
+      .returning();
+    
+    if (!deleted) {
+      return res.status(404).json({ message: "Screenshot not found" });
+    }
+    
+    // Log the action
+    await logAdminAction(
+      adminId,
+      "delete_screenshot",
+      null,
+      { screenshotId: id, title: deleted.title },
+      getClientIP(req)
+    );
+    
+    res.status(204).send();
+  } catch (error) {
+    console.error("Delete screenshot error:", error);
+    res.status(500).json({ message: "Failed to delete screenshot" });
   }
 });
 

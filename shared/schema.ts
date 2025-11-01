@@ -167,6 +167,20 @@ export const userActivityLog = pgTable("user_activity_log", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Feature screenshots - admin-managed screenshots for marketing pages
+export const featureScreenshots = pgTable("feature_screenshots", {
+  id: serial("id").primaryKey(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  category: varchar("category").notNull(), // "mobile", "desktop", "admin"
+  imageUrl: text("image_url").notNull(), // URL to screenshot in object storage
+  route: varchar("route"), // App route this screenshot showcases (e.g., "/models", "/admin")
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   models: many(models),
@@ -327,6 +341,12 @@ export const insertUserActivityLogSchema = createInsertSchema(userActivityLog).o
   createdAt: true,
 });
 
+export const insertFeatureScreenshotSchema = createInsertSchema(featureScreenshots).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -349,6 +369,8 @@ export type AdminAuditLog = typeof adminAuditLog.$inferSelect;
 export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
 export type UserActivityLog = typeof userActivityLog.$inferSelect;
 export type InsertUserActivityLog = z.infer<typeof insertUserActivityLogSchema>;
+export type FeatureScreenshot = typeof featureScreenshots.$inferSelect;
+export type InsertFeatureScreenshot = z.infer<typeof insertFeatureScreenshotSchema>;
 
 // Extended types with relations
 export type HopUpPartWithPhoto = HopUpPart & {
