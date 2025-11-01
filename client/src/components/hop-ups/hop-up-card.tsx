@@ -29,13 +29,6 @@ interface HopUpCardProps {
 export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopUpCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  console.log('🔧 HopUpCard render:', { 
-    partName: part.name, 
-    photoId: part.photoId, 
-    hasPhoto: !!part.photo,
-    photoUrl: part.photo?.url 
-  });
-  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "installed":
@@ -133,20 +126,30 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
     <>
       <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
         <CardContent className="p-4">
-          {/* Product Photo */}
-          {part.photo && (
-            <div 
-              className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => onImageClick?.(part)}
-            >
-              <img
-                src={addStorageFallbackParam(part.photo.url)}
-                alt={part.name}
-                className="w-full h-48 object-contain p-2"
-                loading="lazy"
-              />
-            </div>
-          )}
+          {/* Product Photo - Debug */}
+          {(() => {
+            if (part.photo) {
+              return (
+                <div 
+                  className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => onImageClick?.(part)}
+                >
+                  <img
+                    src={addStorageFallbackParam(part.photo.url)}
+                    alt={part.name}
+                    className="w-full h-48 object-contain p-2"
+                    loading="lazy"
+                  />
+                </div>
+              );
+            } else {
+              return (
+                <div className="mb-4 p-4 bg-red-100 text-red-800 rounded">
+                  DEBUG: No photo - photoId={part.photoId}, hasPhoto={String(!!part.photo)}
+                </div>
+              );
+            }
+          })()}
           
           {/* Mobile: Full detailed layout */}
           <div className="block lg:hidden">
