@@ -1,10 +1,22 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Edit, Trash2, ExternalLink } from "lucide-react";
 import { HopUpPart } from "@/types";
 import { SiAmazon, SiEbay } from "react-icons/si";
 import { Globe } from "lucide-react";
+import { useState } from "react";
 
 interface HopUpCardProps {
   part: HopUpPart;
@@ -14,6 +26,8 @@ interface HopUpCardProps {
 }
 
 export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopUpCardProps) {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "installed":
@@ -100,12 +114,20 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
     );
   };
 
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(part.id);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
   return (
-    <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-      <CardContent className="p-4">
-        {/* Mobile: Full detailed layout */}
-        <div className="block lg:hidden">
-          {/* Header */}
+    <>
+      <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+        <CardContent className="p-4">
+          {/* Mobile: Full detailed layout */}
+          <div className="block lg:hidden">
+            {/* Header */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-start space-x-2 flex-1">
               <div className="text-2xl">{getCategoryIcon(part.category)}</div>
@@ -173,7 +195,7 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDelete(part.id)}
+                  onClick={() => setIsDeleteDialogOpen(true)}
                   className="font-mono text-red-600 hover:text-red-700 dark:text-red-400"
                 >
                   <Trash2 className="h-3 w-3 mr-1" />
@@ -235,7 +257,7 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDelete(part.id)}
+                  onClick={() => setIsDeleteDialogOpen(true)}
                   className="h-6 w-6 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
                   title="Delete part"
                 >
@@ -254,5 +276,29 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
         </div>
       </CardContent>
     </Card>
+
+      {/* Single Delete Confirmation Dialog */}
+      {onDelete && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Hop-Up Part</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{part.name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              >
+                Delete Part
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
   );
 }

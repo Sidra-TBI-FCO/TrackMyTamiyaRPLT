@@ -49,7 +49,11 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setLocation("/")}
+              className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+              data-testid="button-home-logo"
+            >
               <div className="w-10 h-10 flex items-center justify-center relative overflow-hidden" style={{clipPath: 'polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)', backgroundColor: 'var(--theme-primary)'}}>
                 {/* Angular star similar to Tamiya style */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -71,7 +75,7 @@ export default function Header() {
                   RC Collection Manager
                 </p>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Search Bar - Desktop Only */}

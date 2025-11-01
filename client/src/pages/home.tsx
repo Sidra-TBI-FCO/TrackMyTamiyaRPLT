@@ -5,6 +5,7 @@ import { ModelWithRelations } from "@/types";
 import CollectionStats from "@/components/stats/collection-stats";
 import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
+import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [selectedPhotos] = useState<string[]>([]);
   const { isOpen: isSlideshowOpen, closeSlideshow } = useSlideshow();
+  const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
+  const [selectedModelForPhoto, setSelectedModelForPhoto] = useState<number | null>(null);
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
@@ -49,8 +52,8 @@ export default function Home() {
 
 
   const handleAddPhoto = (modelId: number) => {
-    // This would open photo upload for specific model
-    console.log(`Adding photo to model ${modelId}`);
+    setSelectedModelForPhoto(modelId);
+    setIsAddPhotoOpen(true);
   };
 
   const recentModels = models?.slice(0, 8) || [];
@@ -236,6 +239,15 @@ export default function Home() {
         isOpen={isSlideshowOpen}
         onClose={closeSlideshow}
       />
+
+      {/* Add Photo Dialog */}
+      {selectedModelForPhoto && (
+        <AddPhotoDialog
+          modelId={selectedModelForPhoto}
+          open={isAddPhotoOpen}
+          onOpenChange={setIsAddPhotoOpen}
+        />
+      )}
     </div>
   );
 }

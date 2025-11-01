@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Play, Pause, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSlideshowSettings } from "@/lib/settings";
+import { getSlideshowSettings, saveSlideshowSettings } from "@/lib/settings";
 import ImageFallback from "@/components/ui/image-fallback";
 import { addStorageFallbackParam } from "@/lib/file-utils";
 
@@ -40,25 +40,45 @@ export default function PhotoSlideshow({
 }: PhotoSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [settings] = useState(() => getSlideshowSettings());
+  const [settings, setSettings] = useState(() => getSlideshowSettings());
+  const [shuffledPhotos, setShuffledPhotos] = useState<PhotoWithModel[]>([]);
+
+  // Shuffle photos when shuffle is enabled
+  useEffect(() => {
+    if (settings.shuffle && photos.length > 0) {
+      const shuffled = [...photos].sort(() => Math.random() - 0.5);
+      setShuffledPhotos(shuffled);
+    } else {
+      setShuffledPhotos(photos);
+    }
+  }, [photos, settings.shuffle]);
+
+  const toggleShuffle = () => {
+    const newSettings = { ...settings, shuffle: !settings.shuffle };
+    setSettings(newSettings);
+    saveSlideshowSettings(newSettings);
+    setCurrentIndex(0); // Reset to first photo when shuffle changes
+  };
+
+  const displayPhotos = settings.shuffle ? shuffledPhotos : photos;
 
   // Auto-start slideshow when opened if enabled
   useEffect(() => {
-    if (isOpen && settings.autoStart && photos.length > 0) {
+    if (isOpen && settings.autoStart && displayPhotos.length > 0) {
       setIsPlaying(true);
     }
-  }, [isOpen, settings.autoStart, photos.length]);
+  }, [isOpen, settings.autoStart, displayPhotos.length]);
 
   // Auto-advance slideshow
   useEffect(() => {
-    if (!isPlaying || photos.length <= 1) return;
+    if (!isPlaying || displayPhotos.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % photos.length);
+      setCurrentIndex((prev) => (prev + 1) % displayPhotos.length);
     }, settings.duration * 1000);
 
     return () => clearInterval(interval);
-  }, [isPlaying, photos.length, settings.duration]);
+  }, [isPlaying, displayPhotos.length, settings.duration]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -71,11 +91,11 @@ export default function PhotoSlideshow({
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
+          setCurrentIndex((prev) => (prev - 1 + displayPhotos.length) % displayPhotos.length);
           break;
         case 'ArrowRight':
           e.preventDefault();
-          setCurrentIndex((prev) => (prev + 1) % photos.length);
+          setCurrentIndex((prev) => (prev + 1) % displayPhotos.length);
           break;
         case ' ':
           e.preventDefault();
@@ -88,7 +108,7 @@ export default function PhotoSlideshow({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, photos.length, onClose]);
+  }, [isOpen, displayPhotos.length, onClose]);
 
   // Reset when photos change or slideshow opens
   useEffect(() => {
@@ -147,12 +167,12 @@ export default function PhotoSlideshow({
   }, [isOpen]);
 
   const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % photos.length);
-  }, [photos.length]);
+    setCurrentIndex((prev) => (prev + 1) % displayPhotos.length);
+  }, [displayPhotos.length]);
 
   const goToPrevious = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
-  }, [photos.length]);
+    setCurrentIndex((prev) => (prev - 1 + displayPhotos.length) % displayPhotos.length);
+  }, [displayPhotos.length]);
 
   const togglePlayPause = useCallback(() => {
     setIsPlaying(prev => !prev);
@@ -162,7 +182,7 @@ export default function PhotoSlideshow({
   if (!isOpen) return null;
   
   // If no photos, show empty state
-  if (photos.length === 0) {
+  if (displayPhotos.length === 0) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
         <div className="absolute inset-0 bg-black" onClick={onClose} />
@@ -176,7 +196,7 @@ export default function PhotoSlideshow({
     );
   }
   
-  const currentPhoto = photos[currentIndex];
+  const currentPhoto = displayPhotos[currentIndex];
   if (!currentPhoto) return null;
 
   return (
@@ -195,7 +215,7 @@ export default function PhotoSlideshow({
         />
 
         {/* Navigation Controls */}
-        {photos.length > 1 && (
+        {displayPhotos.length > 1 && (
           <>
             <button
               onClick={goToPrevious}
@@ -216,21 +236,35 @@ export default function PhotoSlideshow({
         {/* Top Controls - Moved to left to avoid thumbnail overlap in landscape */}
         <div className="absolute top-4 left-4 flex items-center space-x-2">
           {/* Photo counter */}
-          {photos.length > 1 && (
+          {displayPhotos.length > 1 && (
             <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-mono">
-              {currentIndex + 1} / {photos.length}
+              {currentIndex + 1} / {displayPhotos.length}
             </div>
           )}
 
           {/* Play/Pause button */}
-          {photos.length > 1 && (
+          {displayPhotos.length > 1 && (
             <Button
               onClick={togglePlayPause}
               variant="ghost"
               size="icon"
               className="bg-black/50 hover:bg-black/70 text-white rounded-full"
+              title={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+          )}
+
+          {/* Shuffle button */}
+          {displayPhotos.length > 1 && (
+            <Button
+              onClick={toggleShuffle}
+              variant="ghost"
+              size="icon"
+              className={`rounded-full ${settings.shuffle ? 'bg-green-600/70 hover:bg-green-700' : 'bg-black/50 hover:bg-black/70'} text-white`}
+              title={settings.shuffle ? "Shuffle On" : "Shuffle Off"}
+            >
+              <Shuffle className="h-4 w-4" />
             </Button>
           )}
 
