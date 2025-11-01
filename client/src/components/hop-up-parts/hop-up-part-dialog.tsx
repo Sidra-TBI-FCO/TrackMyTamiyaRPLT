@@ -28,7 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, Upload, X, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const formSchema = insertHopUpPartSchema.extend({
@@ -87,6 +87,9 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
   const [isParsingText, setIsParsingText] = useState(false);
   const [productText, setProductText] = useState("");
   const [parseLog, setParseLog] = useState<string[]>([]);
+  const [productPhoto, setProductPhoto] = useState<File | null>(null);
+  const [productPhotoPreview, setProductPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -527,11 +530,37 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    if (part) {
-      updateMutation.mutate(data);
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    // If there's a product photo, we need to send as multipart FormData
+    if (productPhoto) {
+      const formData = new FormData();
+      
+      // Append all form fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+      
+      // Append the photo file
+      formData.append('productPhoto', productPhoto);
+      
+      if (part) {
+        updateMutation.mutate(formData as any);
+      } else {
+        createMutation.mutate(formData as any);
+      }
     } else {
-      createMutation.mutate(data);
+      // No photo, send as regular JSON
+      if (part) {
+        updateMutation.mutate(data as any);
+      } else {
+        createMutation.mutate(data as any);
+      }
     }
   };
 
@@ -652,6 +681,69 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                       </div>
                     </details>
                   </div>
+                </FormDescription>
+              </div>
+            </div>
+
+            {/* Product Photo Section */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm">Product Photo</h4>
+              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border space-y-4">
+                {productPhotoPreview ? (
+                  <div className="relative">
+                    <img 
+                      src={productPhotoPreview} 
+                      alt="Product preview" 
+                      className="w-full h-48 object-contain bg-white dark:bg-gray-800 rounded border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        setProductPhoto(null);
+                        setProductPhotoPreview(null);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center">
+                    <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      No product photo uploaded
+                    </p>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setProductPhoto(file);
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setProductPhotoPreview(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                      id="product-photo-upload"
+                    />
+                    <label htmlFor="product-photo-upload">
+                      <Button type="button" variant="outline" size="sm" asChild>
+                        <span className="cursor-pointer">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Photo
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                )}
+                <FormDescription className="text-xs">
+                  Upload a product photo from your device, or use Parse URL above to scrape from store pages
                 </FormDescription>
               </div>
             </div>

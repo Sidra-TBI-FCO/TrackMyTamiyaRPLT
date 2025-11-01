@@ -11,7 +11,7 @@ import fs from "fs";
 import { fileStorage } from "./storage-service";
 import { JSDOM } from "jsdom";
 import { db } from "./db";
-import { models, photos, buildLogEntries, userActivityLog } from "@shared/schema";
+import { models, photos, buildLogEntries, userActivityLog, hopUpParts } from "@shared/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
 import { logUserActivity } from "./activityLogger";
@@ -725,11 +725,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/models/:modelId/hop-up-parts', async (req, res) => {
+  app.post('/api/models/:modelId/hop-up-parts', upload.single('productPhoto'), async (req, res) => {
     try {
       const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
-      const partData = insertHopUpPartSchema.parse({ ...req.body, modelId });
+      
+      // Normalize multipart form data fields (multer makes everything strings)
+      const normalizedBody: any = { ...req.body, modelId };
+      
+      // Coerce numeric fields
+      if (normalizedBody.quantity) normalizedBody.quantity = parseInt(normalizedBody.quantity);
+      if (normalizedBody.cost) normalizedBody.cost = parseFloat(normalizedBody.cost);
+      
+      // Coerce boolean fields
+      if (normalizedBody.isTamiyaBrand !== undefined) {
+        normalizedBody.isTamiyaBrand = normalizedBody.isTamiyaBrand === 'true' || normalizedBody.isTamiyaBrand === true;
+      }
+      
+      // Parse arrays
+      if (normalizedBody.compatibility) {
+        normalizedBody.compatibility = typeof normalizedBody.compatibility === 'string' 
+          ? JSON.parse(normalizedBody.compatibility) 
+          : normalizedBody.compatibility;
+      }
+      
+      // Validate hop-up part data BEFORE uploading photo
+      const partData = insertHopUpPartSchema.parse(normalizedBody);
+      
+      // Now handle product photo upload if validation passed
+      let photoId = null;
+      if (req.file) {
+        const savedFilename = await fileStorage.uploadFile(req.file, req.file.originalname);
+        const fileUrl = fileStorage.getFileUrl(savedFilename);
+        
+        const photoData = insertPhotoSchema.parse({
+          modelId,
+          filename: savedFilename,
+          originalName: req.file.originalname,
+          url: fileUrl,
+          caption: 'Product photo',
+          isBoxArt: false,
+        });
+        
+        const photo = await storage.createPhoto(photoData);
+        photoId = photo.id;
+        partData.photoId = photoId;
+      }
+      
       const part = await storage.createHopUpPart(partData);
       res.status(201).json(part);
     } catch (error: any) {
@@ -740,11 +782,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/hop-up-parts/:id', async (req, res) => {
+  app.put('/api/hop-up-parts/:id', upload.single('productPhoto'), async (req, res) => {
     try {
       const userId = getUserId(req);
       const id = parseInt(req.params.id);
-      const partData = insertHopUpPartSchema.partial().parse(req.body);
+      
+      // Normalize multipart form data fields (multer makes everything strings)
+      const normalizedBody: any = { ...req.body };
+      
+      // Coerce numeric fields
+      if (normalizedBody.quantity) normalizedBody.quantity = parseInt(normalizedBody.quantity);
+      if (normalizedBody.cost) normalizedBody.cost = parseFloat(normalizedBody.cost);
+      if (normalizedBody.modelId) normalizedBody.modelId = parseInt(normalizedBody.modelId);
+      
+      // Coerce boolean fields
+      if (normalizedBody.isTamiyaBrand !== undefined) {
+        normalizedBody.isTamiyaBrand = normalizedBody.isTamiyaBrand === 'true' || normalizedBody.isTamiyaBrand === true;
+      }
+      
+      // Parse arrays
+      if (normalizedBody.compatibility) {
+        normalizedBody.compatibility = typeof normalizedBody.compatibility === 'string' 
+          ? JSON.parse(normalizedBody.compatibility) 
+          : normalizedBody.compatibility;
+      }
+      
+      // Validate hop-up part data BEFORE uploading photo
+      const partData = insertHopUpPartSchema.partial().parse(normalizedBody);
+      
+      // Now handle product photo upload if validation passed
+      if (req.file) {
+        // Get modelId from body or query database
+        let modelId = normalizedBody.modelId || null;
+        
+        if (!modelId) {
+          // Query database directly to get modelId from hop-up part
+          const [existingPart] = await db.select()
+            .from(hopUpParts)
+            .where(eq(hopUpParts.id, id))
+            .limit(1);
+          
+          if (!existingPart) {
+            return res.status(404).json({ message: 'Hop-up part not found' });
+          }
+          modelId = existingPart.modelId;
+        }
+        
+        const savedFilename = await fileStorage.uploadFile(req.file, req.file.originalname);
+        const fileUrl = fileStorage.getFileUrl(savedFilename);
+        
+        const photoData = insertPhotoSchema.parse({
+          modelId,
+          filename: savedFilename,
+          originalName: req.file.originalname,
+          url: fileUrl,
+          caption: 'Product photo',
+          isBoxArt: false,
+        });
+        
+        const photo = await storage.createPhoto(photoData);
+        partData.photoId = photo.id;
+      }
+      
       const part = await storage.updateHopUpPart(id, userId, partData);
       if (!part) {
         return res.status(404).json({ message: 'Hop-up part not found' });
