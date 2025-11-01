@@ -13,17 +13,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, ExternalLink, ImageIcon } from "lucide-react";
-import { HopUpPart } from "@/types";
+import { HopUpPartWithPhoto } from "@shared/schema";
 import { SiAmazon, SiEbay } from "react-icons/si";
 import { Globe } from "lucide-react";
 import { useState } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface HopUpCardProps {
-  part: HopUpPart;
-  onEdit?: (part: HopUpPart) => void;
+  part: HopUpPartWithPhoto;
+  onEdit?: (part: HopUpPartWithPhoto) => void;
   onDelete?: (id: number) => void;
-  onImageClick?: (part: HopUpPart) => void;
+  onImageClick?: (part: HopUpPartWithPhoto) => void;
 }
 
 export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopUpCardProps) {

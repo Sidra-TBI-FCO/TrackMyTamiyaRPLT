@@ -351,10 +351,14 @@ export type UserActivityLog = typeof userActivityLog.$inferSelect;
 export type InsertUserActivityLog = z.infer<typeof insertUserActivityLogSchema>;
 
 // Extended types with relations
+export type HopUpPartWithPhoto = HopUpPart & {
+  photo?: Photo | null;
+};
+
 export type ModelWithRelations = Model & {
   photos: Photo[];
   buildLogEntries: BuildLogEntry[];
-  hopUpParts: HopUpPart[];
+  hopUpParts: HopUpPartWithPhoto[];
 };
 
 export type BuildLogEntryWithPhotos = BuildLogEntry & {
