@@ -312,6 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!model) {
         return res.status(404).json({ message: 'Model not found' });
       }
+      console.log('📸 Model photos:', model.photos.map(p => ({ id: p.id, caption: p.caption, isBoxArt: p.isBoxArt })));
       res.json(model);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
