@@ -10,12 +10,24 @@ import { requireAdmin, getClientIP } from "./adminMiddleware";
 import { sendPasswordResetEmail } from "./emailService";
 import crypto from "crypto";
 import multer from "multer";
+import path from "path";
 import { fileStorage } from "./storage-service";
 
 const router = Router();
 
-// Multer configuration for screenshot uploads
-const upload = multer({ storage: multer.memoryStorage() });
+// Multer configuration for screenshot uploads - use disk storage like other uploads
+const uploadDir = path.join(process.cwd(), 'uploads');
+const storage_multer = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'screenshot-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage_multer });
 
 // Helper function to get user ID from authenticated user
 function getUserId(req: any): string {
