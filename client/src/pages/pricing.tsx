@@ -20,14 +20,13 @@ import { useToast } from "@/hooks/use-toast";
 
 interface PricingTier {
   id: number;
-  name: string;
-  description: string | null;
-  price: number;
-  modelLimit: number | null;
-  features: string[];
-  isPopular: boolean;
+  modelCount: number;
+  basePrice: string;
+  discountPercent: number;
+  finalPrice: string;
   isActive: boolean;
-  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function PricingPage() {
@@ -39,12 +38,12 @@ export default function PricingPage() {
     queryKey: ["/api/pricing-tiers"],
   });
 
-  const activeTiers = tiers.filter(t => t.isActive).sort((a, b) => a.sortOrder - b.sortOrder);
-  const freeTier = activeTiers.find(t => t.price === 0);
-  const paidTiers = activeTiers.filter(t => t.price > 0);
+  const activeTiers = tiers.filter(t => t.isActive).sort((a, b) => a.modelCount - b.modelCount);
+  const freeTier = activeTiers.find(t => parseFloat(t.finalPrice) === 0);
+  const paidTiers = activeTiers.filter(t => parseFloat(t.finalPrice) > 0);
 
   const handleSelectPlan = async (tier: PricingTier) => {
-    if (tier.price === 0) {
+    if (parseFloat(tier.finalPrice) === 0) {
       navigate("/auth");
       return;
     }
@@ -138,10 +137,8 @@ export default function PricingPage() {
               {freeTier && (
                 <Card className="relative border-2" data-testid={`tier-card-${freeTier.id}`}>
                   <CardHeader>
-                    <CardTitle className="text-2xl">{freeTier.name}</CardTitle>
-                    {freeTier.description && (
-                      <CardDescription>{freeTier.description}</CardDescription>
-                    )}
+                    <CardTitle className="text-2xl">{freeTier.modelCount} Model Starter</CardTitle>
+                    <CardDescription>Perfect for getting started with your RC collection</CardDescription>
                     <div className="mt-4">
                       <span className="text-4xl font-bold">Free</span>
                       <span className="text-muted-foreground ml-2">forever</span>
@@ -149,12 +146,22 @@ export default function PricingPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
-                      {freeTier.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm">{feature}</span>
-                        </div>
-                      ))}
+                      <div className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Up to {freeTier.modelCount} models</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Photo gallery</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Build logging</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm">Parts tracking</span>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter>
@@ -171,69 +178,96 @@ export default function PricingPage() {
               )}
 
               {/* Paid Tiers */}
-              {paidTiers.map((tier) => (
-                <Card 
-                  key={tier.id}
-                  className={`relative border-2 ${
-                    tier.isPopular 
-                      ? "border-[var(--theme-primary)] shadow-xl scale-105" 
-                      : ""
-                  }`}
-                  data-testid={`tier-card-${tier.id}`}
-                >
-                  {tier.isPopular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--theme-primary)] text-white">
-                      <Star className="w-3 h-3 mr-1" />
-                      Most Popular
-                    </Badge>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                    {tier.description && (
-                      <CardDescription>{tier.description}</CardDescription>
+              {paidTiers.map((tier, index) => {
+                const isPopular = index === Math.floor(paidTiers.length / 2); // Middle tier is popular
+                const price = parseFloat(tier.finalPrice);
+                const originalPrice = parseFloat(tier.basePrice);
+                const hasDiscount = tier.discountPercent > 0;
+                
+                return (
+                  <Card 
+                    key={tier.id}
+                    className={`relative border-2 ${
+                      isPopular 
+                        ? "border-[var(--theme-primary)] shadow-xl scale-105" 
+                        : ""
+                    }`}
+                    data-testid={`tier-card-${tier.id}`}
+                  >
+                    {isPopular && (
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--theme-primary)] text-white">
+                        <Star className="w-3 h-3 mr-1" />
+                        Most Popular
+                      </Badge>
                     )}
-                    <div className="mt-4">
-                      <span className="text-4xl font-bold">${tier.price}</span>
-                      <span className="text-muted-foreground ml-2">one-time</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {tier.modelLimit && (
+                    <CardHeader>
+                      <CardTitle className="text-2xl">{tier.modelCount} Model Pack</CardTitle>
+                      <CardDescription>Expand your collection tracking</CardDescription>
+                      <div className="mt-4">
+                        <span className="text-4xl font-bold">${price.toFixed(2)}</span>
+                        <span className="text-muted-foreground ml-2">one-time</span>
+                        {hasDiscount && (
+                          <div className="mt-2">
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                              Save {tier.discountPercent}%
+                            </Badge>
+                            <span className="text-sm text-muted-foreground line-through ml-2">
+                              ${originalPrice.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                       <div className="bg-gradient-to-r from-[var(--theme-primary)]/10 to-[var(--theme-secondary)]/10 p-3 rounded-lg">
                         <p className="text-sm font-semibold">
                           <Sparkles className="inline h-4 w-4 mr-1" />
-                          Up to {tier.modelLimit} models
+                          Up to {tier.modelCount} models
                         </p>
                       </div>
-                    )}
-                    <div className="space-y-3">
-                      {tier.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2">
                           <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm">{feature}</span>
+                          <span className="text-sm">Unlimited photo uploads</span>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      className="w-full bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-dark)] text-white"
-                      onClick={() => handleSelectPlan(tier)}
-                      disabled={loadingTierId === tier.id}
-                      data-testid={`button-select-tier-${tier.id}`}
-                    >
-                      {loadingTierId === tier.id ? (
-                        "Loading..."
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          Purchase {tier.name}
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                        <div className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">Build log with voice notes</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">Hop-up parts tracking</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">Photo slideshow mode</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">Cloud storage & backup</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        className="w-full bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-dark)] text-white"
+                        onClick={() => handleSelectPlan(tier)}
+                        disabled={loadingTierId === tier.id}
+                        data-testid={`button-select-tier-${tier.id}`}
+                      >
+                        {loadingTierId === tier.id ? (
+                          "Loading..."
+                        ) : (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            Purchase {tier.modelCount} Model Pack
+                          </>
+                        )}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
