@@ -18,12 +18,15 @@ import { logUserActivity } from "./activityLogger";
 import Stripe from "stripe";
 
 // Initialize Stripe (blueprint:javascript_stripe)
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-09-30.clover",
+  });
+  console.log('✅ Stripe initialized');
+} else {
+  console.warn('⚠️  Stripe not configured - payment features will be disabled');
 }
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-09-30.clover",
-});
 
 // Multer configuration for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -177,6 +180,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // CRITICAL: Verify payment with Stripe before granting models
+      if (!stripe) {
+        return res.status(503).json({ message: "Payment processing is not configured" });
+      }
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
 
       // Verify payment succeeded
@@ -295,6 +301,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const amount = parseFloat(tier.finalPrice);
 
       // Create Stripe payment intent with authoritative price
+      if (!stripe) {
+        return res.status(503).json({ message: "Payment processing is not configured" });
+      }
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
