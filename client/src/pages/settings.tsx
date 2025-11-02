@@ -26,10 +26,10 @@ import StripeCheckoutForm from "@/components/checkout/StripeCheckoutForm";
 import { apiRequest } from "@/lib/queryClient";
 
 // Initialize Stripe (blueprint:javascript_stripe)
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Make Stripe optional - only initialize if key is available
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 // Storage Status Component
 interface StorageStatusResponse {
@@ -763,14 +763,25 @@ export default function SettingsPage() {
           </DialogHeader>
           
           {showCheckout && clientSecret ? (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <StripeCheckoutForm
-                amount={selectedTier ? parseFloat(selectedTier.finalPrice) : 0}
-                modelCount={selectedTier?.modelCount || 0}
-                onSuccess={handlePaymentSuccess}
-                onCancel={handleCancelCheckout}
-              />
-            </Elements>
+            stripePromise ? (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <StripeCheckoutForm
+                  amount={selectedTier ? parseFloat(selectedTier.finalPrice) : 0}
+                  modelCount={selectedTier?.modelCount || 0}
+                  onSuccess={handlePaymentSuccess}
+                  onCancel={handleCancelCheckout}
+                />
+              </Elements>
+            ) : (
+              <div className="p-6 text-center space-y-3">
+                <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
+                  Payment processing is not currently configured.
+                </p>
+                <p className="font-mono text-xs text-gray-500">
+                  Please contact support to enable payments.
+                </p>
+              </div>
+            )
           ) : (
           <div className="space-y-4 py-4">
             {loadingPricing ? (
