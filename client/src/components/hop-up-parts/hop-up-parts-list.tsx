@@ -200,7 +200,7 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                     {part.installationStatus}
                   </Badge>
                   {part.isTamiyaBrand && (
-                    <Badge variant="outline" className="text-xs tamiya-red bg-white border-tamiya-red">
+                    <Badge variant="outline" className="text-xs text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 border-red-600 dark:border-red-400">
                       TAMIYA
                     </Badge>
                   )}
