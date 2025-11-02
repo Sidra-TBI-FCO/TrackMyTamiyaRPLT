@@ -11,7 +11,7 @@ import fs from "fs";
 import { fileStorage } from "./storage-service";
 import { JSDOM } from "jsdom";
 import { db } from "./db";
-import { models, photos, buildLogEntries, userActivityLog, hopUpParts } from "@shared/schema";
+import { models, photos, buildLogEntries, userActivityLog, hopUpParts, featureScreenshots } from "@shared/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
 import { logUserActivity } from "./activityLogger";
@@ -111,10 +111,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(404).json({ error: 'File not found in this environment' });
   });
 
-  // Protect all API routes except auth routes
+  // Protect all API routes except auth routes and public marketing routes
   app.use('/api', (req, res, next) => {
-    // Skip auth for auth routes, file serving, and storage status
-    if (req.path.startsWith('/auth/') || req.path === '/login' || req.path === '/logout' || req.path === '/callback' || req.path.startsWith('/files/') || req.path === '/storage/status') {
+    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots
+    if (req.path.startsWith('/auth/') || 
+        req.path === '/login' || 
+        req.path === '/logout' || 
+        req.path === '/callback' || 
+        req.path.startsWith('/files/') || 
+        req.path === '/storage/status' ||
+        req.path === '/pricing-tiers' ||
+        req.path === '/screenshots') {
       return next();
     }
     
@@ -128,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return isAuthenticated(req, res, next);
   });
 
-  // Pricing Tiers route - for all authenticated users
+  // Public pricing tiers route - accessible to all users
   app.get('/api/pricing-tiers', async (req, res) => {
     try {
       const tiers = await db.select().from(pricingTiers)
@@ -138,6 +145,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Pricing tiers error:", error);
       res.status(500).json({ message: "Failed to fetch pricing tiers" });
+    }
+  });
+
+  // Public screenshots route - for marketing page
+  app.get('/api/screenshots', async (req, res) => {
+    try {
+      const screenshots = await db.select().from(featureScreenshots)
+        .where(eq(featureScreenshots.isActive, true))
+        .orderBy(featureScreenshots.sortOrder);
+      res.json(screenshots);
+    } catch (error) {
+      console.error("Screenshots fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch screenshots" });
     }
   });
 

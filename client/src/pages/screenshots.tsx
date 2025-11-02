@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Smartphone, Monitor, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, Smartphone, Monitor, Star } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -236,7 +236,6 @@ export default function Screenshots() {
             </Link>
             <Link href="/download">
               <Button size="lg" variant="outline">
-                <Download className="mr-2 h-4 w-4" />
                 Get Mobile App
               </Button>
             </Link>

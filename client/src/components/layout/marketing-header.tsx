@@ -37,6 +37,9 @@ export default function MarketingHeader() {
             <Link href="/screenshots">
               <Button variant="ghost">Screenshots</Button>
             </Link>
+            <Link href="/pricing">
+              <Button variant="ghost">Pricing</Button>
+            </Link>
             <Link href="/download">
               <Button variant="ghost">Download</Button>
             </Link>

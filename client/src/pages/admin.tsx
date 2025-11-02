@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, DollarSign, Activity, Image } from "lucide-react";
+import { Shield, Users, DollarSign, Activity, Image, Settings } from "lucide-react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPricing } from "@/components/admin/AdminPricing";
@@ -72,7 +72,7 @@ export default function AdminPage() {
             <span className="hidden sm:inline">Users</span>
           </TabsTrigger>
           <TabsTrigger value="pricing" className="flex items-center gap-2">
-            <SettingsIcon className="w-4 h-4" />
+            <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Pricing</span>
           </TabsTrigger>
           <TabsTrigger value="activity" className="flex items-center gap-2">
