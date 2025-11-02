@@ -186,46 +186,15 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
           <Card key={part.id} className="relative h-full">
             <CardContent className="p-4">
               <div className="flex gap-3">
-                {/* Photo on left */}
-                {part.photo ? (
-                  <div className="flex-shrink-0 w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
-                    <img
-                      src={part.photo.url}
-                      alt={part.name}
-                      className="w-full h-full object-contain p-1"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex-shrink-0 w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
-                    <span className="text-gray-400 dark:text-gray-600 text-xs">No image</span>
-                  </div>
-                )}
-
-                {/* Content on right */}
+                {/* Left side - Details */}
                 <div className="flex-1 min-w-0 flex flex-col">
                   {/* Header */}
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-sm leading-tight mb-1">
-                        {part.name}
-                      </CardTitle>
-                      {part.itemNumber && (
-                        <CardDescription className="text-xs">#{part.itemNumber}</CardDescription>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1 text-xs`}>
-                        {getStatusIcon(part.installationStatus)}
-                        {part.installationStatus}
-                      </Badge>
-                      {part.isTamiyaBrand && (
-                        <Badge variant="outline" className="text-xs text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 border-red-600 dark:border-red-400">
-                          TAMIYA
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+                  <CardTitle className="text-sm leading-tight mb-1">
+                    {part.name}
+                  </CardTitle>
+                  {part.itemNumber && (
+                    <CardDescription className="text-xs mb-2">#{part.itemNumber}</CardDescription>
+                  )}
 
                   {/* Details */}
               <div className="flex-1 space-y-3">
@@ -277,8 +246,43 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 )}
               </div>
 
-                  {/* Button row - always at bottom */}
-                  <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
+                </div>
+
+                {/* Right side - Badges and Photo */}
+                <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                  {/* Badges at top */}
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1 text-xs`}>
+                      {getStatusIcon(part.installationStatus)}
+                      {part.installationStatus}
+                    </Badge>
+                    {part.isTamiyaBrand && (
+                      <Badge variant="outline" className="text-xs text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 border-red-600 dark:border-red-400">
+                        TAMIYA
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Photo below badges */}
+                  {part.photo ? (
+                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
+                      <img
+                        src={part.photo.url}
+                        alt={part.name}
+                        className="w-full h-full object-contain p-1"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                      <span className="text-gray-400 dark:text-gray-600 text-xs">No image</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Button row - always at bottom */}
+              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-1 h-8">
                       {/* Only show Mark Installed for planned parts */}
                       {part.installationStatus === "planned" && (
@@ -367,8 +371,6 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         ))}
