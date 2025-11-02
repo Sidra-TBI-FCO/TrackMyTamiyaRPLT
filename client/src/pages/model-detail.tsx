@@ -593,53 +593,7 @@ export default function ModelDetail() {
             </TabsContent>
 
             <TabsContent value="parts">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-mono font-semibold text-lg">Hop-Up Parts ({model.hopUpParts.length})</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                      Total Investment: ${model.hopUpParts.reduce((sum, part) => sum + (part.cost ? parseFloat(part.cost) : 0), 0).toFixed(2)} | 
-                      Installed: {model.hopUpParts.filter(p => p.installationStatus === "installed").length} | 
-                      Planned: {model.hopUpParts.filter(p => p.installationStatus === "planned").length}
-                    </p>
-                  </div>
-                  <Button onClick={() => setIsAddHopUpOpen(true)} data-testid="button-add-hop-up" style={{backgroundColor: 'var(--theme-primary)', color: 'white'}}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Part
-                  </Button>
-                </div>
-
-                {model.hopUpParts.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {model.hopUpParts.map((part) => (
-                      <HopUpCard
-                        key={part.id}
-                        part={part}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Card className="p-8">
-                    <div className="text-center text-gray-400 dark:text-gray-500">
-                      <Cog className="h-12 w-12 mx-auto mb-4" />
-                      <h4 className="text-lg font-mono font-semibold text-gray-900 dark:text-white mb-2">
-                        No Hop-Up Parts
-                      </h4>
-                      <p className="font-mono text-gray-500 dark:text-gray-400 mb-6">
-                        Add hop-up parts to track your upgrades and modifications.
-                      </p>
-                      <Button
-                        onClick={() => setIsAddHopUpOpen(true)}
-                        style={{backgroundColor: 'var(--theme-primary)', color: 'white'}}
-                        className="font-mono"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add First Part
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-              </div>
+              <HopUpPartsList modelId={model.id} />
             </TabsContent>
 
             {/* Mobile-only Details Tab */}

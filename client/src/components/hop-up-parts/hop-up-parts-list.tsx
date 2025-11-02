@@ -183,31 +183,51 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
       {/* Parts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredParts.map((part) => (
-          <Card key={part.id} className="relative flex flex-col h-full">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base leading-tight">
-                    {part.name}
-                  </CardTitle>
-                  {part.itemNumber && (
-                    <CardDescription className="text-xs">#{part.itemNumber}</CardDescription>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1`}>
-                    {getStatusIcon(part.installationStatus)}
-                    {part.installationStatus}
-                  </Badge>
-                  {part.isTamiyaBrand && (
-                    <Badge variant="outline" className="text-xs text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 border-red-600 dark:border-red-400">
-                      TAMIYA
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
+          <Card key={part.id} className="relative h-full">
+            <CardContent className="p-4">
+              <div className="flex gap-3">
+                {/* Photo on left */}
+                {part.photo ? (
+                  <div className="flex-shrink-0 w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
+                    <img
+                      src={part.photo.url}
+                      alt={part.name}
+                      className="w-full h-full object-contain p-1"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+                    <span className="text-gray-400 dark:text-gray-600 text-xs">No image</span>
+                  </div>
+                )}
+
+                {/* Content on right */}
+                <div className="flex-1 min-w-0 flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm leading-tight mb-1">
+                        {part.name}
+                      </CardTitle>
+                      {part.itemNumber && (
+                        <CardDescription className="text-xs">#{part.itemNumber}</CardDescription>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className={`${getStatusColor(part.installationStatus)} flex items-center gap-1 text-xs`}>
+                        {getStatusIcon(part.installationStatus)}
+                        {part.installationStatus}
+                      </Badge>
+                      {part.isTamiyaBrand && (
+                        <Badge variant="outline" className="text-xs text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 border-red-600 dark:border-red-400">
+                          TAMIYA
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Details */}
               <div className="flex-1 space-y-3">
                 <div className="space-y-1">
                   <div className="text-sm font-medium">{part.category}</div>
@@ -257,94 +277,96 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                 )}
               </div>
 
-              {/* Button row - always at bottom */}
-              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-1 h-8">
-                  {/* Only show Mark Installed for planned parts */}
-                  {part.installationStatus === "planned" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleStatusMutation.mutate({ partId: part.id, newStatus: "installed" });
-                      }}
-                      disabled={toggleStatusMutation.isPending}
-                      className="h-8 w-8 p-0 flex items-center justify-center"
-                      title="Mark as Installed"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setEditingPart(part);
-                      setDialogOpen(true);
-                    }}
-                    className="h-8 w-8 p-0 flex items-center justify-center"
-                    title="Edit Part"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      deleteMutation.mutate(part.id);
-                    }}
-                    disabled={deleteMutation.isPending}
-                    className="h-8 w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
-                    title="Delete Part"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {/* Store links with logos */}
-                <div className="flex items-center gap-1 h-8">
-                  {part.tamiyaBaseUrl && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (part.tamiyaBaseUrl) window.open(part.tamiyaBaseUrl, '_blank');
-                      }}
-                      className="h-8 w-8 p-0 flex items-center justify-center"
-                      title="View on TamiyaBase"
-                    >
-                      <SiTamiya className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {part.productUrl && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (part.productUrl) window.open(part.productUrl, '_blank');
-                      }}
-                      className="h-8 w-8 p-0 flex items-center justify-center"
-                      title="View on Store"
-                    >
-                      {part.productUrl && part.productUrl.includes('amazon') ? (
-                        <SiAmazon className="h-4 w-4" />
-                      ) : part.productUrl && part.productUrl.includes('ebay') ? (
-                        <SiEbay className="h-4 w-4" />
-                      ) : (
-                        <ExternalLink className="h-4 w-4" />
+                  {/* Button row - always at bottom */}
+                  <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-1 h-8">
+                      {/* Only show Mark Installed for planned parts */}
+                      {part.installationStatus === "planned" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleStatusMutation.mutate({ partId: part.id, newStatus: "installed" });
+                          }}
+                          disabled={toggleStatusMutation.isPending}
+                          className="h-8 w-8 p-0 flex items-center justify-center"
+                          title="Mark as Installed"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </Button>
                       )}
-                    </Button>
-                  )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setEditingPart(part);
+                          setDialogOpen(true);
+                        }}
+                        className="h-8 w-8 p-0 flex items-center justify-center"
+                        title="Edit Part"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deleteMutation.mutate(part.id);
+                        }}
+                        disabled={deleteMutation.isPending}
+                        className="h-8 w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Delete Part"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Store links with logos */}
+                    <div className="flex items-center gap-1 h-8">
+                      {part.tamiyaBaseUrl && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (part.tamiyaBaseUrl) window.open(part.tamiyaBaseUrl, '_blank');
+                          }}
+                          className="h-8 w-8 p-0 flex items-center justify-center"
+                          title="View on TamiyaBase"
+                        >
+                          <SiTamiya className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {part.productUrl && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (part.productUrl) window.open(part.productUrl, '_blank');
+                          }}
+                          className="h-8 w-8 p-0 flex items-center justify-center"
+                          title="View on Store"
+                        >
+                          {part.productUrl && part.productUrl.includes('amazon') ? (
+                            <SiAmazon className="h-4 w-4" />
+                          ) : part.productUrl && part.productUrl.includes('ebay') ? (
+                            <SiEbay className="h-4 w-4" />
+                          ) : (
+                            <ExternalLink className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
