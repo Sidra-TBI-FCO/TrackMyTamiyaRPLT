@@ -22,7 +22,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Search, Plus, Trash2, RotateCw, Shield, ShieldOff, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Plus, Trash2, RotateCw, Shield, ShieldOff, CheckCircle2, XCircle, Copy, Filter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface UserWithStats {
   id: string;
@@ -43,6 +50,9 @@ interface UserWithStats {
 export function AdminUsers() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterVerified, setFilterVerified] = useState<string>("all");
+  const [filterAdmin, setFilterAdmin] = useState<string>("all");
+  const [filterHasModels, setFilterHasModels] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null);
   const [grantModelsCount, setGrantModelsCount] = useState<number>(10);
   const [showGrantDialog, setShowGrantDialog] = useState(false);
@@ -106,11 +116,47 @@ export function AdminUsers() {
     },
   });
   
-  const filteredUsers = users?.filter(user =>
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.lastName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users?.filter(user => {
+    // Search filter
+    const matchesSearch = searchQuery === "" || 
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.lastName?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Verified filter
+    const matchesVerified = filterVerified === "all" ||
+      (filterVerified === "verified" && user.isVerified) ||
+      (filterVerified === "unverified" && !user.isVerified);
+    
+    // Admin filter
+    const matchesAdmin = filterAdmin === "all" ||
+      (filterAdmin === "admin" && user.isAdmin) ||
+      (filterAdmin === "user" && !user.isAdmin);
+    
+    // Has models filter
+    const matchesHasModels = filterHasModels === "all" ||
+      (filterHasModels === "has-models" && user.modelCount > 0) ||
+      (filterHasModels === "no-models" && user.modelCount === 0);
+    
+    return matchesSearch && matchesVerified && matchesAdmin && matchesHasModels;
+  });
+
+  // Copy filtered emails to clipboard
+  const copyFilteredEmails = () => {
+    if (!filteredUsers || filteredUsers.length === 0) {
+      toast({ title: "No users to copy", variant: "destructive" });
+      return;
+    }
+    const emails = filteredUsers.map(user => user.email).join(", ");
+    navigator.clipboard.writeText(emails).then(() => {
+      toast({ 
+        title: "Emails copied!", 
+        description: `${filteredUsers.length} email(s) copied to clipboard` 
+      });
+    }).catch(() => {
+      toast({ title: "Failed to copy emails", variant: "destructive" });
+    });
+  };
   
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -134,9 +180,28 @@ export function AdminUsers() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <div className="flex items-center gap-2 mt-4">
-          <div className="relative flex-1">
+        <div className="flex items-center justify-between">
+          <CardTitle>User Management</CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {filteredUsers?.length || 0} users
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyFilteredEmails}
+              disabled={!filteredUsers || filteredUsers.length === 0}
+              data-testid="button-copy-emails"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Emails
+            </Button>
+          </div>
+        </div>
+        
+        {/* Search and Filters */}
+        <div className="flex flex-col gap-3 mt-4">
+          <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search users by email or name..."
@@ -145,6 +210,59 @@ export function AdminUsers() {
               className="pl-8"
               data-testid="input-search-users"
             />
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            
+            <Select value={filterVerified} onValueChange={setFilterVerified}>
+              <SelectTrigger className="w-32" data-testid="filter-verified">
+                <SelectValue placeholder="Verified" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="verified">Verified</SelectItem>
+                <SelectItem value="unverified">Unverified</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterAdmin} onValueChange={setFilterAdmin}>
+              <SelectTrigger className="w-32" data-testid="filter-admin">
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="admin">Admins</SelectItem>
+                <SelectItem value="user">Users</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterHasModels} onValueChange={setFilterHasModels}>
+              <SelectTrigger className="w-32" data-testid="filter-models">
+                <SelectValue placeholder="Models" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="has-models">Has Models</SelectItem>
+                <SelectItem value="no-models">No Models</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {(filterVerified !== "all" || filterAdmin !== "all" || filterHasModels !== "all" || searchQuery) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterVerified("all");
+                  setFilterAdmin("all");
+                  setFilterHasModels("all");
+                }}
+                data-testid="button-clear-filters"
+              >
+                Clear filters
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

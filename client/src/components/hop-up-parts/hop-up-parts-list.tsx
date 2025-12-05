@@ -197,55 +197,54 @@ export default function HopUpPartsList({ modelId }: HopUpPartsListProps) {
                   )}
 
                   {/* Details */}
-              <div className="flex-1 space-y-3">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">{part.category}</div>
-                  {part.manufacturer && (
-                    <div className="text-sm text-muted-foreground">by {part.manufacturer}</div>
-                  )}
-                  {part.supplier && (
-                    <div className="text-xs text-muted-foreground">from {part.supplier}</div>
-                  )}
-                  {part.cost && (
+                  <div className="flex-1 space-y-2">
                     <div className="space-y-1">
-                      <div className="text-sm font-medium text-green-600">
-                        ${parseFloat(part.cost).toFixed(2)} each
-                        {part.quantity && part.quantity > 1 && (
-                          <span className="text-xs ml-1">× {part.quantity}</span>
-                        )}
-                      </div>
-                      {part.quantity && part.quantity > 1 && (
-                        <div className="text-sm font-semibold text-green-700">
-                          Total: ${(parseFloat(part.cost) * part.quantity).toFixed(2)}
+                      <div className="text-sm font-medium">{part.category}</div>
+                      {part.manufacturer && (
+                        <div className="text-sm text-muted-foreground">by {part.manufacturer}</div>
+                      )}
+                      {part.supplier && (
+                        <div className="text-xs text-muted-foreground">from {part.supplier}</div>
+                      )}
+                      {part.cost && (
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium text-green-600">
+                            ${parseFloat(part.cost).toFixed(2)} each
+                            {part.quantity && part.quantity > 1 && (
+                              <span className="text-xs ml-1">× {part.quantity}</span>
+                            )}
+                          </div>
+                          {part.quantity && part.quantity > 1 && (
+                            <div className="text-sm font-semibold text-green-700">
+                              Total: ${(parseFloat(part.cost) * part.quantity).toFixed(2)}
+                            </div>
+                          )}
                         </div>
                       )}
+                      {part.material && (
+                        <div className="text-xs text-muted-foreground">Material: {part.material}</div>
+                      )}
+                      {part.color && (
+                        <div className="text-xs text-muted-foreground">Color: {part.color}</div>
+                      )}
                     </div>
-                  )}
-                  {part.material && (
-                    <div className="text-xs text-muted-foreground">Material: {part.material}</div>
-                  )}
-                  {part.color && (
-                    <div className="text-xs text-muted-foreground">Color: {part.color}</div>
-                  )}
-                </div>
 
-                {part.compatibility && part.compatibility.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {part.compatibility.map((chassis) => (
-                      <Badge key={chassis} variant="secondary" className="text-xs">
-                        {chassis}
-                      </Badge>
-                    ))}
+                    {part.compatibility && part.compatibility.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {part.compatibility.map((chassis) => (
+                          <Badge key={chassis} variant="secondary" className="text-xs">
+                            {chassis}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {part.installationDate && (
+                      <div className="text-xs text-muted-foreground">
+                        Installed: {new Date(part.installationDate).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {part.installationDate && (
-                  <div className="text-xs text-muted-foreground">
-                    Installed: {new Date(part.installationDate).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-
                 </div>
 
                 {/* Right side - Badges and Photo */}
