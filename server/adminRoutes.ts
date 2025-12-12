@@ -12,6 +12,7 @@ import crypto from "crypto";
 import multer from "multer";
 import path from "path";
 import { fileStorage } from "./storage-service";
+import { storage } from "./storage";
 
 const router = Router();
 
@@ -600,6 +601,86 @@ router.delete("/screenshots/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Delete screenshot error:", error);
     res.status(500).json({ message: "Failed to delete screenshot" });
+  }
+});
+
+// ============================================================================
+// Shared Models Management Routes
+// ============================================================================
+
+// GET /api/admin/shared-models - Get all shared models for admin review
+router.get("/shared-models", requireAdmin, async (req, res) => {
+  try {
+    const sharedModels = await storage.getAllSharedModelsForAdmin();
+    res.json(sharedModels);
+  } catch (error) {
+    console.error("Get shared models error:", error);
+    res.status(500).json({ message: "Failed to load shared models" });
+  }
+});
+
+// POST /api/admin/shared-models/:id/unshare - Admin force unshare a model
+router.post("/shared-models/:id/unshare", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const adminId = getUserId(req);
+    const modelId = parseInt(id);
+    
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+      return res.status(400).json({ message: "Reason is required" });
+    }
+    
+    // Get model info before unsharing for logging
+    const sharedModels = await storage.getAllSharedModelsForAdmin();
+    const targetModel = sharedModels.find(sm => sm.model.id === modelId);
+    
+    if (!targetModel) {
+      return res.status(404).json({ message: "Shared model not found" });
+    }
+    
+    // Unshare the model
+    const updatedModel = await storage.adminUnshareModel(modelId);
+    
+    if (!updatedModel) {
+      return res.status(500).json({ message: "Failed to unshare model" });
+    }
+    
+    // Log admin action
+    await logAdminAction(
+      adminId,
+      "admin_unshare_model",
+      targetModel.owner.id,
+      {
+        modelId: modelId,
+        modelName: targetModel.model.name,
+        reason: reason.trim(),
+        previousSlug: targetModel.model.publicSlug,
+      },
+      getClientIP(req)
+    );
+    
+    // Also log to user activity for transparency
+    await db.insert(userActivityLog).values({
+      userId: targetModel.owner.id,
+      activityType: 'model_unshared_by_admin',
+      details: {
+        modelId: modelId,
+        modelName: targetModel.model.name,
+        reason: reason.trim(),
+        adminId: adminId,
+      },
+      ipAddress: getClientIP(req),
+      userAgent: 'Admin Panel',
+    });
+    
+    res.json({ 
+      message: "Model unshared successfully",
+      model: updatedModel 
+    });
+  } catch (error) {
+    console.error("Admin unshare model error:", error);
+    res.status(500).json({ message: "Failed to unshare model" });
   }
 });
 

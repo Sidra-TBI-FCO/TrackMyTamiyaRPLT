@@ -860,6 +860,55 @@ export class DatabaseStorage implements IStorage {
     
     return result;
   }
+
+  // Admin methods for shared models management
+  async getAllSharedModelsForAdmin(): Promise<Array<{
+    model: Model;
+    owner: { id: string; email: string; firstName: string | null; lastName: string | null; sharePreference: string };
+    photoCount: number;
+  }>> {
+    const sharedModels = await db
+      .select({
+        model: models,
+        owner: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          sharePreference: users.sharePreference,
+        }
+      })
+      .from(models)
+      .innerJoin(users, eq(models.userId, users.id))
+      .where(eq(models.isShared, true))
+      .orderBy(desc(models.updatedAt));
+
+    const results = [];
+    for (const { model, owner } of sharedModels) {
+      const [{ count: photoCount }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(photos)
+        .where(eq(photos.modelId, model.id));
+      
+      results.push({
+        model,
+        owner,
+        photoCount: photoCount || 0,
+      });
+    }
+
+    return results;
+  }
+
+  async adminUnshareModel(modelId: number): Promise<Model | undefined> {
+    const [model] = await db
+      .update(models)
+      .set({ isShared: false })
+      .where(eq(models.id, modelId))
+      .returning();
+    
+    return model || undefined;
+  }
 }
 
 export const storage = new DatabaseStorage();
