@@ -45,6 +45,9 @@ export default function MarketingHeader() {
             <Link href="/feedback">
               <Button variant="ghost">Feedback</Button>
             </Link>
+            <Link href="/community">
+              <Button variant="ghost">Community</Button>
+            </Link>
             <Link href="/download">
               <Button variant="ghost">Download</Button>
             </Link>

@@ -197,3 +197,17 @@ The application is designed to be mobile-first with responsive design, supportin
   - Created shared/mobile-api.ts with TypeScript types and API documentation for mobile app
   - Security: JWT tokens require SESSION_SECRET, no fallback secret allowed
   - Mobile app architecture: React Native app calls Express API, shares types from shared/mobile-api.ts
+- **Community Model Sharing (December 2025)**:
+  - Users can share models with the community via per-model toggle
+  - Three-level visibility: public (anyone), authenticated (logged-in users only), private (owner only)
+  - User preference controls who can see their shared models (Settings > Community Sharing)
+  - Public community gallery at /community showing all shared models
+  - Individual shared model pages at /community/models/:slug with photos and hop-ups
+  - Automatic slug generation when sharing is enabled
+  - Community link added to marketing navigation
+  - **MIGRATION REQUIRED**: Run the following SQL on the database:
+    ```sql
+    ALTER TABLE users ADD COLUMN share_preference VARCHAR(20) NOT NULL DEFAULT 'private';
+    ALTER TABLE models ADD COLUMN is_shared BOOLEAN DEFAULT false;
+    ALTER TABLE models ADD COLUMN public_slug VARCHAR(100) UNIQUE;
+    ```
