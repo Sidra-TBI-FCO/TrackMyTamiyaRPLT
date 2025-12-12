@@ -42,8 +42,8 @@ export default function FeedbackPage() {
   const [category, setCategory] = useState("feature");
 
   const queryParams = new URLSearchParams();
-  if (filterCategory) queryParams.set("category", filterCategory);
-  if (filterStatus) queryParams.set("status", filterStatus);
+  if (filterCategory && filterCategory !== "all") queryParams.set("category", filterCategory);
+  if (filterStatus && filterStatus !== "all") queryParams.set("status", filterStatus);
   const queryString = queryParams.toString();
 
   const { data: posts, isLoading } = useQuery<FeedbackPostWithUser[]>({
