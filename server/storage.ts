@@ -768,6 +768,8 @@ export class DatabaseStorage implements IStorage {
       results.push({
         ...model,
         photos: modelPhotos,
+        buildLogEntries: [],
+        hopUpParts: [],
         hopUpCount: hopUpList.length,
         owner: {
           firstName: owner.firstName,
@@ -816,6 +818,8 @@ export class DatabaseStorage implements IStorage {
     return {
       ...result.model,
       photos: modelPhotos,
+      buildLogEntries: [],
+      hopUpParts: [],
       hopUpCount: hopUpList.length,
       owner: {
         firstName: result.owner.firstName,

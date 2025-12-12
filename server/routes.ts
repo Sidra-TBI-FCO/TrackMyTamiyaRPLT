@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protect all API routes except auth routes and public marketing routes
   app.use('/api', (req, res, next) => {
-    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots, feedback (GET only)
+    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots, feedback (GET only), community (GET only)
     if (req.path.startsWith('/auth/') || 
         req.path === '/login' || 
         req.path === '/logout' || 
@@ -131,7 +131,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/storage/status' ||
         req.path === '/pricing-tiers' ||
         req.path === '/screenshots' ||
-        (req.path === '/feedback' && req.method === 'GET')) {
+        (req.path === '/feedback' && req.method === 'GET') ||
+        (req.path.startsWith('/community/') && req.method === 'GET')) {
       return next();
     }
     
@@ -350,6 +351,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== END FEEDBACK ROUTES ====================
+
+  // ==================== COMMUNITY/SHARING ROUTES ====================
+  
+  // Get all shared models (public, but auth-required models need login)
+  app.get('/api/community/models', async (req: any, res) => {
+    try {
+      const viewerUserId = req.user?.id;
+      const models = await storage.getSharedModels(viewerUserId);
+      res.json(models);
+    } catch (error) {
+      console.error("Community models fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch community models" });
+    }
+  });
+
+  // Get a specific shared model by slug
+  app.get('/api/community/models/:slug', async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const viewerUserId = req.user?.id;
+      const model = await storage.getSharedModelBySlug(slug, viewerUserId);
+      
+      if (!model) {
+        return res.status(404).json({ message: "Model not found or not shared" });
+      }
+      
+      res.json(model);
+    } catch (error) {
+      console.error("Community model fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch model" });
+    }
+  });
+
+  // Get photos for a shared model
+  app.get('/api/community/models/:slug/photos', async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const viewerUserId = req.user?.id;
+      const photos = await storage.getSharedModelPhotos(slug, viewerUserId);
+      res.json(photos);
+    } catch (error) {
+      console.error("Community photos fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch photos" });
+    }
+  });
+
+  // Get hop-ups for a shared model (costs hidden)
+  app.get('/api/community/models/:slug/hopups', async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const viewerUserId = req.user?.id;
+      const hopups = await storage.getSharedModelHopUps(slug, viewerUserId);
+      res.json(hopups);
+    } catch (error) {
+      console.error("Community hop-ups fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch hop-ups" });
+    }
+  });
+
+  // Update user share preference (requires auth)
+  app.patch('/api/user/share-preference', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { sharePreference } = req.body;
+      const validPreferences = ['public', 'authenticated', 'private'];
+      if (!validPreferences.includes(sharePreference)) {
+        return res.status(400).json({ message: "Invalid share preference" });
+      }
+
+      const user = await storage.updateUserSharePreference(userId, sharePreference);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ sharePreference: user.sharePreference });
+    } catch (error) {
+      console.error("Share preference update error:", error);
+      res.status(500).json({ message: "Failed to update share preference" });
+    }
+  });
+
+  // ==================== END COMMUNITY/SHARING ROUTES ====================
 
   // Purchase complete route - records purchase after Stripe payment succeeds
   app.post('/api/purchase/complete', async (req, res) => {
@@ -585,6 +672,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const id = parseInt(req.params.id);
       const modelData = insertModelSchema.partial().parse(req.body);
+      
+      // Generate publicSlug if sharing is being enabled and no slug exists
+      if (modelData.isShared && !req.body.publicSlug) {
+        const existingModel = await storage.getModel(id, userId);
+        if (existingModel && !existingModel.publicSlug) {
+          // Generate a unique slug from model name + random suffix
+          const slugBase = existingModel.name.toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '')
+            .substring(0, 30);
+          const randomSuffix = Math.random().toString(36).substring(2, 8);
+          modelData.publicSlug = `${slugBase}-${randomSuffix}`;
+        }
+      }
+      
       const model = await storage.updateModel(id, userId, modelData);
       if (!model) {
         return res.status(404).json({ message: 'Model not found' });
