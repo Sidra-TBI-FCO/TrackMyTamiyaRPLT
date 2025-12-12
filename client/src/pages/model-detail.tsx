@@ -1,10 +1,11 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe } from "lucide-react";
 import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -145,6 +146,39 @@ export default function ModelDetail() {
       });
     },
   });
+
+  const toggleShareMutation = useMutation({
+    mutationFn: async (isShared: boolean) => {
+      await apiRequest("PUT", `/api/models/${id}`, { isShared });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", id] });
+      toast({
+        title: model?.isShared ? "Model hidden" : "Model shared",
+        description: model?.isShared 
+          ? "This model is now private." 
+          : "This model is now visible to the community.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update sharing settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const copyShareLink = () => {
+    if (model?.publicSlug) {
+      const shareUrl = `${window.location.origin}/community/models/${model.publicSlug}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied",
+        description: "Share link has been copied to your clipboard.",
+      });
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1010,6 +1044,71 @@ export default function ModelDetail() {
                 <Cog className="mr-2 h-4 w-4" />
                 Add Hop-Up
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Share Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-mono text-lg flex items-center gap-2">
+                <Share2 className="h-5 w-5" />
+                Community Sharing
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-mono text-gray-900 dark:text-white">Share this model</p>
+                  <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                    Make visible to the community
+                  </p>
+                </div>
+                <Switch
+                  checked={model.isShared || false}
+                  onCheckedChange={(checked) => toggleShareMutation.mutate(checked)}
+                  disabled={toggleShareMutation.isPending}
+                  data-testid="toggle-share-model"
+                />
+              </div>
+
+              {model.isShared && model.publicSlug && (
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-mono text-green-600 dark:text-green-400">
+                      Model is visible to the community
+                    </span>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full font-mono"
+                    onClick={copyShareLink}
+                    data-testid="copy-share-link"
+                  >
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Copy Share Link
+                  </Button>
+                  
+                  <a 
+                    href={`/community/models/${model.publicSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full font-mono text-xs"
+                      data-testid="view-public-page"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-2" />
+                      View Public Page
+                    </Button>
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

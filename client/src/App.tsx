@@ -16,6 +16,8 @@ import PricingPage from "@/pages/pricing";
 import DownloadPage from "@/pages/download";
 import DisclaimerPage from "@/pages/disclaimer";
 import FeedbackPage from "@/pages/feedback";
+import CommunityPage from "@/pages/community";
+import CommunityModelDetailPage from "@/pages/community-model-detail";
 
 // Application pages
 import Home from "@/pages/home";
@@ -38,7 +40,7 @@ import MobileNav from "@/components/layout/mobile-nav";
 import MarketingHeader from "@/components/layout/marketing-header";
 
 // Marketing routes that should always be accessible
-const MARKETING_ROUTES = ['/features', '/screenshots', '/pricing', '/download', '/disclaimer', '/feedback', '/auth', '/forgot-password', '/reset-password'];
+const MARKETING_ROUTES = ['/features', '/screenshots', '/pricing', '/download', '/disclaimer', '/feedback', '/auth', '/forgot-password', '/reset-password', '/community'];
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -52,6 +54,8 @@ function Router() {
       <Route path="/download" component={DownloadPage} />
       <Route path="/disclaimer" component={DisclaimerPage} />
       <Route path="/feedback" component={FeedbackPage} />
+      <Route path="/community" component={CommunityPage} />
+      <Route path="/community/models/:slug" component={CommunityModelDetailPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />

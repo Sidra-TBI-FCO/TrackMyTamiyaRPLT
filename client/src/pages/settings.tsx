@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart, Share2, Globe, Users, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme, getAppSettings, saveAppSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -175,6 +175,28 @@ export default function SettingsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to complete purchase",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Share preference mutation
+  const updateSharePreferenceMutation = useMutation({
+    mutationFn: async (sharePreference: 'public' | 'authenticated' | 'private') => {
+      const response = await apiRequest("PATCH", "/api/user/share-preference", { sharePreference });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Share preference updated",
+        description: "Your community sharing preference has been saved.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update share preference",
         variant: "destructive",
       });
     },
@@ -449,6 +471,73 @@ export default function SettingsPage() {
                 : 'Alternative red and blue colors'
               }
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Community Sharing Settings */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-lg font-mono">
+            <Share2 className="h-5 w-5" />
+            <span>Community Sharing</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm font-mono text-gray-600 dark:text-gray-400">
+            Control who can see your shared models in the community gallery.
+          </p>
+          
+          <div className="space-y-3">
+            <Label className="text-sm font-mono font-medium">Sharing Visibility</Label>
+            <Select 
+              value={(user as any)?.sharePreference || 'private'} 
+              onValueChange={(value: 'public' | 'authenticated' | 'private') => {
+                updateSharePreferenceMutation.mutate(value);
+              }}
+              disabled={updateSharePreferenceMutation.isPending}
+            >
+              <SelectTrigger className="w-full" data-testid="select-share-preference">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    <span>Public - Anyone can view</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="authenticated">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>Members Only - Logged-in users</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="private">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    <span>Private - Only you</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              {(user as any)?.sharePreference === 'public' 
+                ? 'Your shared models are visible to everyone, including non-registered visitors.'
+                : (user as any)?.sharePreference === 'authenticated'
+                ? 'Only registered and logged-in members can view your shared models.'
+                : 'Your models are private and not visible in the community gallery.'
+              }
+            </p>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+            <p className="text-xs font-mono font-medium text-gray-700 dark:text-gray-300">How sharing works:</p>
+            <ul className="text-xs font-mono text-gray-600 dark:text-gray-400 space-y-1">
+              <li>1. Set your visibility preference above</li>
+              <li>2. Toggle sharing ON for individual models you want to share</li>
+              <li>3. Your shared models appear in the community gallery</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
