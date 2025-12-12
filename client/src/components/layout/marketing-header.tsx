@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, LayoutDashboard } from "lucide-react";
 import { Link } from "wouter";
 import { useTheme } from "@/lib/theme-context";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MarketingHeader() {
   const { darkMode, toggleDarkMode } = useTheme();
+  const { isAuthenticated, user } = useAuth();
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -62,11 +64,20 @@ export default function MarketingHeader() {
               )}
             </Button>
             
-            <Link href="/auth">
-              <Button className="text-white" style={{backgroundColor: 'var(--theme-primary)'}}>
-                Login
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/">
+                <Button className="text-white" style={{backgroundColor: 'var(--theme-primary)'}} data-testid="button-go-to-app">
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Go to App
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth">
+                <Button className="text-white" style={{backgroundColor: 'var(--theme-primary)'}} data-testid="button-login">
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
