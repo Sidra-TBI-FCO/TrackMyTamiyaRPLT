@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, pricingTiers, purchases, users } from "@shared/schema";
+import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -121,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protect all API routes except auth routes and public marketing routes
   app.use('/api', (req, res, next) => {
-    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots
+    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots, feedback (GET only)
     if (req.path.startsWith('/auth/') || 
         req.path === '/login' || 
         req.path === '/logout' || 
@@ -129,7 +129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path.startsWith('/files/') || 
         req.path === '/storage/status' ||
         req.path === '/pricing-tiers' ||
-        req.path === '/screenshots') {
+        req.path === '/screenshots' ||
+        (req.path === '/feedback' && req.method === 'GET')) {
       return next();
     }
     
@@ -168,6 +169,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch screenshots" });
     }
   });
+
+  // ==================== FEEDBACK ROUTES ====================
+  
+  // Get all feedback posts (public, but shows vote status if authenticated)
+  app.get('/api/feedback', async (req: any, res) => {
+    try {
+      const { category, status } = req.query;
+      const currentUserId = req.user?.id;
+      
+      const posts = await storage.getFeedbackPosts(
+        currentUserId,
+        category as string | undefined,
+        status as string | undefined
+      );
+      res.json(posts);
+    } catch (error) {
+      console.error("Feedback fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch feedback" });
+    }
+  });
+
+  // Create a new feedback post (requires auth)
+  app.post('/api/feedback', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "You must be signed in to post feedback" });
+      }
+
+      const parsed = insertFeedbackPostSchema.safeParse({ ...req.body, userId });
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid feedback data", errors: parsed.error.errors });
+      }
+
+      const post = await storage.createFeedbackPost(parsed.data);
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Feedback create error:", error);
+      res.status(500).json({ message: "Failed to create feedback" });
+    }
+  });
+
+  // Vote for a feedback post (requires auth)
+  app.post('/api/feedback/:id/vote', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "You must be signed in to vote" });
+      }
+
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ message: "Invalid feedback ID" });
+      }
+
+      const success = await storage.voteFeedback(feedbackId, userId);
+      if (!success) {
+        return res.status(400).json({ message: "Already voted or feedback not found" });
+      }
+
+      res.json({ message: "Vote recorded" });
+    } catch (error) {
+      console.error("Vote error:", error);
+      res.status(500).json({ message: "Failed to record vote" });
+    }
+  });
+
+  // Remove vote from a feedback post (requires auth)
+  app.delete('/api/feedback/:id/vote', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "You must be signed in to vote" });
+      }
+
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ message: "Invalid feedback ID" });
+      }
+
+      await storage.unvoteFeedback(feedbackId, userId);
+      res.json({ message: "Vote removed" });
+    } catch (error) {
+      console.error("Unvote error:", error);
+      res.status(500).json({ message: "Failed to remove vote" });
+    }
+  });
+
+  // Delete own feedback post (requires auth)
+  app.delete('/api/feedback/:id', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ message: "Invalid feedback ID" });
+      }
+
+      const success = await storage.deleteFeedbackPost(feedbackId, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Feedback not found or not owned by you" });
+      }
+
+      res.json({ message: "Feedback deleted" });
+    } catch (error) {
+      console.error("Feedback delete error:", error);
+      res.status(500).json({ message: "Failed to delete feedback" });
+    }
+  });
+
+  // Admin: Update feedback status
+  app.patch('/api/feedback/:id/status', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Check if user is admin
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const feedbackId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      const validStatuses = ['open', 'planned', 'in_progress', 'completed', 'declined'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const updated = await storage.updateFeedbackPostStatus(feedbackId, status);
+      if (!updated) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Status update error:", error);
+      res.status(500).json({ message: "Failed to update status" });
+    }
+  });
+
+  // ==================== END FEEDBACK ROUTES ====================
 
   // Purchase complete route - records purchase after Stripe payment succeeds
   app.post('/api/purchase/complete', async (req, res) => {

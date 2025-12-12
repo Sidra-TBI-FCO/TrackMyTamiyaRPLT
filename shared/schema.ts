@@ -181,11 +181,55 @@ export const featureScreenshots = pgTable("feature_screenshots", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Feedback posts - user feature requests and feedback
+export const feedbackPosts = pgTable("feedback_posts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  category: varchar("category").notNull().default("feature"), // "feature", "bug", "improvement", "other"
+  status: varchar("status").notNull().default("open"), // "open", "planned", "in_progress", "completed", "declined"
+  voteCount: integer("vote_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Feedback votes - track who voted for what (prevents duplicates)
+export const feedbackVotes = pgTable("feedback_votes", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => feedbackPosts.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_feedback_votes_unique").on(table.feedbackId, table.userId),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   models: many(models),
   purchases: many(purchases),
   activityLogs: many(userActivityLog),
+  feedbackPosts: many(feedbackPosts),
+  feedbackVotes: many(feedbackVotes),
+}));
+
+export const feedbackPostsRelations = relations(feedbackPosts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [feedbackPosts.userId],
+    references: [users.id],
+  }),
+  votes: many(feedbackVotes),
+}));
+
+export const feedbackVotesRelations = relations(feedbackVotes, ({ one }) => ({
+  feedbackPost: one(feedbackPosts, {
+    fields: [feedbackVotes.feedbackId],
+    references: [feedbackPosts.id],
+  }),
+  user: one(users, {
+    fields: [feedbackVotes.userId],
+    references: [users.id],
+  }),
 }));
 
 export const modelsRelations = relations(models, ({ one, many }) => ({
@@ -347,6 +391,18 @@ export const insertFeatureScreenshotSchema = createInsertSchema(featureScreensho
   updatedAt: true,
 });
 
+export const insertFeedbackPostSchema = createInsertSchema(feedbackPosts).omit({
+  id: true,
+  voteCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFeedbackVoteSchema = createInsertSchema(feedbackVotes).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -371,6 +427,16 @@ export type UserActivityLog = typeof userActivityLog.$inferSelect;
 export type InsertUserActivityLog = z.infer<typeof insertUserActivityLogSchema>;
 export type FeatureScreenshot = typeof featureScreenshots.$inferSelect;
 export type InsertFeatureScreenshot = z.infer<typeof insertFeatureScreenshotSchema>;
+export type FeedbackPost = typeof feedbackPosts.$inferSelect;
+export type InsertFeedbackPost = z.infer<typeof insertFeedbackPostSchema>;
+export type FeedbackVote = typeof feedbackVotes.$inferSelect;
+export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
+
+// Extended feedback type with user info and vote status
+export type FeedbackPostWithUser = FeedbackPost & {
+  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'profileImageUrl'>;
+  hasVoted?: boolean;
+};
 
 // Extended types with relations
 export type HopUpPartWithPhoto = HopUpPart & {

@@ -1,4 +1,4 @@
-import { Search, Images, Moon, Sun, Settings, Star, Shield } from "lucide-react";
+import { Search, Images, Moon, Sun, Settings, Star, Shield, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -104,6 +104,19 @@ export default function Header() {
               onMouseLeave={(e) => e.currentTarget.style.color = ''}
             >
               <Images className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocation("/feedback")}
+              className="text-gray-600 dark:text-gray-300"
+              style={{'--hover-color': 'var(--theme-secondary)'} as React.CSSProperties}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--theme-secondary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = ''}
+              title="Feedback & Feature Requests"
+              data-testid="button-feedback"
+            >
+              <MessageSquare className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"

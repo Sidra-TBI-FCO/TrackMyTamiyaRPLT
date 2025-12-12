@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +15,7 @@ import Screenshots from "@/pages/screenshots";
 import PricingPage from "@/pages/pricing";
 import DownloadPage from "@/pages/download";
 import DisclaimerPage from "@/pages/disclaimer";
+import FeedbackPage from "@/pages/feedback";
 
 // Application pages
 import Home from "@/pages/home";
@@ -36,17 +37,21 @@ import Navigation from "@/components/layout/navigation";
 import MobileNav from "@/components/layout/mobile-nav";
 import MarketingHeader from "@/components/layout/marketing-header";
 
+// Marketing routes that should always be accessible
+const MARKETING_ROUTES = ['/features', '/screenshots', '/pricing', '/download', '/disclaimer', '/feedback', '/auth', '/forgot-password', '/reset-password'];
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
-      {/* Marketing pages - always accessible */}
+      {/* Marketing pages - always accessible to everyone */}
       <Route path="/features" component={Features} />
       <Route path="/screenshots" component={Screenshots} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/download" component={DownloadPage} />
       <Route path="/disclaimer" component={DisclaimerPage} />
+      <Route path="/feedback" component={FeedbackPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
@@ -90,7 +95,13 @@ function App() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
-  const showAppLayout = !isLoading && isAuthenticated;
+  const [location] = useLocation();
+  
+  // Check if we're on a marketing route
+  const isMarketingRoute = MARKETING_ROUTES.some(route => location.startsWith(route));
+  
+  // Show app layout only for authenticated users on non-marketing routes
+  const showAppLayout = !isLoading && isAuthenticated && !isMarketingRoute;
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">

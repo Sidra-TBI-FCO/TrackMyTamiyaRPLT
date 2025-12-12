@@ -1,14 +1,16 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
+  feedbackPosts, feedbackVotes,
   type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
   type BuildLogEntry, type InsertBuildLogEntry, type BuildLogEntryWithPhotos,
   type HopUpPart, type InsertHopUpPart, type HopUpPartWithPhoto,
-  type BuildLogPhoto
+  type BuildLogPhoto,
+  type FeedbackPost, type InsertFeedbackPost, type FeedbackPostWithUser
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User methods for Replit Auth and traditional auth
@@ -56,6 +58,16 @@ export interface IStorage {
     totalInvestment: string;
     totalPhotos: number;
   }>;
+
+  // Feedback methods
+  getFeedbackPosts(currentUserId?: string, category?: string, status?: string): Promise<FeedbackPostWithUser[]>;
+  getFeedbackPost(id: number, currentUserId?: string): Promise<FeedbackPostWithUser | undefined>;
+  createFeedbackPost(post: InsertFeedbackPost): Promise<FeedbackPost>;
+  updateFeedbackPostStatus(id: number, status: string): Promise<FeedbackPost | undefined>;
+  deleteFeedbackPost(id: number, userId: string): Promise<boolean>;
+  voteFeedback(feedbackId: number, userId: string): Promise<boolean>;
+  unvoteFeedback(feedbackId: number, userId: string): Promise<boolean>;
+  hasUserVoted(feedbackId: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -545,6 +557,151 @@ export class DatabaseStorage implements IStorage {
       totalInvestment,
       totalPhotos,
     };
+  }
+
+  // Feedback methods
+  async getFeedbackPosts(currentUserId?: string, category?: string, status?: string): Promise<FeedbackPostWithUser[]> {
+    const conditions = [];
+    if (category) {
+      conditions.push(eq(feedbackPosts.category, category));
+    }
+    if (status) {
+      conditions.push(eq(feedbackPosts.status, status));
+    }
+
+    const posts = await db.query.feedbackPosts.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      with: {
+        user: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+      },
+      orderBy: desc(feedbackPosts.voteCount),
+    });
+
+    // If we have a current user, check which posts they've voted for
+    if (currentUserId) {
+      const userVotes = await db.select({ feedbackId: feedbackVotes.feedbackId })
+        .from(feedbackVotes)
+        .where(eq(feedbackVotes.userId, currentUserId));
+      
+      const votedIds = new Set(userVotes.map(v => v.feedbackId));
+      
+      return posts.map(post => ({
+        ...post,
+        hasVoted: votedIds.has(post.id),
+      }));
+    }
+
+    return posts.map(post => ({ ...post, hasVoted: false }));
+  }
+
+  async getFeedbackPost(id: number, currentUserId?: string): Promise<FeedbackPostWithUser | undefined> {
+    const post = await db.query.feedbackPosts.findFirst({
+      where: eq(feedbackPosts.id, id),
+      with: {
+        user: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!post) return undefined;
+
+    let hasVoted = false;
+    if (currentUserId) {
+      hasVoted = await this.hasUserVoted(id, currentUserId);
+    }
+
+    return { ...post, hasVoted };
+  }
+
+  async createFeedbackPost(post: InsertFeedbackPost): Promise<FeedbackPost> {
+    const [newPost] = await db.insert(feedbackPosts).values(post).returning();
+    return newPost;
+  }
+
+  async updateFeedbackPostStatus(id: number, status: string): Promise<FeedbackPost | undefined> {
+    const [updated] = await db
+      .update(feedbackPosts)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(feedbackPosts.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteFeedbackPost(id: number, userId: string): Promise<boolean> {
+    // Users can only delete their own posts
+    const result = await db
+      .delete(feedbackPosts)
+      .where(and(eq(feedbackPosts.id, id), eq(feedbackPosts.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async voteFeedback(feedbackId: number, userId: string): Promise<boolean> {
+    try {
+      // Use transaction with unique constraint to prevent duplicates
+      await db.transaction(async (tx) => {
+        // Try to insert vote - will fail if already exists due to unique constraint
+        await tx.insert(feedbackVotes).values({ feedbackId, userId });
+        await tx.update(feedbackPosts)
+          .set({ voteCount: sql`${feedbackPosts.voteCount} + 1` })
+          .where(eq(feedbackPosts.id, feedbackId));
+      });
+
+      return true;
+    } catch (error: any) {
+      // If unique constraint violation, user already voted
+      if (error.code === '23505') {
+        return false;
+      }
+      console.error('Error voting for feedback:', error);
+      return false;
+    }
+  }
+
+  async unvoteFeedback(feedbackId: number, userId: string): Promise<boolean> {
+    try {
+      // Remove vote and decrement count atomically
+      await db.transaction(async (tx) => {
+        const result = await tx.delete(feedbackVotes)
+          .where(and(
+            eq(feedbackVotes.feedbackId, feedbackId),
+            eq(feedbackVotes.userId, userId)
+          ));
+
+        if ((result.rowCount ?? 0) > 0) {
+          await tx.update(feedbackPosts)
+            .set({ voteCount: sql`GREATEST(${feedbackPosts.voteCount} - 1, 0)` })
+            .where(eq(feedbackPosts.id, feedbackId));
+        }
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error removing vote:', error);
+      return false;
+    }
+  }
+
+  async hasUserVoted(feedbackId: number, userId: string): Promise<boolean> {
+    const [vote] = await db.select()
+      .from(feedbackVotes)
+      .where(and(
+        eq(feedbackVotes.feedbackId, feedbackId),
+        eq(feedbackVotes.userId, userId)
+      ));
+    return !!vote;
   }
 }
 
