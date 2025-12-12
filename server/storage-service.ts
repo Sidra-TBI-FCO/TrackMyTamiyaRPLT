@@ -23,11 +23,18 @@ try {
   throw error;
 }
 
+export interface SignedUrlResult {
+  uploadUrl: string;
+  filename: string;
+  expiresAt: Date;
+}
+
 export interface FileStorageService {
   uploadFile(file: Express.Multer.File, filename: string): Promise<string>;
   deleteFile(filename: string): Promise<void>;
   getFileUrl(filename: string): string;
   downloadFile(filename: string): Promise<Buffer>;
+  generateSignedUploadUrl(filename: string, contentType: string): Promise<SignedUrlResult>;
 }
 
 class GoogleCloudStorage implements FileStorageService {
@@ -110,6 +117,37 @@ class GoogleCloudStorage implements FileStorageService {
     } catch (error) {
       console.error('❌ Google Cloud Storage list files error:', error);
       throw new Error(`Failed to list files from Google Cloud Storage: ${(error as any).message}`);
+    }
+  }
+
+  async generateSignedUploadUrl(filename: string, contentType: string): Promise<SignedUrlResult> {
+    if (!googleStorage) {
+      throw new Error('Google Cloud Storage not initialized');
+    }
+
+    try {
+      const bucket = googleStorage.bucket(this.bucketName);
+      const file = bucket.file(filename);
+      
+      // URL expires in 15 minutes
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      
+      const [url] = await file.getSignedUrl({
+        version: 'v4',
+        action: 'write',
+        expires: expiresAt,
+        contentType: contentType,
+      });
+
+      console.log(`✅ Generated signed upload URL for: ${filename}`);
+      return {
+        uploadUrl: url,
+        filename: filename,
+        expiresAt: expiresAt
+      };
+    } catch (error) {
+      console.error('❌ Failed to generate signed URL:', error);
+      throw new Error(`Failed to generate signed upload URL: ${(error as any).message}`);
     }
   }
 }

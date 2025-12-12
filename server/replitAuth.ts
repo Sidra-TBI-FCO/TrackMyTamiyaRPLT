@@ -4,6 +4,7 @@ import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import { setupTraditionalAuth } from "./traditionalAuth";
 import { setupGoogleAuth } from "./googleAuth";
+import { setupMobileAuth, getMobileUser } from "./mobileAuth";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -40,6 +41,9 @@ export async function setupAuth(app: Express) {
   
   // Set up Google OAuth authentication
   setupGoogleAuth(app);
+  
+  // Set up mobile JWT authentication
+  setupMobileAuth(app);
 
   // Setup passport serialization
   passport.serializeUser((user: any, cb) => cb(null, user));
@@ -64,9 +68,28 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
+  // First check session-based auth (web app)
+  if (req.isAuthenticated() && req.user) {
+    return next();
   }
   
-  return next();
+  // Then check JWT-based auth (mobile app)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const mobileUser = await getMobileUser(req);
+    if (mobileUser) {
+      // Attach mobile user to request in same format as session user
+      (req as any).user = {
+        id: mobileUser.id,
+        email: mobileUser.email,
+        firstName: mobileUser.firstName,
+        lastName: mobileUser.lastName,
+        profileImageUrl: mobileUser.profileImageUrl,
+        authProvider: mobileUser.authProvider
+      };
+      return next();
+    }
+  }
+  
+  return res.status(401).json({ message: "Unauthorized" });
 };

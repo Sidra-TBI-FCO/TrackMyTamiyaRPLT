@@ -99,7 +99,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle both Replit OAuth and traditional auth user structures
       const userId = getUserId(req);
       const user = await storage.getUser(userId);
-      res.json(user);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      // Return user without sensitive fields
+      const { password, verificationToken, resetPasswordToken, resetPasswordExpires, ...safeUser } = user;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -326,8 +331,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Handle both Replit OAuth and traditional auth user structures
       const userId = getUserId(req);
+      
+      // Support pagination for mobile clients
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const offset = (page - 1) * limit;
+      
       const models = await storage.getModels(userId);
-      res.json(models);
+      
+      // Return paginated response if pagination params provided
+      if (req.query.page || req.query.limit) {
+        const paginatedModels = models.slice(offset, offset + limit);
+        res.json({
+          data: paginatedModels,
+          pagination: {
+            page,
+            limit,
+            total: models.length,
+            totalPages: Math.ceil(models.length / limit),
+            hasMore: offset + limit < models.length
+          }
+        });
+      } else {
+        // Backward compatible: return array for web app
+        res.json(models);
+      }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -422,8 +450,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const photos = await storage.getPhotos(modelId, userId);
-      res.json(photos);
+      
+      // Support pagination for mobile clients
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const offset = (page - 1) * limit;
+      
+      if (req.query.page || req.query.limit) {
+        const paginatedPhotos = photos.slice(offset, offset + limit);
+        res.json({
+          data: paginatedPhotos,
+          pagination: {
+            page,
+            limit,
+            total: photos.length,
+            totalPages: Math.ceil(photos.length / limit),
+            hasMore: offset + limit < photos.length
+          }
+        });
+      } else {
+        res.json(photos);
+      }
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Mobile: Generate signed URL for direct photo upload to Google Cloud Storage
+  app.post('/api/mobile/photos/signed-url', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const { modelId, filename, contentType } = req.body;
+      
+      if (!modelId || !filename || !contentType) {
+        return res.status(400).json({ message: 'modelId, filename, and contentType are required' });
+      }
+
+      // Verify user owns the model
+      const model = await storage.getModel(parseInt(modelId), userId);
+      if (!model) {
+        return res.status(404).json({ message: 'Model not found' });
+      }
+
+      // Generate unique filename to prevent conflicts
+      const uniqueFilename = `${Date.now()}-${Math.round(Math.random() * 1E9)}-${filename}`;
+      
+      // Generate signed URL for upload
+      const result = await fileStorage.generateSignedUploadUrl(uniqueFilename, contentType);
+      
+      res.json({
+        uploadUrl: result.uploadUrl,
+        filename: result.filename,
+        fileUrl: fileStorage.getFileUrl(result.filename),
+        expiresAt: result.expiresAt.toISOString()
+      });
+    } catch (error: any) {
+      console.error('Signed URL generation error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Mobile: Confirm photo upload after using signed URL
+  app.post('/api/mobile/photos/confirm', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const { modelId, filename, originalName, caption, isBoxArt } = req.body;
+      
+      if (!modelId || !filename || !originalName) {
+        return res.status(400).json({ message: 'modelId, filename, and originalName are required' });
+      }
+
+      // Verify user owns the model
+      const model = await storage.getModel(parseInt(modelId), userId);
+      if (!model) {
+        return res.status(404).json({ message: 'Model not found' });
+      }
+
+      // Create photo record in database
+      const photoData = insertPhotoSchema.parse({
+        modelId: parseInt(modelId),
+        filename: filename,
+        originalName: originalName,
+        url: fileStorage.getFileUrl(filename),
+        caption: caption || null,
+        isBoxArt: isBoxArt || false
+      });
+
+      const photo = await storage.createPhoto(photoData);
+      
+      res.status(201).json(photo);
+    } catch (error: any) {
+      console.error('Photo confirmation error:', error);
       res.status(500).json({ message: error.message });
     }
   });
