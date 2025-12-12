@@ -673,24 +673,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const modelData = insertModelSchema.partial().parse(req.body);
       
+      // Get existing model to check for sharing changes
+      const existingModel = await storage.getModel(id, userId);
+      if (!existingModel) {
+        return res.status(404).json({ message: 'Model not found' });
+      }
+      
       // Generate publicSlug if sharing is being enabled and no slug exists
-      if (modelData.isShared && !req.body.publicSlug) {
-        const existingModel = await storage.getModel(id, userId);
-        if (existingModel && !existingModel.publicSlug) {
-          // Generate a unique slug from model name + random suffix
-          const slugBase = existingModel.name.toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '')
-            .substring(0, 30);
-          const randomSuffix = Math.random().toString(36).substring(2, 8);
-          modelData.publicSlug = `${slugBase}-${randomSuffix}`;
-        }
+      if (modelData.isShared && !req.body.publicSlug && !existingModel.publicSlug) {
+        const slugBase = existingModel.name.toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+          .substring(0, 30);
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        modelData.publicSlug = `${slugBase}-${randomSuffix}`;
       }
       
       const model = await storage.updateModel(id, userId, modelData);
       if (!model) {
-        return res.status(404).json({ message: 'Model not found' });
+        return res.status(404).json({ message: 'Model update failed' });
       }
+      
+      // Log sharing changes
+      if (modelData.isShared !== undefined && modelData.isShared !== existingModel.isShared) {
+        await logUserActivity(userId, modelData.isShared ? 'model_shared' : 'model_unshared', {
+          modelId: id,
+          modelName: existingModel.name,
+          publicSlug: model.publicSlug,
+        }, req);
+      }
+      
       res.json(model);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
