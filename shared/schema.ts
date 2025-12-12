@@ -32,6 +32,8 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   modelLimit: integer("model_limit").default(2), // Free tier: 2 models
   manuallyGrantedModels: integer("manually_granted_models").default(0), // Admin can grant extra models
+  // Sharing preferences: 'public' (anyone), 'authenticated' (logged-in users), 'private' (no sharing)
+  sharePreference: varchar("share_preference").notNull().default("private"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -61,6 +63,9 @@ export const models = pgTable("models", {
   tamiyaUrl: text("tamiya_url"), // Link to official Tamiya page
   tamiyaBaseUrl: text("tamiya_base_url"), // Link to TamiyaBase page
   tags: text("tags").array().default(sql`'{}'::text[]`), // Array of tags for organization
+  // Sharing fields
+  isShared: boolean("is_shared").default(false), // User wants to share this model
+  publicSlug: varchar("public_slug").unique(), // Unique slug for public URL
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

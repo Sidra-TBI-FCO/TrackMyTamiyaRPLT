@@ -68,6 +68,13 @@ export interface IStorage {
   voteFeedback(feedbackId: number, userId: string): Promise<boolean>;
   unvoteFeedback(feedbackId: number, userId: string): Promise<boolean>;
   hasUserVoted(feedbackId: number, userId: string): Promise<boolean>;
+
+  // Community/Sharing methods
+  updateUserSharePreference(userId: string, preference: string): Promise<User | undefined>;
+  getSharedModels(viewerUserId?: string): Promise<ModelWithRelations[]>;
+  getSharedModelBySlug(slug: string, viewerUserId?: string): Promise<ModelWithRelations | undefined>;
+  getSharedModelPhotos(slug: string, viewerUserId?: string): Promise<Photo[]>;
+  getSharedModelHopUps(slug: string, viewerUserId?: string): Promise<HopUpPartWithPhoto[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -702,6 +709,152 @@ export class DatabaseStorage implements IStorage {
         eq(feedbackVotes.userId, userId)
       ));
     return !!vote;
+  }
+
+  // Community/Sharing methods
+  async updateUserSharePreference(userId: string, preference: string): Promise<User | undefined> {
+    const validPreferences = ['public', 'authenticated', 'private'];
+    if (!validPreferences.includes(preference)) {
+      return undefined;
+    }
+    
+    const [user] = await db.update(users)
+      .set({ sharePreference: preference, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getSharedModels(viewerUserId?: string): Promise<ModelWithRelations[]> {
+    // Get all models that are:
+    // 1. Marked as shared (isShared = true)
+    // 2. Owner has sharePreference != 'private'
+    // 3. If sharePreference = 'authenticated', viewer must be logged in
+    
+    const sharedModels = await db
+      .select({
+        model: models,
+        owner: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          sharePreference: users.sharePreference,
+        }
+      })
+      .from(models)
+      .innerJoin(users, eq(models.userId, users.id))
+      .where(
+        and(
+          eq(models.isShared, true),
+          sql`${users.sharePreference} != 'private'`
+        )
+      )
+      .orderBy(desc(models.updatedAt));
+
+    // Filter based on sharePreference and viewer auth status
+    const filteredModels = sharedModels.filter(({ owner }) => {
+      if (owner.sharePreference === 'public') return true;
+      if (owner.sharePreference === 'authenticated' && viewerUserId) return true;
+      return false;
+    });
+
+    // Get photos and counts for each model
+    const results: ModelWithRelations[] = [];
+    for (const { model, owner } of filteredModels) {
+      const modelPhotos = await db.select().from(photos).where(eq(photos.modelId, model.id));
+      const hopUpList = await db.select().from(hopUpParts).where(eq(hopUpParts.modelId, model.id));
+      
+      results.push({
+        ...model,
+        photos: modelPhotos,
+        hopUpCount: hopUpList.length,
+        owner: {
+          firstName: owner.firstName,
+          lastName: owner.lastName,
+          profileImageUrl: owner.profileImageUrl,
+        }
+      } as ModelWithRelations);
+    }
+    
+    return results;
+  }
+
+  async getSharedModelBySlug(slug: string, viewerUserId?: string): Promise<ModelWithRelations | undefined> {
+    const [result] = await db
+      .select({
+        model: models,
+        owner: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          sharePreference: users.sharePreference,
+        }
+      })
+      .from(models)
+      .innerJoin(users, eq(models.userId, users.id))
+      .where(
+        and(
+          eq(models.publicSlug, slug),
+          eq(models.isShared, true),
+          sql`${users.sharePreference} != 'private'`
+        )
+      );
+
+    if (!result) return undefined;
+
+    // Check auth requirement
+    if (result.owner.sharePreference === 'authenticated' && !viewerUserId) {
+      return undefined;
+    }
+
+    // Get photos and hop-ups
+    const modelPhotos = await db.select().from(photos).where(eq(photos.modelId, result.model.id));
+    const hopUpList = await db.select().from(hopUpParts).where(eq(hopUpParts.modelId, result.model.id));
+
+    return {
+      ...result.model,
+      photos: modelPhotos,
+      hopUpCount: hopUpList.length,
+      owner: {
+        firstName: result.owner.firstName,
+        lastName: result.owner.lastName,
+        profileImageUrl: result.owner.profileImageUrl,
+      }
+    } as ModelWithRelations;
+  }
+
+  async getSharedModelPhotos(slug: string, viewerUserId?: string): Promise<Photo[]> {
+    const model = await this.getSharedModelBySlug(slug, viewerUserId);
+    if (!model) return [];
+    
+    return db.select().from(photos).where(eq(photos.modelId, model.id)).orderBy(photos.sortOrder);
+  }
+
+  async getSharedModelHopUps(slug: string, viewerUserId?: string): Promise<HopUpPartWithPhoto[]> {
+    const model = await this.getSharedModelBySlug(slug, viewerUserId);
+    if (!model) return [];
+    
+    const parts = await db.select().from(hopUpParts).where(eq(hopUpParts.modelId, model.id));
+    
+    // Get photos for parts
+    const result: HopUpPartWithPhoto[] = [];
+    for (const part of parts) {
+      let photo: Photo | null = null;
+      if (part.photoId) {
+        const [p] = await db.select().from(photos).where(eq(photos.id, part.photoId));
+        photo = p || null;
+      }
+      // Exclude cost info for public viewing
+      result.push({
+        ...part,
+        cost: null, // Hide cost from public
+        photo
+      } as HopUpPartWithPhoto);
+    }
+    
+    return result;
   }
 }
 
