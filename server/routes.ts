@@ -15,6 +15,7 @@ import { models, photos, buildLogEntries, userActivityLog, hopUpParts, featureSc
 import { eq, and, sql, desc } from "drizzle-orm";
 import adminRoutes from "./adminRoutes";
 import { logUserActivity } from "./activityLogger";
+import { sendFeedbackThankYouEmail, sendFeedbackAdminNotification } from "./emailService";
 import Stripe from "stripe";
 
 // Initialize Stripe (blueprint:javascript_stripe)
@@ -204,6 +205,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const post = await storage.createFeedbackPost(parsed.data);
+      
+      // Send email notifications (fire and forget - don't block response)
+      const user = await storage.getUser(userId);
+      if (user?.email) {
+        const userName = user.firstName || 'User';
+        const title = parsed.data.title || 'Feedback';
+        const description = parsed.data.description || '';
+        const category = parsed.data.category || 'other';
+        
+        Promise.allSettled([
+          sendFeedbackThankYouEmail(
+            user.email,
+            userName,
+            title,
+            category
+          ),
+          sendFeedbackAdminNotification(
+            title,
+            description,
+            category,
+            userName,
+            user.email
+          )
+        ]).then(results => {
+          results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              console.error(`Email ${index} failed:`, result.reason);
+            }
+          });
+        });
+      }
+      
       res.status(201).json(post);
     } catch (error) {
       console.error("Feedback create error:", error);

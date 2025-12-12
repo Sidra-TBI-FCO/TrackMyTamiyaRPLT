@@ -161,3 +161,166 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
 export function isEmailConfigured(): boolean {
   return !!(transporter && EMAIL_USER && EMAIL_APP_PASSWORD);
 }
+
+// Admin emails for notifications (comma-separated in env var)
+const ADMIN_EMAILS = process.env.ADMIN_EMAILS || EMAIL_USER || ''; // Fallback to sender email
+
+export async function sendFeedbackThankYouEmail(
+  userEmail: string,
+  userName: string,
+  feedbackTitle: string,
+  feedbackCategory: string
+): Promise<void> {
+  if (!transporter) {
+    console.log(`📧 Thank you email would be sent to: ${userEmail}`);
+    console.log(`   Feedback: "${feedbackTitle}" (${feedbackCategory})`);
+    return;
+  }
+
+  const baseUrl = getBaseUrl();
+  const categoryLabels: Record<string, string> = {
+    feature: "Feature Request",
+    bug: "Bug Report",
+    improvement: "Improvement",
+    other: "Other"
+  };
+
+  const mailOptions = {
+    from: `"TrackMyRC" <${EMAIL_USER}>`,
+    to: userEmail,
+    subject: `Thanks for your feedback - ${feedbackTitle}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4a7c59; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+          .feedback-box { background-color: #fff; border-left: 4px solid #f97316; padding: 15px; margin: 20px 0; border-radius: 3px; }
+          .button { display: inline-block; padding: 12px 30px; background-color: #4a7c59; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Thank You for Your Feedback!</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${userName || 'there'},</p>
+            <p>We've received your ${categoryLabels[feedbackCategory] || feedbackCategory} and want to thank you for taking the time to share your thoughts with us!</p>
+            
+            <div class="feedback-box">
+              <strong>Your Submission:</strong><br>
+              <strong>Category:</strong> ${categoryLabels[feedbackCategory] || feedbackCategory}<br>
+              <strong>Title:</strong> ${feedbackTitle}
+            </div>
+            
+            <p>Our team reviews all feedback and uses it to prioritize improvements. You can track the status of your request and vote on other ideas on our <a href="${baseUrl}/feedback">Feedback page</a>.</p>
+            
+            <p style="text-align: center;">
+              <a href="${baseUrl}/feedback" class="button">View Feedback Board</a>
+            </p>
+            
+            <p>Thanks for helping us make TrackMyRC better!</p>
+            <p>— The TrackMyRC Team</p>
+          </div>
+          <div class="footer">
+            <p>&copy; 2025 TrackMyRC. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Thank you email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error(`❌ Failed to send thank you email to ${userEmail}:`, error);
+    // Don't throw - feedback submission should succeed even if email fails
+  }
+}
+
+export async function sendFeedbackAdminNotification(
+  feedbackTitle: string,
+  feedbackDescription: string,
+  feedbackCategory: string,
+  submitterName: string,
+  submitterEmail: string
+): Promise<void> {
+  if (!transporter) {
+    console.log(`📧 Admin notification would be sent to: ${ADMIN_EMAILS}`);
+    console.log(`   New feedback: "${feedbackTitle}" from ${submitterName}`);
+    return;
+  }
+
+  const baseUrl = getBaseUrl();
+  const categoryLabels: Record<string, string> = {
+    feature: "Feature Request",
+    bug: "Bug Report",
+    improvement: "Improvement",
+    other: "Other"
+  };
+
+  const adminEmailList = ADMIN_EMAILS.split(',').map(e => e.trim()).filter(Boolean);
+
+  const mailOptions = {
+    from: `"TrackMyRC" <${EMAIL_USER}>`,
+    to: adminEmailList,
+    subject: `[TrackMyRC] New ${categoryLabels[feedbackCategory] || feedbackCategory}: ${feedbackTitle}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f97316; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+          .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+          .feedback-box { background-color: #fff; border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 5px; }
+          .meta { background-color: #e5e7eb; padding: 10px 15px; border-radius: 3px; margin-bottom: 15px; font-size: 14px; }
+          .button { display: inline-block; padding: 12px 30px; background-color: #4a7c59; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Feedback Submitted</h1>
+          </div>
+          <div class="content">
+            <div class="meta">
+              <strong>From:</strong> ${submitterName} (${submitterEmail})<br>
+              <strong>Category:</strong> ${categoryLabels[feedbackCategory] || feedbackCategory}
+            </div>
+            
+            <div class="feedback-box">
+              <h2 style="margin-top: 0; color: #4a7c59;">${feedbackTitle}</h2>
+              <p style="white-space: pre-wrap;">${feedbackDescription}</p>
+            </div>
+            
+            <p style="text-align: center;">
+              <a href="${baseUrl}/feedback" class="button">View on Feedback Board</a>
+            </p>
+          </div>
+          <div class="footer">
+            <p>This is an automated notification from TrackMyRC.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Admin notification sent to: ${adminEmailList.join(', ')}`);
+  } catch (error) {
+    console.error(`❌ Failed to send admin notification:`, error);
+    // Don't throw - feedback submission should succeed even if email fails
+  }
+}
