@@ -188,3 +188,12 @@ The application is designed to be mobile-first with responsive design, supportin
   - Fixed auth/login page: updated app name to TrackMyRC, temporarily disabled OAuth, fixed button colors
   - Theme switching now works consistently across entire application including authentication
   - Single point of control for all brand colors in index.css with complete coverage
+- **Mobile API Implementation (December 2025)**:
+  - Added JWT-based authentication for React Native mobile app support
+  - Created mobile auth endpoints: /api/auth/mobile/login, /register, /refresh, /google
+  - Updated isAuthenticated middleware to support both session (web) and JWT (mobile) authentication
+  - Added signed URL endpoints for direct photo uploads: /api/mobile/photos/signed-url and /confirm
+  - Added backward-compatible pagination to models and photos endpoints (?page=1&limit=20)
+  - Created shared/mobile-api.ts with TypeScript types and API documentation for mobile app
+  - Security: JWT tokens require SESSION_SECRET, no fallback secret allowed
+  - Mobile app architecture: React Native app calls Express API, shares types from shared/mobile-api.ts
