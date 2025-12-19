@@ -1,6 +1,6 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
-  feedbackPosts, feedbackVotes, modelComments,
+  feedbackPosts, feedbackVotes, modelComments, fieldOptions,
   type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
@@ -8,7 +8,8 @@ import {
   type HopUpPart, type InsertHopUpPart, type HopUpPartWithPhoto,
   type BuildLogPhoto,
   type FeedbackPost, type InsertFeedbackPost, type FeedbackPostWithUser,
-  type ModelComment, type InsertModelComment, type ModelCommentWithUser
+  type ModelComment, type InsertModelComment, type ModelCommentWithUser,
+  type FieldOption, type InsertFieldOption
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
@@ -83,6 +84,15 @@ export interface IStorage {
   getModelComments(modelId: number): Promise<ModelCommentWithUser[]>;
   createModelComment(comment: InsertModelComment): Promise<ModelComment>;
   deleteModelComment(id: number, userId: string): Promise<boolean>;
+
+  // Field options methods (admin-managed dropdown options)
+  getFieldOptions(fieldKey: string): Promise<FieldOption[]>;
+  getAllFieldOptions(): Promise<FieldOption[]>;
+  createFieldOption(option: InsertFieldOption): Promise<FieldOption>;
+  updateFieldOption(id: number, option: Partial<InsertFieldOption>): Promise<FieldOption | undefined>;
+  deleteFieldOption(id: number): Promise<boolean>;
+  replaceFieldOptionValue(fieldKey: string, oldValue: string, newValue: string): Promise<number>;
+  getFieldOptionUsageCount(fieldKey: string, value: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -988,6 +998,97 @@ export class DatabaseStorage implements IStorage {
     
     const result = await db.delete(modelComments).where(eq(modelComments.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Field options methods (admin-managed dropdown options)
+  async getFieldOptions(fieldKey: string): Promise<FieldOption[]> {
+    return db.select()
+      .from(fieldOptions)
+      .where(eq(fieldOptions.fieldKey, fieldKey))
+      .orderBy(fieldOptions.sortOrder);
+  }
+
+  async getAllFieldOptions(): Promise<FieldOption[]> {
+    return db.select()
+      .from(fieldOptions)
+      .orderBy(fieldOptions.fieldKey, fieldOptions.sortOrder);
+  }
+
+  async createFieldOption(option: InsertFieldOption): Promise<FieldOption> {
+    const [newOption] = await db.insert(fieldOptions).values(option).returning();
+    return newOption;
+  }
+
+  async updateFieldOption(id: number, option: Partial<InsertFieldOption>): Promise<FieldOption | undefined> {
+    const [updated] = await db.update(fieldOptions)
+      .set({ ...option, updatedAt: new Date() })
+      .where(eq(fieldOptions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteFieldOption(id: number): Promise<boolean> {
+    const result = await db.delete(fieldOptions).where(eq(fieldOptions.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async replaceFieldOptionValue(fieldKey: string, oldValue: string, newValue: string): Promise<number> {
+    // Map field keys to their database columns
+    const fieldToColumn: Record<string, string> = {
+      'scale': 'scale',
+      'driveType': 'drive_type',
+      'chassisMaterial': 'chassis_material',
+      'differentialType': 'differential_type',
+      'motorSize': 'motor_size',
+      'batteryType': 'battery_type',
+      'buildStatus': 'build_status',
+      'hopUpCategory': 'category', // for hop_up_parts table
+    };
+
+    const column = fieldToColumn[fieldKey];
+    if (!column) return 0;
+
+    let result;
+    if (fieldKey === 'hopUpCategory') {
+      // Update hop-up parts category
+      result = await db.execute(
+        sql`UPDATE hop_up_parts SET ${sql.identifier(column)} = ${newValue} WHERE ${sql.identifier(column)} = ${oldValue}`
+      );
+    } else {
+      // Update models table
+      result = await db.execute(
+        sql`UPDATE models SET ${sql.identifier(column)} = ${newValue} WHERE ${sql.identifier(column)} = ${oldValue}`
+      );
+    }
+    return result.rowCount ?? 0;
+  }
+
+  async getFieldOptionUsageCount(fieldKey: string, value: string): Promise<number> {
+    const fieldToColumn: Record<string, string> = {
+      'scale': 'scale',
+      'driveType': 'drive_type',
+      'chassisMaterial': 'chassis_material',
+      'differentialType': 'differential_type',
+      'motorSize': 'motor_size',
+      'batteryType': 'battery_type',
+      'buildStatus': 'build_status',
+      'hopUpCategory': 'category',
+    };
+
+    const column = fieldToColumn[fieldKey];
+    if (!column) return 0;
+
+    let result;
+    if (fieldKey === 'hopUpCategory') {
+      result = await db.execute(
+        sql`SELECT COUNT(*) as count FROM hop_up_parts WHERE ${sql.identifier(column)} = ${value}`
+      );
+    } else {
+      result = await db.execute(
+        sql`SELECT COUNT(*) as count FROM models WHERE ${sql.identifier(column)} = ${value}`
+      );
+    }
+    return Number(result.rows[0]?.count ?? 0);
   }
 }
 

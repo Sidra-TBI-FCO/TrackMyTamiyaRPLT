@@ -219,6 +219,19 @@ export const modelComments = pgTable("model_comments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Field options - admin-managed options for multiple choice fields
+export const fieldOptions = pgTable("field_options", {
+  id: serial("id").primaryKey(),
+  fieldKey: varchar("field_key", { length: 50 }).notNull(), // e.g., "scale", "driveType", "chassisMaterial"
+  value: varchar("value", { length: 100 }).notNull(), // The stored value (also displayed)
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_field_options_field_key").on(table.fieldKey),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   models: many(models),
@@ -437,6 +450,12 @@ export const insertModelCommentSchema = createInsertSchema(modelComments).omit({
   updatedAt: true,
 });
 
+export const insertFieldOptionSchema = createInsertSchema(fieldOptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -467,6 +486,21 @@ export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
 export type ModelComment = typeof modelComments.$inferSelect;
 export type InsertModelComment = z.infer<typeof insertModelCommentSchema>;
+export type FieldOption = typeof fieldOptions.$inferSelect;
+export type InsertFieldOption = z.infer<typeof insertFieldOptionSchema>;
+
+// Supported field keys for field options
+export const FIELD_OPTION_KEYS = [
+  'scale',
+  'driveType', 
+  'chassisMaterial',
+  'differentialType',
+  'motorSize',
+  'batteryType',
+  'buildStatus',
+  'hopUpCategory',
+] as const;
+export type FieldOptionKey = typeof FIELD_OPTION_KEYS[number];
 
 // Extended types with user info
 export type ModelCommentWithUser = ModelComment & {

@@ -3,7 +3,7 @@ import { db } from "./db";
 import { 
   users, models, photos, purchases, pricingTiers, adminAuditLog, userActivityLog,
   featureScreenshots, insertPricingTierSchema, insertPurchaseSchema, insertAdminAuditLogSchema,
-  insertFeatureScreenshotSchema
+  insertFeatureScreenshotSchema, FIELD_OPTION_KEYS, insertFieldOptionSchema
 } from "@shared/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAdmin, getClientIP } from "./adminMiddleware";
@@ -681,6 +681,234 @@ router.post("/shared-models/:id/unshare", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin unshare model error:", error);
     res.status(500).json({ message: "Failed to unshare model" });
+  }
+});
+
+// ==================== FIELD OPTIONS MANAGEMENT ====================
+
+// GET /api/admin/field-options - Get all field options
+router.get("/field-options", requireAdmin, async (req, res) => {
+  try {
+    const options = await storage.getAllFieldOptions();
+    
+    // Group by field key for easier frontend consumption
+    const grouped = options.reduce((acc, opt) => {
+      if (!acc[opt.fieldKey]) {
+        acc[opt.fieldKey] = [];
+      }
+      acc[opt.fieldKey].push(opt);
+      return acc;
+    }, {} as Record<string, typeof options>);
+    
+    res.json({
+      options: grouped,
+      fieldKeys: FIELD_OPTION_KEYS,
+    });
+  } catch (error) {
+    console.error("Admin get field options error:", error);
+    res.status(500).json({ message: "Failed to load field options" });
+  }
+});
+
+// GET /api/admin/field-options/:fieldKey - Get options for a specific field
+router.get("/field-options/:fieldKey", requireAdmin, async (req, res) => {
+  try {
+    const { fieldKey } = req.params;
+    
+    if (!FIELD_OPTION_KEYS.includes(fieldKey as any)) {
+      return res.status(400).json({ message: "Invalid field key" });
+    }
+    
+    const options = await storage.getFieldOptions(fieldKey);
+    res.json(options);
+  } catch (error) {
+    console.error("Admin get field options error:", error);
+    res.status(500).json({ message: "Failed to load field options" });
+  }
+});
+
+// POST /api/admin/field-options - Create a new field option
+router.post("/field-options", requireAdmin, async (req, res) => {
+  try {
+    const adminId = getUserId(req);
+    const parsed = insertFieldOptionSchema.safeParse(req.body);
+    
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid input", errors: parsed.error.errors });
+    }
+    
+    const { fieldKey, value, sortOrder, isActive } = parsed.data;
+    
+    if (!FIELD_OPTION_KEYS.includes(fieldKey as any)) {
+      return res.status(400).json({ message: "Invalid field key" });
+    }
+    
+    // Check if value already exists for this field
+    const existingOptions = await storage.getFieldOptions(fieldKey);
+    if (existingOptions.some(opt => opt.value.toLowerCase() === value.toLowerCase())) {
+      return res.status(400).json({ message: "Option already exists for this field" });
+    }
+    
+    const newOption = await storage.createFieldOption({
+      fieldKey,
+      value,
+      sortOrder: sortOrder ?? existingOptions.length,
+      isActive: isActive ?? true,
+    });
+    
+    await logAdminAction(adminId, "create_field_option", null, { fieldKey, value }, getClientIP(req));
+    
+    res.status(201).json(newOption);
+  } catch (error) {
+    console.error("Admin create field option error:", error);
+    res.status(500).json({ message: "Failed to create field option" });
+  }
+});
+
+// PATCH /api/admin/field-options/:id - Update a field option
+router.patch("/field-options/:id", requireAdmin, async (req, res) => {
+  try {
+    const adminId = getUserId(req);
+    const optionId = parseInt(req.params.id);
+    const { value, sortOrder, isActive } = req.body;
+    
+    if (isNaN(optionId)) {
+      return res.status(400).json({ message: "Invalid option ID" });
+    }
+    
+    const updatedOption = await storage.updateFieldOption(optionId, {
+      value,
+      sortOrder,
+      isActive,
+    });
+    
+    if (!updatedOption) {
+      return res.status(404).json({ message: "Field option not found" });
+    }
+    
+    await logAdminAction(adminId, "update_field_option", null, { optionId, value, sortOrder, isActive }, getClientIP(req));
+    
+    res.json(updatedOption);
+  } catch (error) {
+    console.error("Admin update field option error:", error);
+    res.status(500).json({ message: "Failed to update field option" });
+  }
+});
+
+// DELETE /api/admin/field-options/:id - Delete a field option
+router.delete("/field-options/:id", requireAdmin, async (req, res) => {
+  try {
+    const adminId = getUserId(req);
+    const optionId = parseInt(req.params.id);
+    
+    if (isNaN(optionId)) {
+      return res.status(400).json({ message: "Invalid option ID" });
+    }
+    
+    // Get the option first to check usage
+    const allOptions = await storage.getAllFieldOptions();
+    const option = allOptions.find(o => o.id === optionId);
+    
+    if (!option) {
+      return res.status(404).json({ message: "Field option not found" });
+    }
+    
+    // Check if option is in use
+    const usageCount = await storage.getFieldOptionUsageCount(option.fieldKey, option.value);
+    if (usageCount > 0) {
+      return res.status(400).json({ 
+        message: `Cannot delete: option is used by ${usageCount} records. Use replace instead.`,
+        usageCount 
+      });
+    }
+    
+    const deleted = await storage.deleteFieldOption(optionId);
+    
+    if (!deleted) {
+      return res.status(500).json({ message: "Failed to delete field option" });
+    }
+    
+    await logAdminAction(adminId, "delete_field_option", null, { optionId, fieldKey: option.fieldKey, value: option.value }, getClientIP(req));
+    
+    res.json({ message: "Field option deleted successfully" });
+  } catch (error) {
+    console.error("Admin delete field option error:", error);
+    res.status(500).json({ message: "Failed to delete field option" });
+  }
+});
+
+// POST /api/admin/field-options/:id/replace - Replace an option value across all records
+router.post("/field-options/:id/replace", requireAdmin, async (req, res) => {
+  try {
+    const adminId = getUserId(req);
+    const optionId = parseInt(req.params.id);
+    const { newValue } = req.body;
+    
+    if (isNaN(optionId)) {
+      return res.status(400).json({ message: "Invalid option ID" });
+    }
+    
+    if (!newValue || typeof newValue !== 'string' || newValue.trim().length === 0) {
+      return res.status(400).json({ message: "New value is required" });
+    }
+    
+    // Get the option
+    const allOptions = await storage.getAllFieldOptions();
+    const option = allOptions.find(o => o.id === optionId);
+    
+    if (!option) {
+      return res.status(404).json({ message: "Field option not found" });
+    }
+    
+    const oldValue = option.value;
+    const trimmedNewValue = newValue.trim();
+    
+    // Replace the value in all records
+    const updatedCount = await storage.replaceFieldOptionValue(option.fieldKey, oldValue, trimmedNewValue);
+    
+    // Update the option itself
+    await storage.updateFieldOption(optionId, { value: trimmedNewValue });
+    
+    await logAdminAction(adminId, "replace_field_option", null, { 
+      optionId, 
+      fieldKey: option.fieldKey, 
+      oldValue, 
+      newValue: trimmedNewValue,
+      recordsUpdated: updatedCount 
+    }, getClientIP(req));
+    
+    res.json({ 
+      message: `Option replaced successfully. Updated ${updatedCount} records.`,
+      recordsUpdated: updatedCount 
+    });
+  } catch (error) {
+    console.error("Admin replace field option error:", error);
+    res.status(500).json({ message: "Failed to replace field option" });
+  }
+});
+
+// GET /api/admin/field-options/:id/usage - Get usage count for a field option
+router.get("/field-options/:id/usage", requireAdmin, async (req, res) => {
+  try {
+    const optionId = parseInt(req.params.id);
+    
+    if (isNaN(optionId)) {
+      return res.status(400).json({ message: "Invalid option ID" });
+    }
+    
+    const allOptions = await storage.getAllFieldOptions();
+    const option = allOptions.find(o => o.id === optionId);
+    
+    if (!option) {
+      return res.status(404).json({ message: "Field option not found" });
+    }
+    
+    const usageCount = await storage.getFieldOptionUsageCount(option.fieldKey, option.value);
+    
+    res.json({ usageCount });
+  } catch (error) {
+    console.error("Admin get field option usage error:", error);
+    res.status(500).json({ message: "Failed to get usage count" });
   }
 });
 

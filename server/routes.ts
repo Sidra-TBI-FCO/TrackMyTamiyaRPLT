@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Protect all API routes except auth routes and public marketing routes
   app.use('/api', (req, res, next) => {
-    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots, feedback (GET only), community (GET only)
+    // Skip auth for public routes: auth, file serving, storage status, pricing, screenshots, feedback (GET only), community (GET only), field-options (GET only)
     if (req.path.startsWith('/auth/') || 
         req.path === '/login' || 
         req.path === '/logout' || 
@@ -132,7 +132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/pricing-tiers' ||
         req.path === '/screenshots' ||
         (req.path === '/feedback' && req.method === 'GET') ||
-        (req.path.startsWith('/community/') && req.method === 'GET')) {
+        (req.path.startsWith('/community/') && req.method === 'GET') ||
+        (req.path.startsWith('/field-options') && req.method === 'GET')) {
       return next();
     }
     
@@ -156,6 +157,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Pricing tiers error:", error);
       res.status(500).json({ message: "Failed to fetch pricing tiers" });
+    }
+  });
+
+  // Public field options route - for form dropdowns (returns grouped by fieldKey)
+  app.get('/api/field-options', async (req, res) => {
+    try {
+      const options = await storage.getAllFieldOptions();
+      // Group by field key and only return active options
+      const grouped = options
+        .filter(opt => opt.isActive)
+        .reduce((acc, opt) => {
+          if (!acc[opt.fieldKey]) {
+            acc[opt.fieldKey] = [];
+          }
+          acc[opt.fieldKey].push(opt.value);
+          return acc;
+        }, {} as Record<string, string[]>);
+      
+      res.json(grouped);
+    } catch (error) {
+      console.error("Field options fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch field options" });
     }
   });
 

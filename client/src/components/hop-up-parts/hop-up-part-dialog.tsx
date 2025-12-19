@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useFieldOptions } from "@/hooks/useFieldOptions";
 import { Loader2, ExternalLink, Upload, X, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -47,13 +48,6 @@ interface HopUpPartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const categories = [
-  "Motor", "ESC", "Servo", "Receiver", "Battery",
-  "Chassis", "Suspension", "Wheels", "Tires", "Drivetrain",
-  "Body", "Wing", "Interior", "Lights", "Electronics",
-  "Tools", "Maintenance", "Other"
-];
 
 const suppliers = [
   "RC Mart", "AMain Hobbies", "Tower Hobbies", "Horizon Hobby", 
@@ -92,6 +86,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getOptions } = useFieldOptions();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -892,7 +887,7 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories.map((category) => (
+                        {getOptions("hopUpCategory").map((category) => (
                           <SelectItem key={category} value={category}>
                             {category}
                           </SelectItem>

@@ -32,6 +32,7 @@ import { X, Tag, ExternalLink } from "lucide-react";
 import { insertModelSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useFieldOptions } from "@/hooks/useFieldOptions";
 import { ModelWithRelations } from "@/types";
 import { z } from "zod";
 
@@ -59,6 +60,7 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
   const [buildType, setBuildType] = useState<"kit" | "custom">((model.buildType as "kit" | "custom") || "kit");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { getOptions } = useFieldOptions();
 
   // Get all models to extract existing tags
   const { data: models } = useQuery<ModelWithRelations[]>({
@@ -379,10 +381,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="planning">Planning</SelectItem>
-                      <SelectItem value="building">Building</SelectItem>
-                      <SelectItem value="built">Built</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      {getOptions("buildStatus").map((option) => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -427,13 +428,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select scale" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1/10">1/10</SelectItem>
-                            <SelectItem value="1/12">1/12</SelectItem>
-                            <SelectItem value="1/8">1/8</SelectItem>
-                            <SelectItem value="1/16">1/16</SelectItem>
-                            <SelectItem value="1/18">1/18</SelectItem>
-                            <SelectItem value="1/24">1/24</SelectItem>
-                            <SelectItem value="Mini-Z">Mini-Z</SelectItem>
+                            {getOptions("scale").map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -454,10 +451,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select drive type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="4WD">4WD (All-Wheel Drive)</SelectItem>
-                            <SelectItem value="2WD">2WD (Two-Wheel Drive)</SelectItem>
-                            <SelectItem value="RWD">RWD (Rear-Wheel Drive)</SelectItem>
-                            <SelectItem value="FWD">FWD (Front-Wheel Drive)</SelectItem>
+                            {getOptions("driveType").map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -478,14 +474,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select material" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Plastic">Plastic/ABS</SelectItem>
-                            <SelectItem value="Carbon Fiber">Carbon Fiber</SelectItem>
-                            <SelectItem value="Aluminum">Aluminum</SelectItem>
-                            <SelectItem value="Carbon/Alu">Carbon & Aluminium</SelectItem>
-                            <SelectItem value="FRP">FRP (Fiberglass Reinforced Plastic)</SelectItem>
-                            <SelectItem value="Glass Fiber">Glass Fiber</SelectItem>
-                            <SelectItem value="Steel">Steel</SelectItem>
-                            <SelectItem value="Composite">Composite</SelectItem>
+                            {getOptions("chassisMaterial").map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -506,12 +497,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select differential type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Gears">Gear Differential</SelectItem>
-                            <SelectItem value="Oil">Oil Differential</SelectItem>
-                            <SelectItem value="Ball Diff">Ball Differential</SelectItem>
-                            <SelectItem value="One-way">One-way Differential</SelectItem>
-                            <SelectItem value="Limited Slip">Limited Slip Differential</SelectItem>
-                            <SelectItem value="Spool">Spool (Locked)</SelectItem>
+                            {getOptions("differentialType").map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -532,14 +520,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select motor size" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="540">540 Motor</SelectItem>
-                            <SelectItem value="380">380 Motor</SelectItem>
-                            <SelectItem value="Brushless">Brushless Motor</SelectItem>
-                            <SelectItem value="13.5T">13.5T Brushless</SelectItem>
-                            <SelectItem value="17.5T">17.5T Brushless</SelectItem>
-                            <SelectItem value="21.5T">21.5T Brushless</SelectItem>
-                            <SelectItem value="25.5T">25.5T Brushless</SelectItem>
-                            <SelectItem value="Custom">Custom/Other</SelectItem>
+                            {getOptions("motorSize").map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -560,14 +543,9 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select battery type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="7.2V NiMH">7.2V NiMH</SelectItem>
-                            <SelectItem value="7.4V LiPo 2S">7.4V LiPo (2S)</SelectItem>
-                            <SelectItem value="11.1V LiPo 3S">11.1V LiPo (3S)</SelectItem>
-                            <SelectItem value="14.8V LiPo 4S">14.8V LiPo (4S)</SelectItem>
-                            <SelectItem value="6V NiMH">6V NiMH</SelectItem>
-                            <SelectItem value="8.4V NiMH">8.4V NiMH</SelectItem>
-                            <SelectItem value="LiFe">LiFe (Lithium Iron)</SelectItem>
-                            <SelectItem value="Custom">Custom/Other</SelectItem>
+                            {getOptions("batteryType").map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </FormControl>

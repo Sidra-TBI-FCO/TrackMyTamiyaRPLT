@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, DollarSign, Activity, Image, Settings, Share2 } from "lucide-react";
+import { Shield, Users, DollarSign, Activity, Image, Settings, Share2, List } from "lucide-react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPricing } from "@/components/admin/AdminPricing";
@@ -10,6 +10,7 @@ import { AdminActivity } from "@/components/admin/AdminActivity";
 import { AdminPurchases } from "@/components/admin/AdminPurchases";
 import { AdminScreenshots } from "@/components/admin/AdminScreenshots";
 import { AdminSharedModels } from "@/components/admin/AdminSharedModels";
+import { AdminFieldOptions } from "@/components/admin/AdminFieldOptions";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -63,7 +64,7 @@ export default function AdminPage() {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Activity className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -75,6 +76,10 @@ export default function AdminPage() {
           <TabsTrigger value="shared" className="flex items-center gap-2">
             <Share2 className="w-4 h-4" />
             <span className="hidden sm:inline">Shared</span>
+          </TabsTrigger>
+          <TabsTrigger value="fields" className="flex items-center gap-2">
+            <List className="w-4 h-4" />
+            <span className="hidden sm:inline">Fields</span>
           </TabsTrigger>
           <TabsTrigger value="pricing" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -104,6 +109,10 @@ export default function AdminPage() {
         
         <TabsContent value="shared">
           <AdminSharedModels />
+        </TabsContent>
+        
+        <TabsContent value="fields">
+          <AdminFieldOptions />
         </TabsContent>
         
         <TabsContent value="pricing">

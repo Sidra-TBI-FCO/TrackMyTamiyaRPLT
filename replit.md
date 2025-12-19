@@ -1,232 +1,51 @@
 # TrackMyRC - RC Collection Manager
 
-## Overview
+### Overview
+TrackMyRC is a comprehensive web application for tracking and managing RC car model collections. It enables users to manage models, organize photos, log builds with voice notes, track hop-up parts, and view photo slideshows. The application is designed with a mobile-first approach, featuring a green and orange color scheme, and aims to be the go-to platform for RC enthusiasts to manage their collections. It supports community sharing of models, build logs, and comments, alongside administrative tools for managing dropdown field options.
 
-TrackMyRC is a comprehensive web application for tracking and managing RC car model collections. The application provides features for model management, photo organization, build logging with voice notes, hop-up parts tracking, and a photo frame slideshow mode. It's designed with a modern green and orange color scheme and targets mobile-first usage for on-the-go collection management.
-
-## User Preferences
-
+### User Preferences
 Preferred communication style: Simple, everyday language.
 
-## System Architecture
+### System Architecture
+The application employs a full-stack TypeScript architecture, utilizing React for the frontend, Express.js for the backend, and PostgreSQL as the database. It leverages modern web technologies including shadcn/ui components, Tailwind CSS for styling, and Drizzle ORM for database interactions.
 
-The application follows a full-stack TypeScript architecture with a React frontend, Express.js backend, and PostgreSQL database. It uses modern web technologies including shadcn/ui components, Tailwind CSS for styling, and Drizzle ORM for database management.
+**Frontend:**
+-   **Framework:** React with TypeScript
+-   **Routing:** Wouter
+-   **State Management:** TanStack Query for server state
+-   **UI:** shadcn/ui components, Tailwind CSS for styling with customizable green/orange themes and responsive design.
 
-### Architecture Pattern
-- **Frontend**: Single Page Application (SPA) with React and TypeScript
-- **Backend**: REST API built with Express.js
-- **Database**: PostgreSQL with Drizzle ORM
-- **Build System**: Vite for frontend bundling, esbuild for backend compilation
-- **Styling**: Tailwind CSS with custom green/orange brand colors
-- **Component Library**: shadcn/ui with Radix UI primitives
+**Backend:**
+-   **Framework:** Express.js with TypeScript
+-   **API:** RESTful endpoints
+-   **File Uploads:** Multer middleware for handling photos and audio.
+-   **Authentication:** Supports Replit OIDC authentication, traditional email/password, and JWT-based authentication for mobile API.
+-   **Mobile API:** JWT-based authentication, signed URL endpoints for photo uploads, and paginated endpoints.
 
-## Key Components
+**Database:**
+-   **Type:** PostgreSQL with Drizzle ORM.
+-   **Hosting:** Neon serverless with connection pooling.
+-   **Schema:** Includes Users, Models, Photos, Build Log Entries, Hop-Up Parts, Build Log Photos, Model Comments, and Field Options tables.
+-   **Key Features:**
+    -   **Model Management:** CRUD operations, build status tracking, TamiyaBase data scraping integration.
+    -   **Photo System:** Multi-file upload, metadata, box art designation, Replit Object Storage integration for unified storage.
+    -   **Build Logging:** Timeline-based entries, voice recording with transcription support.
+    -   **Hop-Up Parts Tracking:** Catalog management, installation status, cost tracking.
+    -   **Community Features:** Model sharing with public/authenticated/private visibility, community gallery, comments on shared models, sequential build log display.
+    -   **Admin Features:** Dynamic management of dropdown field options (scale, drive type, chassis material, etc.) with add/edit/delete/replace functionality.
 
-### Frontend Architecture
-- **Router**: Wouter for client-side routing
-- **State Management**: TanStack Query for server state, React hooks for local state
-- **UI Framework**: React with TypeScript, shadcn/ui components
-- **Styling**: Tailwind CSS with custom design tokens and dual color scheme support
-- **File Structure**: Feature-based organization with shared components
+**Deployment Strategy:**
+-   **Development:** Vite for frontend hot reload, TypeScript compilation, database schema synchronization.
+-   **Production:** Optimized frontend assets, backend compiled to ESM modules, static file serving, environment variable configuration for services.
 
-### Backend Architecture
-- **Server Framework**: Express.js with TypeScript
-- **API Design**: RESTful endpoints with consistent error handling
-- **File Uploads**: Multer middleware for photo and audio file handling
-- **Database Layer**: Drizzle ORM with connection pooling via Neon serverless
-- **Authentication**: Placeholder mock authentication (to be implemented)
-
-### Database Schema
-The application uses a relational PostgreSQL schema with the following main entities:
-
-- **Users**: Basic user authentication and identification
-- **Models**: RC car model information with Tamiya item numbers, build status, and metadata
-- **Photos**: Image storage with metadata, captions, and box art designation
-- **Build Log Entries**: Timeline-based build documentation with voice notes and transcription
-- **Hop-Up Parts**: Performance upgrade tracking with installation status and costs
-- **Build Log Photos**: Junction table linking photos to build entries
-
-### Core Features Implementation
-
-1. **Model Management**
-   - CRUD operations for Tamiya RC models
-   - Automatic data scraping from TamiyaBase using item numbers
-   - Build status tracking (planning, building, built, maintenance)
-   - Photo gallery integration with box art selection
-
-2. **Photo System**
-   - Multi-file upload with drag-and-drop
-   - Image storage with metadata and captions
-   - Gallery view with lightbox functionality
-   - Box art designation and sorting capabilities
-
-3. **Build Logging**
-   - Timeline-based entry system
-   - Voice recording with transcription support
-   - Rich text content with photo attachments
-   - Progress tracking integration
-
-4. **Hop-Up Parts Tracking**
-   - Parts catalog with categories and suppliers
-   - Installation status and cost tracking
-   - Photo documentation for modifications
-   - Investment calculation and reporting
-
-## Data Flow
-
-### Client-Server Communication
-- REST API endpoints with JSON payloads
-- File uploads via multipart form data
-- Real-time UI updates using TanStack Query mutations
-- Error handling with toast notifications
-
-### Database Operations
-- Drizzle ORM provides type-safe database queries
-- Connection pooling through Neon serverless PostgreSQL
-- Automatic schema migrations via drizzle-kit
-- Foreign key relationships maintain data integrity
-
-### File Storage
-- **Unified Storage**: Replit Object Storage integration with bucket "MyTamTrackPhotos" for persistent storage across all environments
-- Supports multiple file types: images (JPG, PNG, GIF, WebP, HEIC, HEIF), audio (MP3, WAV, AAC), documents (PDF, DOC)
-- Enhanced mobile compatibility with flexible file type detection
-- Unique filename generation to prevent conflicts
-- File type validation and size limits (15MB max for high-quality mobile photos)
-- Direct file serving through optimized API endpoints with proper MIME type detection
-- Comprehensive CORS support for mobile browsers and production deployments
-
-## External Dependencies
-
-### Primary Dependencies
-- **Database**: Neon PostgreSQL serverless with connection pooling
-- **UI Components**: Radix UI primitives through shadcn/ui
-- **Styling**: Tailwind CSS with PostCSS processing
-- **File Handling**: Multer for multipart uploads
-- **Voice Processing**: Web Speech API with server-side transcription fallback
-- **Data Scraping**: Planned integration with TamiyaBase and official Tamiya sources
-
-### Development Tools
-- **Build Tools**: Vite for frontend, esbuild for backend
-- **Type Safety**: TypeScript with strict configuration
-- **Schema Validation**: Zod with Drizzle integration
-- **Code Quality**: ESLint and Prettier (implied by structure)
-
-### Runtime Dependencies
-- **Query Management**: TanStack React Query for server state
-- **Form Handling**: React Hook Form with Zod validation
-- **Date Handling**: date-fns for formatting and manipulation
-- **Routing**: Wouter for lightweight client-side routing
-
-## Deployment Strategy
-
-### Development Environment
-- Hot reload development server via Vite
-- TypeScript compilation with watch mode
-- Database schema synchronization through drizzle-kit
-- Environment variable configuration for database connection
-
-### Production Build
-- Frontend assets bundled and optimized by Vite
-- Backend compiled to ESM modules via esbuild
-- Static file serving for uploaded content
-- Database migrations applied automatically
-
-### Environment Configuration
-- Database URL configuration via environment variables
-- Upload directory creation and file serving
-- Production-ready error handling and logging
-- Session management preparation for authentication
-
-The application is designed to be mobile-first with responsive design, supporting both light and dark themes with dynamic Tamiya color swapping (red/blue elements swap in dark mode for optimal branding consistency). The architecture supports future enhancements including PDF export, advanced search, and social features while maintaining clean separation of concerns and type safety throughout the stack.
-
-## Recent Changes (January 2025)
-
-- **Marketing Website**: Complete marketing site with landing, features, screenshots, and download pages
-- **Replit Authentication**: Integrated Replit Auth with string-based user IDs and session management
-- **Database Migration**: Updated schema to support authentication with proper foreign key constraints
-- **Dark Mode Enhancement**: Implemented red-to-blue color swapping in dark mode across all components
-- **Tamiya Branding**: Consistent star logo and color scheme throughout marketing and main application
-- **Dual Authentication System**: Added traditional email/password registration alongside Replit OIDC authentication
-  - Production deployment supports both Replit login and email/password registration
-  - Created comprehensive `/auth` page with dual authentication interface
-  - Updated database schema with password hashing and authentication provider tracking
-  - Landing page offers both "Quick Login (Replit)" and "Create Account" options
-  - Environment detection ensures development uses mock auth, production uses real authentication
-  - Successfully deployed at https://mytamiyatracker.replit.app/ with working Replit authentication
-- **Authentication Enhancements (July 2025)**:
-  - Fixed email input field issue by replacing shadcn Input with native HTML input element
-  - Added password confirmation field with real-time validation to prevent registration errors
-  - Implemented email verification system with token-based verification and database schema updates
-  - Fixed Replit authentication domain detection to properly handle picard.replit.dev domains
-  - Email verification currently logs verification links to console (ready for email service integration)
-- **Photo Upload System Complete (July 2025)**:
-  - Resolved "failed to fetch" error in photo uploads through improved client-side response handling
-  - Enhanced server-side logging and debugging for upload tracking
-  - Fixed authentication middleware to properly handle multipart form data uploads
-  - Photo uploads now work seamlessly with Replit Object Storage for all three authentication methods
-  - Multiple file uploads supported with individual photo processing and success confirmation
-- **Alternative Color Scheme Implementation (July 30, 2025)**:
-  - Added military green/orange theme as alternative to classic Tamiya red/blue colors
-  - Military theme uses green for light mode and orange for dark mode
-  - Implemented theme context system with persistent localStorage settings
-  - Color scheme selector added to settings page with real-time preview
-  - Updated CSS variables system to support multiple color schemes
-  - Theme switching works across entire application including headers and UI components
-- **Rebranding to TrackMyRC (July 30, 2025)**:
-  - Changed app name from "TrackMyTamiya" to "TrackMyRC" to avoid trademark issues
-  - Made military green/orange the default color scheme (instead of alternative)
-  - Updated all branding, headers, and marketing website to use new TrackMyRC identity
-  - Website now uses default green/orange theme consistently
-  - Alternative red/blue theme still available as color scheme option
-  - Updated disclaimer to reflect independence from RC manufacturers
-- **Centralized Color System Implementation (July 31, 2025)**:
-  - Completely centralized all color definitions to single-source CSS variables system
-  - Replaced hardcoded colors throughout app with --theme-primary and --theme-secondary variables
-  - Colors now automatically adapt based on selected theme (military/tamiya) + dark/light mode combination
-  - Updated landing page, headers, buttons, icons, feature cards, and CTA sections
-  - Fixed features page: all icons, bullet points, and color references now use centralized theme system
-  - Fixed auth/login page: updated app name to TrackMyRC, temporarily disabled OAuth, fixed button colors
-  - Theme switching now works consistently across entire application including authentication
-  - Single point of control for all brand colors in index.css with complete coverage
-- **Mobile API Implementation (December 2025)**:
-  - Added JWT-based authentication for React Native mobile app support
-  - Created mobile auth endpoints: /api/auth/mobile/login, /register, /refresh, /google
-  - Updated isAuthenticated middleware to support both session (web) and JWT (mobile) authentication
-  - Added signed URL endpoints for direct photo uploads: /api/mobile/photos/signed-url and /confirm
-  - Added backward-compatible pagination to models and photos endpoints (?page=1&limit=20)
-  - Created shared/mobile-api.ts with TypeScript types and API documentation for mobile app
-  - Security: JWT tokens require SESSION_SECRET, no fallback secret allowed
-  - Mobile app architecture: React Native app calls Express API, shares types from shared/mobile-api.ts
-- **Community Model Sharing (December 2025)**:
-  - Users can share models with the community via per-model toggle
-  - Three-level visibility: public (anyone), authenticated (logged-in users only), private (owner only)
-  - User preference controls who can see their shared models (Settings > Community Sharing)
-  - Public community gallery at /community showing all shared models
-  - Individual shared model pages at /community/models/:slug with photos and hop-ups
-  - Automatic slug generation when sharing is enabled
-  - Community link added to marketing navigation
-  - **MIGRATION REQUIRED**: Run the following SQL on the database:
-    ```sql
-    ALTER TABLE users ADD COLUMN share_preference VARCHAR(20) NOT NULL DEFAULT 'private';
-    ALTER TABLE models ADD COLUMN is_shared BOOLEAN DEFAULT false;
-    ALTER TABLE models ADD COLUMN public_slug VARCHAR(100) UNIQUE;
-    ```
-- **Community Comments and Build Logs (December 2025)**:
-  - Added community comments feature allowing authenticated users to leave comments on shared models
-  - Shared model pages now display build logs in sequential order (by date, oldest first)
-  - Comments show user name, date, and allow deletion by comment owner
-  - Loading states added for build logs and comments sections
-  - Privacy enforced: build logs and comments only visible when model sharing rules allow access
-  - **MIGRATION REQUIRED**: Run the following SQL on the production database:
-    ```sql
-    CREATE TABLE IF NOT EXISTS model_comments (
-      id SERIAL PRIMARY KEY,
-      model_id INTEGER NOT NULL REFERENCES models(id) ON DELETE CASCADE,
-      user_id VARCHAR NOT NULL REFERENCES users(id),
-      content TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_model_comments_model_id ON model_comments(model_id);
-    CREATE INDEX IF NOT EXISTS idx_model_comments_user_id ON model_comments(user_id);
-    ```
+### External Dependencies
+-   **Database:** Neon PostgreSQL (serverless).
+-   **UI Components:** Radix UI primitives (via shadcn/ui).
+-   **Styling:** Tailwind CSS.
+-   **File Handling:** Multer (for uploads), Replit Object Storage (for persistent file storage).
+-   **Voice Processing:** Web Speech API (with server-side transcription fallback).
+-   **Data Scraping:** TamiyaBase (planned integration).
+-   **Query Management:** TanStack React Query.
+-   **Form Handling:** React Hook Form with Zod validation.
+-   **Date Handling:** date-fns.
+-   **Routing:** Wouter.
