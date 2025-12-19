@@ -1047,6 +1047,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No files uploaded' });
       }
 
+      // Get the build log entry to find the modelId
+      const entry = await storage.getBuildLogEntry(entryId, userId);
+      if (!entry) {
+        return res.status(404).json({ message: 'Build log entry not found' });
+      }
+
       const uploadedPhotos = [];
 
       for (let i = 0; i < files.length; i++) {
@@ -1056,9 +1062,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Upload file to storage
         const storedFile = await fileStorage.uploadFile(file, file.originalname);
         
-        // Create photo record
+        // Create photo record with actual modelId from entry
         const photoData = {
-          modelId: 0, // Will be set via entry relationship
+          modelId: entry.modelId,
           filename: storedFile,
           originalName: file.originalname,
           url: `/api/files/${storedFile}`,

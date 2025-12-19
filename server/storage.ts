@@ -40,6 +40,7 @@ export interface IStorage {
   // Build log methods
   getAllBuildLogEntries(userId: string): Promise<BuildLogEntryWithPhotos[]>;
   getBuildLogEntries(modelId: number, userId: string): Promise<BuildLogEntryWithPhotos[]>;
+  getBuildLogEntry(entryId: number, userId: string): Promise<BuildLogEntry | undefined>;
   createBuildLogEntry(entry: InsertBuildLogEntry): Promise<BuildLogEntry>;
   updateBuildLogEntry(id: number, userId: string, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined>;
   deleteBuildLogEntry(id: number, userId: string): Promise<boolean>;
@@ -393,6 +394,21 @@ export class DatabaseStorage implements IStorage {
       },
       orderBy: desc(buildLogEntries.entryDate),
     });
+  }
+
+  async getBuildLogEntry(entryId: number, userId: string): Promise<BuildLogEntry | undefined> {
+    const entry = await db.query.buildLogEntries.findFirst({
+      where: eq(buildLogEntries.id, entryId),
+      with: {
+        model: true,
+      },
+    });
+    
+    if (!entry || entry.model.userId !== userId) {
+      return undefined;
+    }
+    
+    return entry;
   }
 
   async createBuildLogEntry(entry: InsertBuildLogEntry): Promise<BuildLogEntry> {
