@@ -1017,7 +1017,7 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                                 <SelectItem value="Carbon">Carbon Fiber</SelectItem>
                                 <SelectItem value="Aluminium">Aluminium</SelectItem>
                                 <SelectItem value="Carbon/Alu">Carbon & Aluminium</SelectItem>
-                                <SelectItem value="FRP">FRP (Fiber Reinforced Plastic)</SelectItem>
+                                <SelectItem value="FRP">FRP (Fiberglass Reinforced Plastic)</SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>

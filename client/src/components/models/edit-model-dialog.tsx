@@ -478,9 +478,11 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                             <SelectValue placeholder="Select material" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="Plastic">Plastic/ABS</SelectItem>
                             <SelectItem value="Carbon Fiber">Carbon Fiber</SelectItem>
                             <SelectItem value="Aluminum">Aluminum</SelectItem>
-                            <SelectItem value="Plastic">Plastic/ABS</SelectItem>
+                            <SelectItem value="Carbon/Alu">Carbon & Aluminium</SelectItem>
+                            <SelectItem value="FRP">FRP (Fiberglass Reinforced Plastic)</SelectItem>
                             <SelectItem value="Glass Fiber">Glass Fiber</SelectItem>
                             <SelectItem value="Steel">Steel</SelectItem>
                             <SelectItem value="Composite">Composite</SelectItem>
