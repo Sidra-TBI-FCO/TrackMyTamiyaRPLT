@@ -211,3 +211,22 @@ The application is designed to be mobile-first with responsive design, supportin
     ALTER TABLE models ADD COLUMN is_shared BOOLEAN DEFAULT false;
     ALTER TABLE models ADD COLUMN public_slug VARCHAR(100) UNIQUE;
     ```
+- **Community Comments and Build Logs (December 2025)**:
+  - Added community comments feature allowing authenticated users to leave comments on shared models
+  - Shared model pages now display build logs in sequential order (by date, oldest first)
+  - Comments show user name, date, and allow deletion by comment owner
+  - Loading states added for build logs and comments sections
+  - Privacy enforced: build logs and comments only visible when model sharing rules allow access
+  - **MIGRATION REQUIRED**: Run the following SQL on the production database:
+    ```sql
+    CREATE TABLE IF NOT EXISTS model_comments (
+      id SERIAL PRIMARY KEY,
+      model_id INTEGER NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+      user_id VARCHAR NOT NULL REFERENCES users(id),
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_model_comments_model_id ON model_comments(model_id);
+    CREATE INDEX IF NOT EXISTS idx_model_comments_user_id ON model_comments(user_id);
+    ```
