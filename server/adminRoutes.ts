@@ -145,7 +145,7 @@ router.get("/users", requireAdmin, async (req, res) => {
         return {
           ...user,
           modelCount: modelCount.count,
-          storageUsed: photoStats.size || 0,
+          storageUsed: Number(photoStats.size) || 0,
           totalSpent: totalSpent.total,
           lastLogin: lastLogin?.time || null,
         };

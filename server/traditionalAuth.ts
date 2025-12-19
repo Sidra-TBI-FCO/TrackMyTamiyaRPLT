@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { registerUserSchema, loginUserSchema, RegisterUser, LoginUser } from "@shared/schema";
 import { storage } from "./storage";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./emailService";
+import { logUserActivity } from "./activityLogger";
 
 function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -121,11 +122,19 @@ export function setupTraditionalAuth(app: Express) {
         lastName: user.lastName,
         profileImageUrl: user.profileImageUrl,
         authProvider: user.authProvider
-      }, (err) => {
+      }, async (err) => {
         if (err) {
           console.error("Login error:", err);
           return res.status(500).json({ message: "Login failed" });
         }
+        
+        // Log login activity
+        await logUserActivity(user.id, 'login', {
+          method: 'email',
+          email: user.email,
+          ip: req.ip || req.headers['x-forwarded-for'] || 'unknown'
+        }, req);
+        
         res.json({
           id: user.id,
           email: user.email,

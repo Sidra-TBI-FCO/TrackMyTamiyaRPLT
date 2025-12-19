@@ -1,7 +1,8 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
+import { logUserActivity } from "./activityLogger";
 
 export function setupGoogleAuth(app: Express) {
   // Require credentials from environment variables only
@@ -76,10 +77,19 @@ export function setupGoogleAuth(app: Express) {
   );
 
   app.get("/api/auth/google/callback",
-    passport.authenticate("google", { 
-      successRedirect: "/",
-      failureRedirect: "/auth?error=google_auth_failed"
-    })
+    passport.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
+    async (req: Request, res: Response) => {
+      // Log Google OAuth login activity
+      if (req.user && typeof req.user === 'object' && 'id' in req.user) {
+        const user = req.user as { id: string; email: string };
+        await logUserActivity(user.id, 'login', {
+          method: 'google',
+          email: user.email,
+          ip: req.ip || req.headers['x-forwarded-for'] || 'unknown'
+        }, req);
+      }
+      res.redirect("/");
+    }
   );
 
   console.log("Google OAuth routes registered");
