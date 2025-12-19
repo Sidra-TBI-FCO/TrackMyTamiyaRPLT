@@ -410,6 +410,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get build logs for a shared model
+  app.get('/api/community/models/:slug/buildlogs', async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const viewerUserId = req.user?.id;
+      const buildLogs = await storage.getSharedModelBuildLogs(slug, viewerUserId);
+      res.json(buildLogs);
+    } catch (error) {
+      console.error("Community build logs fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch build logs" });
+    }
+  });
+
+  // Get comments for a shared model
+  app.get('/api/community/models/:slug/comments', async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const viewerUserId = req.user?.id;
+      
+      // First get the model to verify it's shared
+      const model = await storage.getSharedModelBySlug(slug, viewerUserId);
+      if (!model) {
+        return res.status(404).json({ message: "Model not found or not shared" });
+      }
+      
+      const comments = await storage.getModelComments(model.id);
+      res.json(comments);
+    } catch (error) {
+      console.error("Community comments fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  // Add a comment to a shared model (requires auth)
+  app.post('/api/community/models/:slug/comments', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "You must be logged in to comment" });
+      }
+      
+      const { slug } = req.params;
+      const { content } = req.body;
+      
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ message: "Comment content is required" });
+      }
+      
+      // Get the model to verify it's shared and get the id
+      const model = await storage.getSharedModelBySlug(slug, userId);
+      if (!model) {
+        return res.status(404).json({ message: "Model not found or not shared" });
+      }
+      
+      const comment = await storage.createModelComment({
+        modelId: model.id,
+        userId,
+        content: content.trim(),
+      });
+      
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Comment creation error:", error);
+      res.status(500).json({ message: "Failed to add comment" });
+    }
+  });
+
+  // Delete a comment (only owner can delete)
+  app.delete('/api/community/comments/:id', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const commentId = parseInt(req.params.id);
+      const deleted = await storage.deleteModelComment(commentId, userId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Comment not found or you don't have permission to delete it" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Comment deletion error:", error);
+      res.status(500).json({ message: "Failed to delete comment" });
+    }
+  });
+
   // Update user share preference (requires auth)
   app.patch('/api/user/share-preference', async (req: any, res) => {
     try {

@@ -1,13 +1,14 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
-  feedbackPosts, feedbackVotes,
+  feedbackPosts, feedbackVotes, modelComments,
   type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
   type BuildLogEntry, type InsertBuildLogEntry, type BuildLogEntryWithPhotos,
   type HopUpPart, type InsertHopUpPart, type HopUpPartWithPhoto,
   type BuildLogPhoto,
-  type FeedbackPost, type InsertFeedbackPost, type FeedbackPostWithUser
+  type FeedbackPost, type InsertFeedbackPost, type FeedbackPostWithUser,
+  type ModelComment, type InsertModelComment, type ModelCommentWithUser
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
@@ -76,6 +77,12 @@ export interface IStorage {
   getSharedModelBySlug(slug: string, viewerUserId?: string): Promise<ModelWithRelations | undefined>;
   getSharedModelPhotos(slug: string, viewerUserId?: string): Promise<Photo[]>;
   getSharedModelHopUps(slug: string, viewerUserId?: string): Promise<HopUpPartWithPhoto[]>;
+  getSharedModelBuildLogs(slug: string, viewerUserId?: string): Promise<BuildLogEntryWithPhotos[]>;
+  
+  // Model comments methods
+  getModelComments(modelId: number): Promise<ModelCommentWithUser[]>;
+  createModelComment(comment: InsertModelComment): Promise<ModelComment>;
+  deleteModelComment(id: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -924,6 +931,63 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return model || undefined;
+  }
+
+  // Get build logs for a shared model (public access)
+  async getSharedModelBuildLogs(slug: string, viewerUserId?: string): Promise<BuildLogEntryWithPhotos[]> {
+    const model = await this.getSharedModelBySlug(slug, viewerUserId);
+    if (!model) return [];
+    
+    const entries = await db.query.buildLogEntries.findMany({
+      where: eq(buildLogEntries.modelId, model.id),
+      with: {
+        photos: {
+          with: {
+            photo: true,
+          },
+        },
+      },
+      orderBy: desc(buildLogEntries.entryDate),
+    });
+    
+    return entries;
+  }
+
+  // Model comments methods
+  async getModelComments(modelId: number): Promise<ModelCommentWithUser[]> {
+    const comments = await db.query.modelComments.findMany({
+      where: eq(modelComments.modelId, modelId),
+      with: {
+        user: true,
+      },
+      orderBy: desc(modelComments.createdAt),
+    });
+    
+    return comments.map(comment => ({
+      ...comment,
+      user: {
+        id: comment.user.id,
+        firstName: comment.user.firstName,
+        lastName: comment.user.lastName,
+        profileImageUrl: comment.user.profileImageUrl,
+      }
+    }));
+  }
+
+  async createModelComment(comment: InsertModelComment): Promise<ModelComment> {
+    const [newComment] = await db.insert(modelComments).values(comment).returning();
+    return newComment;
+  }
+
+  async deleteModelComment(id: number, userId: string): Promise<boolean> {
+    // Only allow deletion by comment owner
+    const [comment] = await db.select().from(modelComments).where(eq(modelComments.id, id));
+    if (!comment || comment.userId !== userId) {
+      return false;
+    }
+    
+    const result = await db.delete(modelComments).where(eq(modelComments.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

@@ -209,6 +209,16 @@ export const feedbackVotes = pgTable("feedback_votes", {
   index("idx_feedback_votes_unique").on(table.feedbackId, table.userId),
 ]);
 
+// Community model comments - comments on shared models
+export const modelComments = pgTable("model_comments", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   models: many(models),
@@ -216,6 +226,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   activityLogs: many(userActivityLog),
   feedbackPosts: many(feedbackPosts),
   feedbackVotes: many(feedbackVotes),
+  modelComments: many(modelComments),
 }));
 
 export const feedbackPostsRelations = relations(feedbackPosts, ({ one, many }) => ({
@@ -245,6 +256,7 @@ export const modelsRelations = relations(models, ({ one, many }) => ({
   photos: many(photos),
   buildLogEntries: many(buildLogEntries),
   hopUpParts: many(hopUpParts),
+  comments: many(modelComments),
 }));
 
 export const photosRelations = relations(photos, ({ one, many }) => ({
@@ -307,6 +319,17 @@ export const adminAuditLogRelations = relations(adminAuditLog, ({ one }) => ({
 export const userActivityLogRelations = relations(userActivityLog, ({ one }) => ({
   user: one(users, {
     fields: [userActivityLog.userId],
+    references: [users.id],
+  }),
+}));
+
+export const modelCommentsRelations = relations(modelComments, ({ one }) => ({
+  model: one(models, {
+    fields: [modelComments.modelId],
+    references: [models.id],
+  }),
+  user: one(users, {
+    fields: [modelComments.userId],
     references: [users.id],
   }),
 }));
@@ -408,6 +431,12 @@ export const insertFeedbackVoteSchema = createInsertSchema(feedbackVotes).omit({
   createdAt: true,
 });
 
+export const insertModelCommentSchema = createInsertSchema(modelComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -436,6 +465,13 @@ export type FeedbackPost = typeof feedbackPosts.$inferSelect;
 export type InsertFeedbackPost = z.infer<typeof insertFeedbackPostSchema>;
 export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
+export type ModelComment = typeof modelComments.$inferSelect;
+export type InsertModelComment = z.infer<typeof insertModelCommentSchema>;
+
+// Extended types with user info
+export type ModelCommentWithUser = ModelComment & {
+  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'profileImageUrl'>;
+};
 
 // Extended feedback type with user info and vote status
 export type FeedbackPostWithUser = FeedbackPost & {
