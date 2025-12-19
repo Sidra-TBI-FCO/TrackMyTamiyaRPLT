@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
+import { addStorageFallbackParam } from './file-utils';
 
 // Export models to CSV
 export const exportModelsToCSV = (models: any[]) => {
@@ -49,7 +50,57 @@ export const exportHopUpsToCSV = (hopUps: any[]) => {
   downloadFile(csv, 'hop-ups-export.csv', 'text/csv');
 };
 
-// Export build logs to PDF
+// Helper function to load image as base64
+const loadImageAsBase64 = (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 400;
+        const maxHeight = 300;
+        
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl);
+        } else {
+          resolve(null);
+        }
+      } catch (e) {
+        console.error('Error converting image to base64:', e);
+        resolve(null);
+      }
+    };
+    
+    img.onerror = () => {
+      console.error('Failed to load image:', url);
+      resolve(null);
+    };
+    
+    img.src = addStorageFallbackParam(url);
+  });
+};
+
+// Export build logs to PDF with embedded photos
 export const exportBuildLogsToPDF = async (buildLogs: any[]) => {
   const pdf = new jsPDF();
   const pageHeight = pdf.internal.pageSize.height;
@@ -113,27 +164,58 @@ export const exportBuildLogsToPDF = async (buildLogs: any[]) => {
       yPosition += 5;
     }
 
-    // Photos section
+    // Photos section - embed actual images
     if (entry.photos && entry.photos.length > 0) {
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'italic');
-      pdf.text(`Photos: ${entry.photos.length} image${entry.photos.length !== 1 ? 's' : ''} attached`, margin, yPosition);
+      pdf.text(`Photos (${entry.photos.length}):`, margin, yPosition);
       yPosition += 8;
 
-      // Add photo list
       for (const photoLink of entry.photos) {
-        if (yPosition > pageHeight - 20) {
-          pdf.addPage();
-          yPosition = margin;
+        const photo = photoLink.photo;
+        const imageUrl = photo.url;
+        
+        // Load and embed the actual image
+        const base64Image = await loadImageAsBase64(imageUrl);
+        
+        if (base64Image) {
+          // Calculate image dimensions to fit in page
+          const maxImgWidth = pageWidth - 2 * margin;
+          const maxImgHeight = 80;
+          
+          // Check if we need a new page for the image
+          if (yPosition + maxImgHeight + 15 > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          
+          try {
+            pdf.addImage(base64Image, 'JPEG', margin, yPosition, maxImgWidth * 0.6, maxImgHeight);
+            yPosition += maxImgHeight + 5;
+          } catch (e) {
+            console.error('Failed to add image to PDF:', e);
+            pdf.text(`[Image: ${photo.originalName}]`, margin, yPosition);
+            yPosition += 6;
+          }
+        } else {
+          // Fallback to filename if image can't be loaded
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`[Image: ${photo.originalName}]`, margin, yPosition);
+          yPosition += 6;
         }
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`• ${photoLink.photo.originalName}`, margin + 10, yPosition);
-        if (photoLink.photo.caption) {
-          yPosition += 4;
+        
+        // Add caption if present
+        if (photo.caption) {
+          if (yPosition > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = margin;
+          }
           pdf.setFont('helvetica', 'italic');
-          pdf.text(`  "${photoLink.photo.caption}"`, margin + 15, yPosition);
+          pdf.text(`"${photo.caption}"`, margin + 5, yPosition);
+          yPosition += 6;
         }
-        yPosition += 5;
+        
+        yPosition += 3;
       }
     }
 
