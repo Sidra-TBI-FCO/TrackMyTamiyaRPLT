@@ -49,3 +49,6 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 -   **Form Handling:** React Hook Form with Zod validation.
 -   **Date Handling:** date-fns.
 -   **Routing:** Wouter.
+
+### Recent Migrations
+-   **2025-12-field-options-management.sql**: Creates the field_options table for admin-managed dropdown values. Automatically populates with existing values from models and hop_up_parts tables, plus default options. Run this on production database to enable the Field Options admin feature.
