@@ -1139,6 +1139,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const entry = await storage.createBuildLogEntry(entryData);
+      
+      // Log build log entry creation activity
+      await logUserActivity(userId, 'build_log_created', {
+        entryId: entry.id,
+        modelId: modelId,
+        title: entry.title,
+        entryNumber: entry.entryNumber
+      }, req);
+      
       res.status(201).json(entry);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -1345,6 +1354,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const part = await storage.createHopUpPart(partData);
+      
+      // Log hop-up part creation activity
+      await logUserActivity(userId, 'hop_up_created', {
+        partId: part.id,
+        modelId: modelId,
+        partName: part.partName,
+        category: part.category
+      }, req);
       
       // Fetch the part with photo relation to return complete data
       const partWithPhoto = await db.query.hopUpParts.findFirst({
