@@ -29,6 +29,7 @@ import BuildLogEntry from "@/components/build-log/build-log-entry";
 import BuildLogEntryDialog from "@/components/build-log/build-log-entry-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useSlideshow } from "@/lib/slideshow-context";
 import { useState, useEffect } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
@@ -47,6 +48,7 @@ export default function ModelDetail() {
   const [editingEntry, setEditingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { openSlideshow: openGlobalSlideshow } = useSlideshow();
 
@@ -1079,6 +1081,20 @@ export default function ModelDetail() {
                       Model is visible to the community
                     </span>
                   </div>
+                  
+                  {user?.sharePreference && (
+                    <div className="p-2 rounded-md bg-muted/50 border border-muted">
+                      <p className="text-xs font-mono text-muted-foreground">
+                        <span className="font-semibold">Your visibility setting:</span>{" "}
+                        {user.sharePreference === 'public' && "Anyone can view your shared models"}
+                        {user.sharePreference === 'authenticated' && "Only logged-in members can view"}
+                        {user.sharePreference === 'private' && "Your models are hidden from the community"}
+                      </p>
+                      <a href="/settings" className="text-xs font-mono text-blue-500 hover:underline">
+                        Change in Settings
+                      </a>
+                    </div>
+                  )}
                   
                   <Button
                     variant="outline"
