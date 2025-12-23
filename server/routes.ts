@@ -494,9 +494,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.status(201).json(comment);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Comment creation error:", error);
-      res.status(500).json({ message: "Failed to add comment" });
+      console.error("Comment creation details:", { slug: req.params.slug, userId: req.user?.id, errorMessage: error?.message, errorCode: error?.code });
+      res.status(500).json({ message: "Failed to add comment", details: error?.message });
     }
   });
 
@@ -1359,7 +1360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await logUserActivity(userId, 'hop_up_created', {
         partId: part.id,
         modelId: modelId,
-        partName: part.partName,
+        partName: part.name,
         category: part.category
       }, req);
       
