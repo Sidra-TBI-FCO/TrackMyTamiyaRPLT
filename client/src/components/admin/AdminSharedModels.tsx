@@ -101,14 +101,17 @@ export function AdminSharedModels() {
     });
   };
   
-  const getSharePreferenceBadge = (preference: string) => {
+  const getSharePreferenceBadge = (preference: string, isShared: boolean) => {
+    if (!isShared) {
+      return <Badge variant="outline">Not Shared</Badge>;
+    }
     switch (preference) {
       case 'public':
         return <Badge variant="default" className="bg-green-600">Public</Badge>;
       case 'authenticated':
-        return <Badge variant="secondary">Auth Only</Badge>;
+        return <Badge variant="secondary">Members Only</Badge>;
       case 'private':
-        return <Badge variant="outline">Private</Badge>;
+        return <Badge variant="outline" className="bg-yellow-600/20 text-yellow-400 border-yellow-600">Hidden</Badge>;
       default:
         return <Badge variant="outline">{preference}</Badge>;
     }
@@ -158,7 +161,7 @@ export function AdminSharedModels() {
                 <TableRow>
                   <TableHead>Model</TableHead>
                   <TableHead>Owner</TableHead>
-                  <TableHead>Preference</TableHead>
+                  <TableHead>Visibility</TableHead>
                   <TableHead>Photos</TableHead>
                   <TableHead>Public URL</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -184,7 +187,7 @@ export function AdminSharedModels() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getSharePreferenceBadge(sm.owner.sharePreference)}
+                      {getSharePreferenceBadge(sm.owner.sharePreference, sm.model.isShared)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
