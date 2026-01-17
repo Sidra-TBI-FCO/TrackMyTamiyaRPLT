@@ -161,9 +161,9 @@ export default function CommunityModelDetailPage() {
     enabled: !!slug,
   });
 
-  const { data: electronics } = useQuery<ModelElectronics[]>({
-    queryKey: ['/api/models', model?.id, 'electronics'],
-    enabled: !!model?.id,
+  const { data: electronics } = useQuery<ModelElectronics | null>({
+    queryKey: [`/api/community/models/${slug}/electronics`],
+    enabled: !!slug,
   });
 
   const addCommentMutation = useMutation({
@@ -704,96 +704,92 @@ export default function CommunityModelDetailPage() {
           )}
 
           {/* Electronics Section */}
-          {electronics && electronics.length > 0 && (
+          {electronics && (electronics.motor || electronics.esc || electronics.servo || electronics.receiver) && (
             <Card>
               <CardHeader>
                 <CardTitle className="font-mono text-lg flex items-center gap-2">
                   <Zap className="h-5 w-5" />
-                  Electronics ({electronics.length})
+                  Electronics
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {electronics.map((item) => (
-                    <div key={item.id} className="space-y-2">
-                      {item.motor && (
-                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-mono text-gray-500">Motor</span>
-                          </div>
-                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                            {item.motor.name}
-                          </p>
-                          {(item.motor.brand || item.motor.turns || item.motor.kv) && (
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              {item.motor.brand && (
-                                <span className="text-xs font-mono text-gray-500">{item.motor.brand}</span>
-                              )}
-                              {item.motor.turns && (
-                                <Badge variant="outline" className="text-xs font-mono">{item.motor.turns}T</Badge>
-                              )}
-                              {item.motor.kv && (
-                                <Badge variant="outline" className="text-xs font-mono">{item.motor.kv}KV</Badge>
-                              )}
-                            </div>
+                <div className="space-y-2">
+                  {electronics.motor && (
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono text-gray-500">Motor</span>
+                      </div>
+                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                        {electronics.motor.name}
+                      </p>
+                      {(electronics.motor.brand || electronics.motor.turns || electronics.motor.kv) && (
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {electronics.motor.brand && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.motor.brand}</span>
                           )}
-                        </div>
-                      )}
-                      {item.esc && (
-                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-mono text-gray-500">ESC</span>
-                          </div>
-                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                            {item.esc.name}
-                          </p>
-                          {(item.esc.brand || item.esc.ampRating) && (
-                            <div className="flex items-center gap-2 mt-1">
-                              {item.esc.brand && (
-                                <span className="text-xs font-mono text-gray-500">{item.esc.brand}</span>
-                              )}
-                              {item.esc.ampRating && (
-                                <Badge variant="outline" className="text-xs font-mono">{item.esc.ampRating}A</Badge>
-                              )}
-                            </div>
+                          {electronics.motor.turns && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.motor.turns}T</Badge>
                           )}
-                        </div>
-                      )}
-                      {item.servo && (
-                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-mono text-gray-500">Servo</span>
-                          </div>
-                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                            {item.servo.name}
-                          </p>
-                          {item.servo.brand && (
-                            <span className="text-xs font-mono text-gray-500">{item.servo.brand}</span>
-                          )}
-                        </div>
-                      )}
-                      {item.receiver && (
-                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-mono text-gray-500">Receiver</span>
-                          </div>
-                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                            {item.receiver.name}
-                          </p>
-                          {(item.receiver.brand || item.receiver.channels) && (
-                            <div className="flex items-center gap-2 mt-1">
-                              {item.receiver.brand && (
-                                <span className="text-xs font-mono text-gray-500">{item.receiver.brand}</span>
-                              )}
-                              {item.receiver.channels && (
-                                <Badge variant="outline" className="text-xs font-mono">{item.receiver.channels}CH</Badge>
-                              )}
-                            </div>
+                          {electronics.motor.kv && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.motor.kv}KV</Badge>
                           )}
                         </div>
                       )}
                     </div>
-                  ))}
+                  )}
+                  {electronics.esc && (
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono text-gray-500">ESC</span>
+                      </div>
+                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                        {electronics.esc.name}
+                      </p>
+                      {(electronics.esc.brand || electronics.esc.ampRating) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {electronics.esc.brand && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.esc.brand}</span>
+                          )}
+                          {electronics.esc.ampRating && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.esc.ampRating}A</Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {electronics.servo && (
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono text-gray-500">Servo</span>
+                      </div>
+                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                        {electronics.servo.name}
+                      </p>
+                      {electronics.servo.brand && (
+                        <span className="text-xs font-mono text-gray-500">{electronics.servo.brand}</span>
+                      )}
+                    </div>
+                  )}
+                  {electronics.receiver && (
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono text-gray-500">Receiver</span>
+                      </div>
+                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                        {electronics.receiver.name}
+                      </p>
+                      {(electronics.receiver.brand || electronics.receiver.channels) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {electronics.receiver.brand && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.receiver.brand}</span>
+                          )}
+                          {electronics.receiver.channels && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.receiver.channels}CH</Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

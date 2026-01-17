@@ -86,6 +86,7 @@ export interface IStorage {
   getSharedModelPhotos(slug: string, viewerUserId?: string): Promise<Photo[]>;
   getSharedModelHopUps(slug: string, viewerUserId?: string): Promise<HopUpPartWithPhoto[]>;
   getSharedModelBuildLogs(slug: string, viewerUserId?: string): Promise<BuildLogEntryWithPhotos[]>;
+  getSharedModelElectronics(slug: string, viewerUserId?: string): Promise<ModelElectronicsWithDetails | null>;
   
   // Model comments methods
   getModelComments(modelId: number): Promise<ModelCommentWithUser[]>;
@@ -1008,6 +1009,22 @@ export class DatabaseStorage implements IStorage {
     });
     
     return entries;
+  }
+
+  // Get electronics for a shared model (public access)
+  async getSharedModelElectronics(slug: string, viewerUserId?: string): Promise<ModelElectronicsWithDetails | null> {
+    const model = await this.getSharedModelBySlug(slug, viewerUserId);
+    if (!model) return null;
+
+    const [electronics] = await db.select().from(modelElectronics).where(eq(modelElectronics.modelId, model.id));
+    if (!electronics) return null;
+
+    const [motor] = electronics.motorId ? await db.select().from(motors).where(eq(motors.id, electronics.motorId)) : [null];
+    const [esc] = electronics.escId ? await db.select().from(escs).where(eq(escs.id, electronics.escId)) : [null];
+    const [servo] = electronics.servoId ? await db.select().from(servos).where(eq(servos.id, electronics.servoId)) : [null];
+    const [receiver] = electronics.receiverId ? await db.select().from(receivers).where(eq(receivers.id, electronics.receiverId)) : [null];
+
+    return { ...electronics, motor, esc, servo, receiver };
   }
 
   // Model comments methods

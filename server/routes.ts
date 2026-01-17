@@ -814,6 +814,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get electronics for a shared model
+  app.get('/api/community/models/:slug/electronics', async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const viewerUserId = req.user?.id;
+      const electronics = await storage.getSharedModelElectronics(slug, viewerUserId);
+      res.json(electronics);
+    } catch (error) {
+      console.error("Community electronics fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch electronics" });
+    }
+  });
+
   // Get comments for a shared model
   app.get('/api/community/models/:slug/comments', async (req: any, res) => {
     try {
