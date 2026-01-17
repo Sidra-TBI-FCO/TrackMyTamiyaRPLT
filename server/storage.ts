@@ -252,6 +252,9 @@ export class DatabaseStorage implements IStorage {
         },
         hopUpParts: {
           orderBy: desc(hopUpParts.createdAt),
+          with: {
+            photo: true,
+          },
         },
       },
       orderBy: desc(models.updatedAt),
