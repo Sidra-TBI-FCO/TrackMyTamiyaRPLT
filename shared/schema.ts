@@ -336,6 +336,8 @@ export const hopUpLibrary = pgTable("hop_up_library", {
   itemNumber: text("item_number"),
   category: text("category").notNull(),
   manufacturer: text("manufacturer"),
+  supplier: text("supplier"),
+  cost: numeric("cost", { precision: 10, scale: 2 }),
   isTamiyaBrand: boolean("is_tamiya_brand").default(false),
   productUrl: text("product_url"),
   tamiyaBaseUrl: text("tamiya_base_url"),

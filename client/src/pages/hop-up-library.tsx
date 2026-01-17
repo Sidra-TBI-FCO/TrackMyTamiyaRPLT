@@ -22,6 +22,8 @@ const hopUpLibraryFormSchema = z.object({
   itemNumber: z.string().optional(),
   category: z.string().min(1, "Category is required"),
   manufacturer: z.string().optional(),
+  supplier: z.string().optional(),
+  cost: z.string().optional(),
   isTamiyaBrand: z.boolean().optional(),
   productUrl: z.string().url().optional().or(z.literal("")),
   tamiyaBaseUrl: z.string().url().optional().or(z.literal("")),
@@ -56,6 +58,8 @@ function HopUpLibraryDialog({ item, open, onOpenChange }: { item?: HopUpLibraryI
       itemNumber: item?.itemNumber || "",
       category: item?.category || "",
       manufacturer: item?.manufacturer || "",
+      supplier: item?.supplier || "",
+      cost: item?.cost || "",
       isTamiyaBrand: item?.isTamiyaBrand || false,
       productUrl: item?.productUrl || "",
       tamiyaBaseUrl: item?.tamiyaBaseUrl || "",
@@ -128,6 +132,14 @@ function HopUpLibraryDialog({ item, open, onOpenChange }: { item?: HopUpLibraryI
               )} />
               <FormField control={form.control} name="manufacturer" render={({ field }) => (
                 <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Tamiya" /></FormControl></FormItem>
+              )} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="supplier" render={({ field }) => (
+                <FormItem><FormLabel>Supplier</FormLabel><FormControl><Input {...field} placeholder="e.g., AMain Hobbies" /></FormControl></FormItem>
+              )} />
+              <FormField control={form.control} name="cost" render={({ field }) => (
+                <FormItem><FormLabel>Cost ($)</FormLabel><FormControl><Input {...field} type="number" step="0.01" placeholder="0.00" /></FormControl></FormItem>
               )} />
             </div>
             <div className="grid grid-cols-2 gap-4">
