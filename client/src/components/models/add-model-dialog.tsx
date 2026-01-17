@@ -108,7 +108,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       driveType: "",
       chassisMaterial: "",
       differentialType: "",
-      motorSize: "",
       batteryType: "",
       bodyName: "",
       bodyItemNumber: "",
@@ -379,16 +378,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       else if (textLower.includes('gear diff') || textLower.includes('gear differential')) foundDifferentialType = "Gears";
       else if (textLower.includes('one-way') || textLower.includes('oneway')) foundDifferentialType = "One-way";
 
-      // Extract motor size
-      let foundMotorSize = "";
-      if (textLower.includes('540') && textLower.includes('motor')) foundMotorSize = "540";
-      else if (textLower.includes('380') && textLower.includes('motor')) foundMotorSize = "380";
-      else if (textLower.includes('brushless')) foundMotorSize = "Brushless";
-      else {
-        const motorMatch = textLower.match(/(\d+\.?\d*)\s*t\s*(brushless|motor)/);
-        if (motorMatch) foundMotorSize = `${motorMatch[1]}T Brushless`;
-      }
-
       // Extract battery type
       let foundBatteryType = "";
       if (textLower.includes('7.2v') && textLower.includes('nimh')) foundBatteryType = "7.2V NiMH";
@@ -466,12 +455,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       if (foundDifferentialType) {
         form.setValue('differentialType', foundDifferentialType);
         newLog.push(`✅ Differential: ${foundDifferentialType}`);
-        foundData = true;
-      }
-
-      if (foundMotorSize) {
-        form.setValue('motorSize', foundMotorSize);
-        newLog.push(`✅ Motor: ${foundMotorSize}`);
         foundData = true;
       }
 
@@ -1046,29 +1029,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                 </div>
               </div>
             </div>
-
-            <FormField
-              control={form.control}
-              name="motorSize"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Motor Size</FormLabel>
-                  <FormControl>
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="font-mono">
-                        <SelectValue placeholder="Select motor size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getOptions("motorSize").map((option) => (
-                          <SelectItem key={option} value={option}>{option}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}

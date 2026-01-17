@@ -89,7 +89,6 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
       driveType: model.driveType || "",
       chassisMaterial: model.chassisMaterial || "",
       differentialType: model.differentialType || "",
-      motorSize: model.motorSize || "",
       batteryType: model.batteryType || "",
       bodyName: model.bodyName || "",
       bodyItemNumber: model.bodyItemNumber || "",
@@ -498,29 +497,6 @@ export default function EditModelDialog({ model, open, onOpenChange }: EditModel
                           </SelectTrigger>
                           <SelectContent>
                             {getOptions("differentialType").map((option) => (
-                              <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="motorSize"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-mono">Motor Size</FormLabel>
-                      <FormControl>
-                        <Select value={field.value || ""} onValueChange={field.onChange}>
-                          <SelectTrigger className="font-mono">
-                            <SelectValue placeholder="Select motor size" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getOptions("motorSize").map((option) => (
                               <SelectItem key={option} value={option}>{option}</SelectItem>
                             ))}
                           </SelectContent>

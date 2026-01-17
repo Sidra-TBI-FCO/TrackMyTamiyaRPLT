@@ -98,7 +98,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
       driveType: "",
       chassisMaterial: "",
       differentialType: "",
-      motorSize: "",
       batteryType: "",
       bodyName: "",
       bodyItemNumber: "",
@@ -756,29 +755,6 @@ export default function AddModelDialog({ trigger }: AddModelDialogProps) {
                               </SelectTrigger>
                               <SelectContent>
                                 {getOptions("differentialType").map((option) => (
-                                  <SelectItem key={option} value={option}>{option}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="motorSize"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-mono">Motor Size</FormLabel>
-                          <FormControl>
-                            <Select value={field.value || ""} onValueChange={field.onChange}>
-                              <SelectTrigger className="font-mono">
-                                <SelectValue placeholder="Select motor size" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getOptions("motorSize").map((option) => (
                                   <SelectItem key={option} value={option}>{option}</SelectItem>
                                 ))}
                               </SelectContent>
