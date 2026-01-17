@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe, Zap, Gauge, Settings2, Radio, Upload } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe, Zap, Gauge, Settings2, Radio } from "lucide-react";
 import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
 import type { Motor, Esc, Servo, Receiver, ModelElectronicsWithDetails } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,13 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,46 +29,13 @@ import HopUpCard from "@/components/hop-ups/hop-up-card";
 import HopUpPartDialog from "@/components/hop-up-parts/hop-up-part-dialog";
 import BuildLogEntry from "@/components/build-log/build-log-entry";
 import BuildLogEntryDialog from "@/components/build-log/build-log-entry-dialog";
+import { MotorDialog, EscDialog, ServoDialog, ReceiverDialog } from "@/components/electronics";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useSlideshow } from "@/lib/slideshow-context";
 import { useState, useEffect } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
-
-const optionalNumber = z.preprocess(
-  (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
-  z.number().optional()
-);
-
-const quickMotorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  manufacturer: z.string().optional(),
-  motorType: z.enum(["brushed", "brushless"]),
-  kv: optionalNumber,
-  turns: optionalNumber,
-});
-
-const quickEscSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  manufacturer: z.string().optional(),
-  escType: z.enum(["brushed", "brushless", "sensored"]),
-  maxAmps: optionalNumber,
-});
-
-const quickServoSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  manufacturer: z.string().optional(),
-  servoType: z.enum(["standard", "low-profile", "mini", "micro"]),
-  torque: z.string().optional(),
-});
-
-const quickReceiverSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  manufacturer: z.string().optional(),
-  protocol: z.string().optional(),
-  channels: optionalNumber,
-});
 
 export default function ModelDetail() {
   const { id } = useParams();
@@ -255,101 +215,42 @@ export default function ModelDetail() {
     },
   });
 
-  const createMotorMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof quickMotorSchema>) => {
-      const res = await apiRequest("POST", "/api/electronics/motors", data);
-      return res.json();
-    },
-    onSuccess: (newMotor: Motor) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/electronics/motors"] });
-      toast({ title: "Motor added" });
-      setIsAddMotorOpen(false);
-      updateElectronicsMutation.mutate({
-        motorId: newMotor.id,
-        escId: modelElectronics?.escId ?? null,
-        servoId: modelElectronics?.servoId ?? null,
-        receiverId: modelElectronics?.receiverId ?? null,
-      });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
-  });
+  // Handlers for auto-assigning newly created electronics to this model
+  const handleMotorCreated = (newMotor: Motor) => {
+    updateElectronicsMutation.mutate({
+      motorId: newMotor.id,
+      escId: modelElectronics?.escId ?? null,
+      servoId: modelElectronics?.servoId ?? null,
+      receiverId: modelElectronics?.receiverId ?? null,
+    });
+  };
 
-  const createEscMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof quickEscSchema>) => {
-      const res = await apiRequest("POST", "/api/electronics/escs", data);
-      return res.json();
-    },
-    onSuccess: (newEsc: Esc) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/electronics/escs"] });
-      toast({ title: "ESC added" });
-      setIsAddEscOpen(false);
-      updateElectronicsMutation.mutate({
-        motorId: modelElectronics?.motorId ?? null,
-        escId: newEsc.id,
-        servoId: modelElectronics?.servoId ?? null,
-        receiverId: modelElectronics?.receiverId ?? null,
-      });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
-  });
+  const handleEscCreated = (newEsc: Esc) => {
+    updateElectronicsMutation.mutate({
+      motorId: modelElectronics?.motorId ?? null,
+      escId: newEsc.id,
+      servoId: modelElectronics?.servoId ?? null,
+      receiverId: modelElectronics?.receiverId ?? null,
+    });
+  };
 
-  const createServoMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof quickServoSchema>) => {
-      const res = await apiRequest("POST", "/api/electronics/servos", data);
-      return res.json();
-    },
-    onSuccess: (newServo: Servo) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/electronics/servos"] });
-      toast({ title: "Servo added" });
-      setIsAddServoOpen(false);
-      updateElectronicsMutation.mutate({
-        motorId: modelElectronics?.motorId ?? null,
-        escId: modelElectronics?.escId ?? null,
-        servoId: newServo.id,
-        receiverId: modelElectronics?.receiverId ?? null,
-      });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
-  });
+  const handleServoCreated = (newServo: Servo) => {
+    updateElectronicsMutation.mutate({
+      motorId: modelElectronics?.motorId ?? null,
+      escId: modelElectronics?.escId ?? null,
+      servoId: newServo.id,
+      receiverId: modelElectronics?.receiverId ?? null,
+    });
+  };
 
-  const createReceiverMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof quickReceiverSchema>) => {
-      const res = await apiRequest("POST", "/api/electronics/receivers", data);
-      return res.json();
-    },
-    onSuccess: (newReceiver: Receiver) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/electronics/receivers"] });
-      toast({ title: "Receiver added" });
-      setIsAddReceiverOpen(false);
-      updateElectronicsMutation.mutate({
-        motorId: modelElectronics?.motorId ?? null,
-        escId: modelElectronics?.escId ?? null,
-        servoId: modelElectronics?.servoId ?? null,
-        receiverId: newReceiver.id,
-      });
-    },
-    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
-  });
-
-  const motorForm = useForm<z.infer<typeof quickMotorSchema>>({
-    resolver: zodResolver(quickMotorSchema),
-    defaultValues: { name: "", manufacturer: "", motorType: "brushed" },
-  });
-
-  const escForm = useForm<z.infer<typeof quickEscSchema>>({
-    resolver: zodResolver(quickEscSchema),
-    defaultValues: { name: "", manufacturer: "", escType: "brushed" },
-  });
-
-  const servoForm = useForm<z.infer<typeof quickServoSchema>>({
-    resolver: zodResolver(quickServoSchema),
-    defaultValues: { name: "", manufacturer: "", servoType: "standard", torque: "" },
-  });
-
-  const receiverForm = useForm<z.infer<typeof quickReceiverSchema>>({
-    resolver: zodResolver(quickReceiverSchema),
-    defaultValues: { name: "", manufacturer: "", protocol: "" },
-  });
+  const handleReceiverCreated = (newReceiver: Receiver) => {
+    updateElectronicsMutation.mutate({
+      motorId: modelElectronics?.motorId ?? null,
+      escId: modelElectronics?.escId ?? null,
+      servoId: modelElectronics?.servoId ?? null,
+      receiverId: newReceiver.id,
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -843,7 +744,7 @@ export default function ModelDetail() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button size="icon" variant="outline" onClick={() => { motorForm.reset(); setIsAddMotorOpen(true); }} title="Add new motor">
+                          <Button size="icon" variant="outline" onClick={() => setIsAddMotorOpen(true)} title="Add new motor">
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -876,7 +777,7 @@ export default function ModelDetail() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button size="icon" variant="outline" onClick={() => { escForm.reset(); setIsAddEscOpen(true); }} title="Add new ESC">
+                          <Button size="icon" variant="outline" onClick={() => setIsAddEscOpen(true)} title="Add new ESC">
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -909,7 +810,7 @@ export default function ModelDetail() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button size="icon" variant="outline" onClick={() => { servoForm.reset(); setIsAddServoOpen(true); }} title="Add new servo">
+                          <Button size="icon" variant="outline" onClick={() => setIsAddServoOpen(true)} title="Add new servo">
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -942,7 +843,7 @@ export default function ModelDetail() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button size="icon" variant="outline" onClick={() => { receiverForm.reset(); setIsAddReceiverOpen(true); }} title="Add new receiver">
+                          <Button size="icon" variant="outline" onClick={() => setIsAddReceiverOpen(true)} title="Add new receiver">
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1559,145 +1460,26 @@ export default function ModelDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isAddMotorOpen} onOpenChange={setIsAddMotorOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono flex items-center gap-2"><Zap className="h-5 w-5" />Add Motor</DialogTitle>
-          </DialogHeader>
-          <Form {...motorForm}>
-            <form onSubmit={motorForm.handleSubmit((data) => createMotorMutation.mutate(data))} className="space-y-4">
-              <FormField control={motorForm.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Tamiya Sport Tuned" /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={motorForm.control} name="manufacturer" render={({ field }) => (
-                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Tamiya" /></FormControl></FormItem>
-              )} />
-              <FormField control={motorForm.control} name="motorType" render={({ field }) => (
-                <FormItem><FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="brushed">Brushed</SelectItem>
-                      <SelectItem value="brushless">Brushless</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={motorForm.control} name="kv" render={({ field }) => (
-                  <FormItem><FormLabel>KV Rating</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 3000" /></FormControl></FormItem>
-                )} />
-                <FormField control={motorForm.control} name="turns" render={({ field }) => (
-                  <FormItem><FormLabel>Turns</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 17" /></FormControl></FormItem>
-                )} />
-              </div>
-              <Button type="submit" className="w-full" disabled={createMotorMutation.isPending}>
-                {createMotorMutation.isPending ? "Adding..." : "Add Motor & Assign"}
-              </Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAddEscOpen} onOpenChange={setIsAddEscOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono flex items-center gap-2"><Gauge className="h-5 w-5" />Add ESC</DialogTitle>
-          </DialogHeader>
-          <Form {...escForm}>
-            <form onSubmit={escForm.handleSubmit((data) => createEscMutation.mutate(data))} className="space-y-4">
-              <FormField control={escForm.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Hobbywing 1060" /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={escForm.control} name="manufacturer" render={({ field }) => (
-                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Hobbywing" /></FormControl></FormItem>
-              )} />
-              <FormField control={escForm.control} name="escType" render={({ field }) => (
-                <FormItem><FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="brushed">Brushed</SelectItem>
-                      <SelectItem value="brushless">Brushless</SelectItem>
-                      <SelectItem value="sensored">Sensored</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={escForm.control} name="maxAmps" render={({ field }) => (
-                <FormItem><FormLabel>Max Amps</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 60" /></FormControl></FormItem>
-              )} />
-              <Button type="submit" className="w-full" disabled={createEscMutation.isPending}>
-                {createEscMutation.isPending ? "Adding..." : "Add ESC & Assign"}
-              </Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAddServoOpen} onOpenChange={setIsAddServoOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono flex items-center gap-2"><Settings2 className="h-5 w-5" />Add Servo</DialogTitle>
-          </DialogHeader>
-          <Form {...servoForm}>
-            <form onSubmit={servoForm.handleSubmit((data) => createServoMutation.mutate(data))} className="space-y-4">
-              <FormField control={servoForm.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Savox SC-1258TG" /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={servoForm.control} name="manufacturer" render={({ field }) => (
-                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Savox" /></FormControl></FormItem>
-              )} />
-              <FormField control={servoForm.control} name="servoType" render={({ field }) => (
-                <FormItem><FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="low-profile">Low Profile</SelectItem>
-                      <SelectItem value="mini">Mini</SelectItem>
-                      <SelectItem value="micro">Micro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={servoForm.control} name="torque" render={({ field }) => (
-                <FormItem><FormLabel>Torque</FormLabel><FormControl><Input {...field} placeholder="e.g., 12kg-cm" /></FormControl></FormItem>
-              )} />
-              <Button type="submit" className="w-full" disabled={createServoMutation.isPending}>
-                {createServoMutation.isPending ? "Adding..." : "Add Servo & Assign"}
-              </Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAddReceiverOpen} onOpenChange={setIsAddReceiverOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono flex items-center gap-2"><Radio className="h-5 w-5" />Add Receiver</DialogTitle>
-          </DialogHeader>
-          <Form {...receiverForm}>
-            <form onSubmit={receiverForm.handleSubmit((data) => createReceiverMutation.mutate(data))} className="space-y-4">
-              <FormField control={receiverForm.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Futaba R304SB" /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={receiverForm.control} name="manufacturer" render={({ field }) => (
-                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Futaba" /></FormControl></FormItem>
-              )} />
-              <FormField control={receiverForm.control} name="protocol" render={({ field }) => (
-                <FormItem><FormLabel>Protocol</FormLabel><FormControl><Input {...field} placeholder="e.g., T-FHSS" /></FormControl></FormItem>
-              )} />
-              <FormField control={receiverForm.control} name="channels" render={({ field }) => (
-                <FormItem><FormLabel>Channels</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 4" /></FormControl></FormItem>
-              )} />
-              <Button type="submit" className="w-full" disabled={createReceiverMutation.isPending}>
-                {createReceiverMutation.isPending ? "Adding..." : "Add Receiver & Assign"}
-              </Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <MotorDialog
+        open={isAddMotorOpen}
+        onOpenChange={setIsAddMotorOpen}
+        onSuccess={handleMotorCreated}
+      />
+      <EscDialog
+        open={isAddEscOpen}
+        onOpenChange={setIsAddEscOpen}
+        onSuccess={handleEscCreated}
+      />
+      <ServoDialog
+        open={isAddServoOpen}
+        onOpenChange={setIsAddServoOpen}
+        onSuccess={handleServoCreated}
+      />
+      <ReceiverDialog
+        open={isAddReceiverOpen}
+        onOpenChange={setIsAddReceiverOpen}
+        onSuccess={handleReceiverCreated}
+      />
     </div>
   );
 }

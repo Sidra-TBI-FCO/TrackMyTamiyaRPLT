@@ -197,6 +197,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== ELECTRONICS ROUTES ====================
 
+  // Electronics photo upload (for motors, escs, servos, receivers)
+  app.post('/api/electronics/photos', upload.single('photo'), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      
+      const file = req.file as Express.Multer.File;
+      if (!file) {
+        return res.status(400).json({ message: 'No photo uploaded' });
+      }
+      
+      const caption = req.body.caption || '';
+      const storedFile = await fileStorage.uploadFile(file, file.originalname);
+      
+      const photo = await storage.createPhoto({
+        modelId: null as any, // Electronics photos aren't tied to a specific model
+        filename: storedFile,
+        originalName: file.originalname,
+        url: `/api/files/${storedFile}`,
+        caption,
+        isBoxArt: false,
+      });
+      
+      res.status(201).json(photo);
+    } catch (error: any) {
+      console.error('Electronics photo upload error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Motors
   app.get('/api/electronics/motors', async (req, res) => {
     try {
