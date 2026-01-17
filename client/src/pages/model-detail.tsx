@@ -66,13 +66,14 @@ export default function ModelDetail() {
   });
 
   // Fetch user's electronics collection for assignment
-  const { data: motors = [] } = useQuery<Motor[]>({ queryKey: ["/api/motors"] });
-  const { data: escs = [] } = useQuery<Esc[]>({ queryKey: ["/api/escs"] });
-  const { data: servos = [] } = useQuery<Servo[]>({ queryKey: ["/api/servos"] });
-  const { data: receivers = [] } = useQuery<Receiver[]>({ queryKey: ["/api/receivers"] });
+  const { data: motors = [], isLoading: isLoadingMotors } = useQuery<Motor[]>({ queryKey: ["/api/motors"] });
+  const { data: escs = [], isLoading: isLoadingEscs } = useQuery<Esc[]>({ queryKey: ["/api/escs"] });
+  const { data: servos = [], isLoading: isLoadingServos } = useQuery<Servo[]>({ queryKey: ["/api/servos"] });
+  const { data: receivers = [], isLoading: isLoadingReceivers } = useQuery<Receiver[]>({ queryKey: ["/api/receivers"] });
+  const isLoadingElectronicsCollection = isLoadingMotors || isLoadingEscs || isLoadingServos || isLoadingReceivers;
 
   // Fetch this model's assigned electronics
-  const { data: modelElectronics } = useQuery<ModelElectronicsWithDetails | null>({
+  const { data: modelElectronics, isLoading: isLoadingModelElectronics } = useQuery<ModelElectronicsWithDetails | null>({
     queryKey: ["/api/models", id, "electronics"],
     enabled: !!id,
   });
@@ -672,7 +673,12 @@ export default function ModelDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {(motors.length === 0 && escs.length === 0 && servos.length === 0 && receivers.length === 0) ? (
+                  {(isLoadingElectronicsCollection || isLoadingModelElectronics) ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
+                      <p className="text-gray-500 dark:text-gray-400 font-mono">Loading electronics...</p>
+                    </div>
+                  ) : (motors.length === 0 && escs.length === 0 && servos.length === 0 && receivers.length === 0) ? (
                     <div className="text-center py-8">
                       <Zap className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                       <p className="text-gray-500 dark:text-gray-400 font-mono mb-4">
@@ -692,9 +698,9 @@ export default function ModelDetail() {
                           value={modelElectronics?.motorId?.toString() || "none"}
                           onValueChange={(value) => updateElectronicsMutation.mutate({
                             motorId: value === "none" ? null : parseInt(value),
-                            escId: modelElectronics?.escId,
-                            servoId: modelElectronics?.servoId,
-                            receiverId: modelElectronics?.receiverId,
+                            escId: modelElectronics?.escId ?? null,
+                            servoId: modelElectronics?.servoId ?? null,
+                            receiverId: modelElectronics?.receiverId ?? null,
                           })}
                         >
                           <SelectTrigger><SelectValue placeholder="Select motor..." /></SelectTrigger>
@@ -719,10 +725,10 @@ export default function ModelDetail() {
                         <Select
                           value={modelElectronics?.escId?.toString() || "none"}
                           onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: modelElectronics?.motorId,
+                            motorId: modelElectronics?.motorId ?? null,
                             escId: value === "none" ? null : parseInt(value),
-                            servoId: modelElectronics?.servoId,
-                            receiverId: modelElectronics?.receiverId,
+                            servoId: modelElectronics?.servoId ?? null,
+                            receiverId: modelElectronics?.receiverId ?? null,
                           })}
                         >
                           <SelectTrigger><SelectValue placeholder="Select ESC..." /></SelectTrigger>
@@ -747,10 +753,10 @@ export default function ModelDetail() {
                         <Select
                           value={modelElectronics?.servoId?.toString() || "none"}
                           onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: modelElectronics?.motorId,
-                            escId: modelElectronics?.escId,
+                            motorId: modelElectronics?.motorId ?? null,
+                            escId: modelElectronics?.escId ?? null,
                             servoId: value === "none" ? null : parseInt(value),
-                            receiverId: modelElectronics?.receiverId,
+                            receiverId: modelElectronics?.receiverId ?? null,
                           })}
                         >
                           <SelectTrigger><SelectValue placeholder="Select servo..." /></SelectTrigger>
@@ -775,9 +781,9 @@ export default function ModelDetail() {
                         <Select
                           value={modelElectronics?.receiverId?.toString() || "none"}
                           onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: modelElectronics?.motorId,
-                            escId: modelElectronics?.escId,
-                            servoId: modelElectronics?.servoId,
+                            motorId: modelElectronics?.motorId ?? null,
+                            escId: modelElectronics?.escId ?? null,
+                            servoId: modelElectronics?.servoId ?? null,
                             receiverId: value === "none" ? null : parseInt(value),
                           })}
                         >
