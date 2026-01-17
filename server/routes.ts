@@ -229,7 +229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
-      const data = insertMotorSchema.partial().parse(req.body);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid motor ID' });
+      const { userId: _, ...body } = req.body; // Strip userId from request body
+      const data = insertMotorSchema.partial().parse(body);
       const motor = await storage.updateMotor(id, userId, data);
       if (!motor) return res.status(404).json({ message: 'Motor not found' });
       res.json(motor);
@@ -243,6 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid motor ID' });
       const deleted = await storage.deleteMotor(id, userId);
       if (!deleted) return res.status(404).json({ message: 'Motor not found' });
       res.json({ message: 'Motor deleted' });
@@ -283,7 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
-      const data = insertEscSchema.partial().parse(req.body);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid ESC ID' });
+      const { userId: _, ...body } = req.body; // Strip userId from request body
+      const data = insertEscSchema.partial().parse(body);
       const esc = await storage.updateEsc(id, userId, data);
       if (!esc) return res.status(404).json({ message: 'ESC not found' });
       res.json(esc);
@@ -297,6 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid ESC ID' });
       const deleted = await storage.deleteEsc(id, userId);
       if (!deleted) return res.status(404).json({ message: 'ESC not found' });
       res.json({ message: 'ESC deleted' });
@@ -337,7 +343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
-      const data = insertServoSchema.partial().parse(req.body);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid servo ID' });
+      const { userId: _, ...body } = req.body; // Strip userId from request body
+      const data = insertServoSchema.partial().parse(body);
       const servo = await storage.updateServo(id, userId, data);
       if (!servo) return res.status(404).json({ message: 'Servo not found' });
       res.json(servo);
@@ -351,6 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid servo ID' });
       const deleted = await storage.deleteServo(id, userId);
       if (!deleted) return res.status(404).json({ message: 'Servo not found' });
       res.json({ message: 'Servo deleted' });
@@ -391,7 +400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
-      const data = insertReceiverSchema.partial().parse(req.body);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid receiver ID' });
+      const { userId: _, ...body } = req.body; // Strip userId from request body
+      const data = insertReceiverSchema.partial().parse(body);
       const receiver = await storage.updateReceiver(id, userId, data);
       if (!receiver) return res.status(404).json({ message: 'Receiver not found' });
       res.json(receiver);
@@ -405,6 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid receiver ID' });
       const deleted = await storage.deleteReceiver(id, userId);
       if (!deleted) return res.status(404).json({ message: 'Receiver not found' });
       res.json({ message: 'Receiver deleted' });
@@ -446,7 +458,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
-      const data = insertHopUpLibrarySchema.partial().parse(req.body);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid item ID' });
+      const { userId: _, ...body } = req.body; // Strip userId from request body
+      const data = insertHopUpLibrarySchema.partial().parse(body);
       const item = await storage.updateHopUpLibraryItem(id, userId, data);
       if (!item) return res.status(404).json({ message: 'Item not found' });
       res.json(item);
@@ -460,6 +474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: 'Invalid item ID' });
       const deleted = await storage.deleteHopUpLibraryItem(id, userId);
       if (!deleted) return res.status(404).json({ message: 'Item not found' });
       res.json({ message: 'Item deleted' });
