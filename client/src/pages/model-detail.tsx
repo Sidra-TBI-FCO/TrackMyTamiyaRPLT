@@ -66,10 +66,10 @@ export default function ModelDetail() {
   });
 
   // Fetch user's electronics collection for assignment
-  const { data: motors = [], isLoading: isLoadingMotors } = useQuery<Motor[]>({ queryKey: ["/api/motors"] });
-  const { data: escs = [], isLoading: isLoadingEscs } = useQuery<Esc[]>({ queryKey: ["/api/escs"] });
-  const { data: servos = [], isLoading: isLoadingServos } = useQuery<Servo[]>({ queryKey: ["/api/servos"] });
-  const { data: receivers = [], isLoading: isLoadingReceivers } = useQuery<Receiver[]>({ queryKey: ["/api/receivers"] });
+  const { data: motors = [], isLoading: isLoadingMotors } = useQuery<Motor[]>({ queryKey: ["/api/electronics/motors"] });
+  const { data: escs = [], isLoading: isLoadingEscs } = useQuery<Esc[]>({ queryKey: ["/api/electronics/escs"] });
+  const { data: servos = [], isLoading: isLoadingServos } = useQuery<Servo[]>({ queryKey: ["/api/electronics/servos"] });
+  const { data: receivers = [], isLoading: isLoadingReceivers } = useQuery<Receiver[]>({ queryKey: ["/api/electronics/receivers"] });
   const isLoadingElectronicsCollection = isLoadingMotors || isLoadingEscs || isLoadingServos || isLoadingReceivers;
 
   // Fetch this model's assigned electronics
