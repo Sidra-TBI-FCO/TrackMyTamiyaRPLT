@@ -126,9 +126,9 @@ export interface IStorage {
   updateReceiver(id: number, userId: string, receiver: Partial<InsertReceiver>): Promise<Receiver | undefined>;
   deleteReceiver(id: number, userId: string): Promise<boolean>;
 
-  // Hop-up library methods
-  getHopUpLibraryItems(userId: string): Promise<HopUpLibraryItem[]>;
-  getHopUpLibraryItem(id: number, userId: string): Promise<HopUpLibraryItem | undefined>;
+  // Hop-up library methods (shared global library - no user filtering for read)
+  getHopUpLibraryItems(): Promise<HopUpLibraryItem[]>;
+  getHopUpLibraryItem(id: number): Promise<HopUpLibraryItem | undefined>;
   createHopUpLibraryItem(item: InsertHopUpLibraryItem): Promise<HopUpLibraryItem>;
   updateHopUpLibraryItem(id: number, userId: string, item: Partial<InsertHopUpLibraryItem>): Promise<HopUpLibraryItem | undefined>;
   deleteHopUpLibraryItem(id: number, userId: string): Promise<boolean>;
@@ -1243,13 +1243,13 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  // Hop-up library methods
-  async getHopUpLibraryItems(userId: string): Promise<HopUpLibraryItem[]> {
-    return await db.select().from(hopUpLibrary).where(eq(hopUpLibrary.userId, userId)).orderBy(desc(hopUpLibrary.createdAt));
+  // Hop-up library methods - returns ALL items across all users (shared global library)
+  async getHopUpLibraryItems(): Promise<HopUpLibraryItem[]> {
+    return await db.select().from(hopUpLibrary).orderBy(desc(hopUpLibrary.createdAt));
   }
 
-  async getHopUpLibraryItem(id: number, userId: string): Promise<HopUpLibraryItem | undefined> {
-    const [item] = await db.select().from(hopUpLibrary).where(and(eq(hopUpLibrary.id, id), eq(hopUpLibrary.userId, userId)));
+  async getHopUpLibraryItem(id: number): Promise<HopUpLibraryItem | undefined> {
+    const [item] = await db.select().from(hopUpLibrary).where(eq(hopUpLibrary.id, id));
     return item;
   }
 

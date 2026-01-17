@@ -461,7 +461,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-      const items = await storage.getHopUpLibraryItems(userId);
+      // Returns ALL library items across all users (shared global library)
+      const items = await storage.getHopUpLibraryItems();
       res.json(items);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
