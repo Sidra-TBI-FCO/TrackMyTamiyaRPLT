@@ -4,7 +4,8 @@
 TrackMyRC is a comprehensive web application for tracking and managing RC car model collections. It enables users to manage models, organize photos, log builds with voice notes, track hop-up parts, and view photo slideshows. The application is designed with a mobile-first approach, featuring a green and orange color scheme, and aims to be the go-to platform for RC enthusiasts to manage their collections. It supports community sharing of models, build logs, and comments, alongside administrative tools for managing dropdown field options.
 
 ### User Preferences
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language.
+- Production database: Google BigQuery (NOT PostgreSQL) - always write migrations in BigQuery SQL syntax.
 
 ### System Architecture
 The application employs a full-stack TypeScript architecture, utilizing React for the frontend, Express.js for the backend, and PostgreSQL as the database. It leverages modern web technologies including shadcn/ui components, Tailwind CSS for styling, and Drizzle ORM for database interactions.
@@ -52,3 +53,4 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 
 ### Recent Migrations
 -   **2025-12-field-options-management.sql**: Creates the field_options table for admin-managed dropdown values. Automatically populates with existing values from models and hop_up_parts tables, plus default options. Run this on production database to enable the Field Options admin feature.
+-   **2025-12-electronics-and-hopup-library.sql**: Creates tables for electronics tracking (motors, escs, servos, receivers, model_electronics) and hop_up_library for global parts catalog. Written in BigQuery SQL syntax.
