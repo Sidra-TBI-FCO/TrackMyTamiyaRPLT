@@ -126,26 +126,11 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
     <>
       <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
         <CardContent className="p-4">
-          {/* Product Photo */}
-          {part.photo && (
-            <div 
-              className="mb-4 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => onImageClick?.(part)}
-            >
-              <img
-                src={addStorageFallbackParam(part.photo.url)}
-                alt={part.name}
-                className="w-full h-48 object-contain p-2"
-                loading="lazy"
-              />
-            </div>
-          )}
-          
           {/* Mobile: Full detailed layout */}
           <div className="block lg:hidden">
-            {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-start space-x-2 flex-1">
+            {/* Header with inline thumbnail */}
+          <div className="flex items-start justify-between mb-3 gap-3">
+            <div className="flex items-start space-x-2 flex-1 min-w-0">
               <div className="text-2xl">{getCategoryIcon(part.category)}</div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-mono font-semibold text-gray-900 dark:text-white line-clamp-2">
@@ -159,9 +144,24 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
               </div>
             </div>
             
-            <Badge className={`text-xs font-mono ${getStatusColor(part.installationStatus)}`}>
-              {part.installationStatus.charAt(0).toUpperCase() + part.installationStatus.slice(1)}
-            </Badge>
+            <div className="flex items-start gap-2 flex-shrink-0">
+              <Badge className={`text-xs font-mono ${getStatusColor(part.installationStatus)}`}>
+                {part.installationStatus.charAt(0).toUpperCase() + part.installationStatus.slice(1)}
+              </Badge>
+              {part.photo && (
+                <div 
+                  className="w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+                  onClick={() => onImageClick?.(part)}
+                >
+                  <img
+                    src={addStorageFallbackParam(part.photo.url)}
+                    alt={part.name}
+                    className="w-full h-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Category and Details */}
@@ -224,10 +224,24 @@ export default function HopUpCard({ part, onEdit, onDelete, onImageClick }: HopU
 
         {/* Desktop: Compact layout */}
         <div className="hidden lg:block">
-          {/* Compact Header Row */}
+          {/* Compact Header Row with inline thumbnail */}
           <div className="flex items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="text-lg flex-shrink-0">{getCategoryIcon(part.category)}</div>
+              {part.photo ? (
+                <div 
+                  className="w-10 h-10 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+                  onClick={() => onImageClick?.(part)}
+                >
+                  <img
+                    src={addStorageFallbackParam(part.photo.url)}
+                    alt={part.name}
+                    className="w-full h-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              ) : (
+                <div className="text-lg flex-shrink-0">{getCategoryIcon(part.category)}</div>
+              )}
               <div className="flex-1 min-w-0">
                 <h3 className="font-mono font-medium text-sm text-gray-900 dark:text-white truncate">
                   {part.name}
