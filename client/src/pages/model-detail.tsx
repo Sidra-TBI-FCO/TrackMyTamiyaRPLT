@@ -937,15 +937,6 @@ export default function ModelDetail() {
                         </div>
                       )}
                       
-                      {model.motorSize && (
-                        <div>
-                          <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Motor</p>
-                          <p className="font-mono text-gray-900 dark:text-white text-sm">
-                            {model.motorSize}
-                          </p>
-                        </div>
-                      )}
-                      
                       {model.batteryType && (
                         <div>
                           <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Battery</p>
@@ -1101,15 +1092,6 @@ export default function ModelDetail() {
                     <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Differential Type</p>
                     <p className="font-mono text-gray-900 dark:text-white text-sm">
                       {model.differentialType}
-                    </p>
-                  </div>
-                )}
-                
-                {model.motorSize && (
-                  <div>
-                    <p className="text-sm font-mono text-gray-500 dark:text-gray-400">Motor Size</p>
-                    <p className="font-mono text-gray-900 dark:text-white text-sm">
-                      {model.motorSize}
                     </p>
                   </div>
                 )}
