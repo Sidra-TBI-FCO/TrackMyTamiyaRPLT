@@ -24,6 +24,8 @@ import Home from "@/pages/home";
 import Models from "@/pages/models";
 import BuildLogs from "@/pages/build-logs";
 import Parts from "@/pages/parts";
+import Electronics from "@/pages/electronics";
+import HopUpLibraryPage from "@/pages/hop-up-library";
 import PhotoGallery from "@/pages/photo-gallery";
 import PhotoFrame from "@/pages/photo-frame";
 import ModelDetail from "@/pages/model-detail";
@@ -71,6 +73,8 @@ function Router() {
           <Route path="/build-logs" component={BuildLogs} />
           <Route path="/models/:modelId/build-log" component={BuildLogs} />
           <Route path="/parts" component={Parts} />
+          <Route path="/electronics" component={Electronics} />
+          <Route path="/hop-up-library" component={HopUpLibraryPage} />
           <Route path="/photo-gallery" component={PhotoGallery} />
           <Route path="/photo-frame" component={PhotoFrame} />
           <Route path="/settings" component={SettingsPage} />
