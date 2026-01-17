@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Camera, Cog, Play, User, Calendar, ExternalLink, Wrench, MessageSquare, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Cog, Play, User, Calendar, ExternalLink, Wrench, MessageSquare, Send, Trash2, Zap } from "lucide-react";
 import { useState } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
@@ -65,6 +65,48 @@ interface SharedModelOwner {
   profileImageUrl: string | null;
 }
 
+interface Motor {
+  id: number;
+  name: string;
+  brand: string | null;
+  turns: number | null;
+  kv: number | null;
+  type: string | null;
+}
+
+interface Esc {
+  id: number;
+  name: string;
+  brand: string | null;
+  ampRating: number | null;
+  type: string | null;
+}
+
+interface Servo {
+  id: number;
+  name: string;
+  brand: string | null;
+  torque: string | null;
+  speed: string | null;
+}
+
+interface Receiver {
+  id: number;
+  name: string;
+  brand: string | null;
+  channels: number | null;
+  protocol: string | null;
+}
+
+interface ModelElectronics {
+  id: number;
+  modelId: number;
+  motor?: Motor | null;
+  esc?: Esc | null;
+  servo?: Servo | null;
+  receiver?: Receiver | null;
+}
+
 interface SharedModel {
   id: number;
   name: string;
@@ -117,6 +159,11 @@ export default function CommunityModelDetailPage() {
   const { data: comments, isLoading: isLoadingComments } = useQuery<ModelComment[]>({
     queryKey: [`/api/community/models/${slug}/comments`],
     enabled: !!slug,
+  });
+
+  const { data: electronics } = useQuery<ModelElectronics[]>({
+    queryKey: ['/api/models', model?.id, 'electronics'],
+    enabled: !!model?.id,
   });
 
   const addCommentMutation = useMutation({
@@ -539,12 +586,6 @@ export default function CommunityModelDetailPage() {
                     <p className="font-mono text-gray-900 dark:text-white text-sm">{model.differentialType}</p>
                   </div>
                 )}
-                {model.motorSize && (
-                  <div>
-                    <p className="text-sm font-mono text-gray-500">Motor</p>
-                    <p className="font-mono text-gray-900 dark:text-white text-sm">{model.motorSize}</p>
-                  </div>
-                )}
                 {model.batteryType && (
                   <div>
                     <p className="text-sm font-mono text-gray-500">Battery</p>
@@ -657,6 +698,102 @@ export default function CommunityModelDetailPage() {
                       ))}
                     </>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Electronics Section */}
+          {electronics && electronics.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-mono text-lg flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Electronics ({electronics.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {electronics.map((item) => (
+                    <div key={item.id} className="space-y-2">
+                      {item.motor && (
+                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-mono text-gray-500">Motor</span>
+                          </div>
+                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                            {item.motor.name}
+                          </p>
+                          {(item.motor.brand || item.motor.turns || item.motor.kv) && (
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              {item.motor.brand && (
+                                <span className="text-xs font-mono text-gray-500">{item.motor.brand}</span>
+                              )}
+                              {item.motor.turns && (
+                                <Badge variant="outline" className="text-xs font-mono">{item.motor.turns}T</Badge>
+                              )}
+                              {item.motor.kv && (
+                                <Badge variant="outline" className="text-xs font-mono">{item.motor.kv}KV</Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {item.esc && (
+                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-mono text-gray-500">ESC</span>
+                          </div>
+                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                            {item.esc.name}
+                          </p>
+                          {(item.esc.brand || item.esc.ampRating) && (
+                            <div className="flex items-center gap-2 mt-1">
+                              {item.esc.brand && (
+                                <span className="text-xs font-mono text-gray-500">{item.esc.brand}</span>
+                              )}
+                              {item.esc.ampRating && (
+                                <Badge variant="outline" className="text-xs font-mono">{item.esc.ampRating}A</Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {item.servo && (
+                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-mono text-gray-500">Servo</span>
+                          </div>
+                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                            {item.servo.name}
+                          </p>
+                          {item.servo.brand && (
+                            <span className="text-xs font-mono text-gray-500">{item.servo.brand}</span>
+                          )}
+                        </div>
+                      )}
+                      {item.receiver && (
+                        <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-mono text-gray-500">Receiver</span>
+                          </div>
+                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                            {item.receiver.name}
+                          </p>
+                          {(item.receiver.brand || item.receiver.channels) && (
+                            <div className="flex items-center gap-2 mt-1">
+                              {item.receiver.brand && (
+                                <span className="text-xs font-mono text-gray-500">{item.receiver.brand}</span>
+                              )}
+                              {item.receiver.channels && (
+                                <Badge variant="outline" className="text-xs font-mono">{item.receiver.channels}CH</Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
