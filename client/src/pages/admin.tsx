@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, DollarSign, Activity, Image, Settings, Share2, List } from "lucide-react";
+import { Shield, Users, DollarSign, Activity, Image, Settings, Share2, List, MessageSquare } from "lucide-react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPricing } from "@/components/admin/AdminPricing";
@@ -11,6 +11,7 @@ import { AdminPurchases } from "@/components/admin/AdminPurchases";
 import { AdminScreenshots } from "@/components/admin/AdminScreenshots";
 import { AdminSharedModels } from "@/components/admin/AdminSharedModels";
 import { AdminFieldOptions } from "@/components/admin/AdminFieldOptions";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -64,7 +65,7 @@ export default function AdminPage() {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <Activity className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
@@ -96,6 +97,10 @@ export default function AdminPage() {
           <TabsTrigger value="screenshots" className="flex items-center gap-2">
             <Image className="w-4 h-4" />
             <span className="hidden sm:inline">Screenshots</span>
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">Feedback</span>
           </TabsTrigger>
         </TabsList>
         
@@ -129,6 +134,10 @@ export default function AdminPage() {
         
         <TabsContent value="screenshots">
           <AdminScreenshots />
+        </TabsContent>
+        
+        <TabsContent value="feedback">
+          <AdminFeedback />
         </TabsContent>
       </Tabs>
     </div>

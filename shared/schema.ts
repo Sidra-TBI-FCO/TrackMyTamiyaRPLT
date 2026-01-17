@@ -232,6 +232,121 @@ export const fieldOptions = pgTable("field_options", {
   index("idx_field_options_field_key").on(table.fieldKey),
 ]);
 
+// ============================================================================
+// Electronics System - Motors, ESCs, Servos, Receivers
+// ============================================================================
+
+// Motors - global library of motors
+export const motors = pgTable("motors", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  itemNumber: text("item_number"),
+  motorType: varchar("motor_type").notNull().default("brushed"), // brushed, brushless
+  isSensored: boolean("is_sensored").default(false),
+  kv: integer("kv"), // KV rating for brushless
+  turns: integer("turns"), // Turn count for brushed
+  diameter: varchar("diameter"), // e.g., "540", "380"
+  canSize: varchar("can_size"), // e.g., "3650", "3660", "4268"
+  cost: numeric("cost", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  photoId: integer("photo_id").references(() => photos.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ESCs - Electronic Speed Controllers
+export const escs = pgTable("escs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  itemNumber: text("item_number"),
+  escType: varchar("esc_type").notNull().default("brushed"), // brushed, brushless, sensored
+  maxAmps: integer("max_amps"),
+  maxVoltage: varchar("max_voltage"), // e.g., "2S", "3S", "6S"
+  bec: varchar("bec"), // BEC output specs e.g., "6V/3A"
+  programmable: boolean("programmable").default(false),
+  cost: numeric("cost", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  photoId: integer("photo_id").references(() => photos.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Servos
+export const servos = pgTable("servos", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  itemNumber: text("item_number"),
+  servoType: varchar("servo_type").notNull().default("standard"), // standard, low-profile, mini, micro
+  torque: varchar("torque"), // e.g., "10kg-cm" or "140 oz-in"
+  speed: varchar("speed"), // e.g., "0.12s/60°"
+  voltage: varchar("voltage"), // e.g., "4.8V-7.4V"
+  gearType: varchar("gear_type"), // plastic, metal, titanium
+  isDigital: boolean("is_digital").default(false),
+  isWaterproof: boolean("is_waterproof").default(false),
+  cost: numeric("cost", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  photoId: integer("photo_id").references(() => photos.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Receivers
+export const receivers = pgTable("receivers", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  itemNumber: text("item_number"),
+  protocol: varchar("protocol"), // e.g., "FHSS", "AFHDS2A", "SFHSS", "FrSky"
+  channels: integer("channels"),
+  frequency: varchar("frequency"), // e.g., "2.4GHz"
+  hasGyro: boolean("has_gyro").default(false),
+  hasTelemetry: boolean("has_telemetry").default(false),
+  cost: numeric("cost", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  photoId: integer("photo_id").references(() => photos.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Model Electronics - junction table to link electronics to models
+export const modelElectronics = pgTable("model_electronics", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }).notNull(),
+  motorId: integer("motor_id").references(() => motors.id, { onDelete: "set null" }),
+  escId: integer("esc_id").references(() => escs.id, { onDelete: "set null" }),
+  servoId: integer("servo_id").references(() => servos.id, { onDelete: "set null" }),
+  receiverId: integer("receiver_id").references(() => receivers.id, { onDelete: "set null" }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ============================================================================
+// Hop-Up Library - Global parts catalog
+// ============================================================================
+
+// Hop-Up Library - global catalog of parts that can be reused across models
+export const hopUpLibrary = pgTable("hop_up_library", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  itemNumber: text("item_number"),
+  category: text("category").notNull(),
+  manufacturer: text("manufacturer"),
+  isTamiyaBrand: boolean("is_tamiya_brand").default(false),
+  productUrl: text("product_url"),
+  tamiyaBaseUrl: text("tamiya_base_url"),
+  compatibility: text("compatibility").array().default(sql`'{}'::text[]`),
+  color: text("color"),
+  material: text("material"),
+  notes: text("notes"),
+  photoId: integer("photo_id").references(() => photos.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   models: many(models),
@@ -240,6 +355,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   feedbackPosts: many(feedbackPosts),
   feedbackVotes: many(feedbackVotes),
   modelComments: many(modelComments),
+  motors: many(motors),
+  escs: many(escs),
+  servos: many(servos),
+  receivers: many(receivers),
+  hopUpLibrary: many(hopUpLibrary),
 }));
 
 export const feedbackPostsRelations = relations(feedbackPosts, ({ one, many }) => ({
@@ -270,6 +390,7 @@ export const modelsRelations = relations(models, ({ one, many }) => ({
   buildLogEntries: many(buildLogEntries),
   hopUpParts: many(hopUpParts),
   comments: many(modelComments),
+  electronics: many(modelElectronics),
 }));
 
 export const photosRelations = relations(photos, ({ one, many }) => ({
@@ -344,6 +465,85 @@ export const modelCommentsRelations = relations(modelComments, ({ one }) => ({
   user: one(users, {
     fields: [modelComments.userId],
     references: [users.id],
+  }),
+}));
+
+// Electronics Relations
+export const motorsRelations = relations(motors, ({ one }) => ({
+  user: one(users, {
+    fields: [motors.userId],
+    references: [users.id],
+  }),
+  photo: one(photos, {
+    fields: [motors.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const escsRelations = relations(escs, ({ one }) => ({
+  user: one(users, {
+    fields: [escs.userId],
+    references: [users.id],
+  }),
+  photo: one(photos, {
+    fields: [escs.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const servosRelations = relations(servos, ({ one }) => ({
+  user: one(users, {
+    fields: [servos.userId],
+    references: [users.id],
+  }),
+  photo: one(photos, {
+    fields: [servos.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const receiversRelations = relations(receivers, ({ one }) => ({
+  user: one(users, {
+    fields: [receivers.userId],
+    references: [users.id],
+  }),
+  photo: one(photos, {
+    fields: [receivers.photoId],
+    references: [photos.id],
+  }),
+}));
+
+export const modelElectronicsRelations = relations(modelElectronics, ({ one }) => ({
+  model: one(models, {
+    fields: [modelElectronics.modelId],
+    references: [models.id],
+  }),
+  motor: one(motors, {
+    fields: [modelElectronics.motorId],
+    references: [motors.id],
+  }),
+  esc: one(escs, {
+    fields: [modelElectronics.escId],
+    references: [escs.id],
+  }),
+  servo: one(servos, {
+    fields: [modelElectronics.servoId],
+    references: [servos.id],
+  }),
+  receiver: one(receivers, {
+    fields: [modelElectronics.receiverId],
+    references: [receivers.id],
+  }),
+}));
+
+export const hopUpLibraryRelations = relations(hopUpLibrary, ({ one }) => ({
+  user: one(users, {
+    fields: [hopUpLibrary.userId],
+    references: [users.id],
+  }),
+  photo: one(photos, {
+    fields: [hopUpLibrary.photoId],
+    references: [photos.id],
   }),
 }));
 
@@ -456,6 +656,50 @@ export const insertFieldOptionSchema = createInsertSchema(fieldOptions).omit({
   updatedAt: true,
 });
 
+// Electronics insert schemas
+export const insertMotorSchema = createInsertSchema(motors, {
+  cost: z.coerce.number().optional(),
+  kv: z.coerce.number().optional(),
+  turns: z.coerce.number().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEscSchema = createInsertSchema(escs, {
+  cost: z.coerce.number().optional(),
+  maxAmps: z.coerce.number().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertServoSchema = createInsertSchema(servos, {
+  cost: z.coerce.number().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReceiverSchema = createInsertSchema(receivers, {
+  cost: z.coerce.number().optional(),
+  channels: z.coerce.number().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertModelElectronicsSchema = createInsertSchema(modelElectronics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertHopUpLibrarySchema = createInsertSchema(hopUpLibrary).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -488,6 +732,20 @@ export type ModelComment = typeof modelComments.$inferSelect;
 export type InsertModelComment = z.infer<typeof insertModelCommentSchema>;
 export type FieldOption = typeof fieldOptions.$inferSelect;
 export type InsertFieldOption = z.infer<typeof insertFieldOptionSchema>;
+
+// Electronics types
+export type Motor = typeof motors.$inferSelect;
+export type InsertMotor = z.infer<typeof insertMotorSchema>;
+export type Esc = typeof escs.$inferSelect;
+export type InsertEsc = z.infer<typeof insertEscSchema>;
+export type Servo = typeof servos.$inferSelect;
+export type InsertServo = z.infer<typeof insertServoSchema>;
+export type Receiver = typeof receivers.$inferSelect;
+export type InsertReceiver = z.infer<typeof insertReceiverSchema>;
+export type ModelElectronics = typeof modelElectronics.$inferSelect;
+export type InsertModelElectronics = z.infer<typeof insertModelElectronicsSchema>;
+export type HopUpLibraryItem = typeof hopUpLibrary.$inferSelect;
+export type InsertHopUpLibraryItem = z.infer<typeof insertHopUpLibrarySchema>;
 
 // Supported field keys for field options
 export const FIELD_OPTION_KEYS = [

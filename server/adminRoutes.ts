@@ -3,7 +3,7 @@ import { db } from "./db";
 import { 
   users, models, photos, purchases, pricingTiers, adminAuditLog, userActivityLog,
   featureScreenshots, insertPricingTierSchema, insertPurchaseSchema, insertAdminAuditLogSchema,
-  insertFeatureScreenshotSchema, FIELD_OPTION_KEYS, insertFieldOptionSchema
+  insertFeatureScreenshotSchema, FIELD_OPTION_KEYS, insertFieldOptionSchema, feedbackPosts, feedbackVotes
 } from "@shared/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAdmin, getClientIP } from "./adminMiddleware";
@@ -909,6 +909,93 @@ router.get("/field-options/:id/usage", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin get field option usage error:", error);
     res.status(500).json({ message: "Failed to get usage count" });
+  }
+});
+
+// ==================== ADMIN FEEDBACK ROUTES ====================
+
+// GET /api/admin/feedback - Get all feedback posts with user info
+router.get("/feedback", requireAdmin, async (req, res) => {
+  try {
+    const rawFeedback = await db
+      .select({
+        id: feedbackPosts.id,
+        userId: feedbackPosts.userId,
+        title: feedbackPosts.title,
+        description: feedbackPosts.description,
+        category: feedbackPosts.category,
+        status: feedbackPosts.status,
+        voteCount: feedbackPosts.voteCount,
+        createdAt: feedbackPosts.createdAt,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+        userEmail: users.email,
+      })
+      .from(feedbackPosts)
+      .leftJoin(users, eq(feedbackPosts.userId, users.id))
+      .orderBy(desc(feedbackPosts.createdAt));
+    
+    // Transform to proper nested structure
+    const allFeedback = rawFeedback.map(row => ({
+      id: row.id,
+      userId: row.userId,
+      title: row.title,
+      description: row.description,
+      category: row.category,
+      status: row.status,
+      voteCount: row.voteCount,
+      createdAt: row.createdAt,
+      user: row.userFirstName || row.userLastName ? {
+        id: row.userId,
+        firstName: row.userFirstName,
+        lastName: row.userLastName,
+        email: row.userEmail,
+      } : null,
+    }));
+    
+    res.json(allFeedback);
+  } catch (error) {
+    console.error("Admin get feedback error:", error);
+    res.status(500).json({ message: "Failed to load feedback" });
+  }
+});
+
+// DELETE /api/admin/feedback/:id - Admin delete any feedback post
+router.delete("/feedback/:id", requireAdmin, async (req, res) => {
+  try {
+    const feedbackId = parseInt(req.params.id);
+    const adminId = getUserId(req);
+    
+    if (isNaN(feedbackId)) {
+      return res.status(400).json({ message: "Invalid feedback ID" });
+    }
+    
+    // Get feedback details for logging
+    const [feedback] = await db
+      .select()
+      .from(feedbackPosts)
+      .where(eq(feedbackPosts.id, feedbackId));
+    
+    if (!feedback) {
+      return res.status(404).json({ message: "Feedback not found" });
+    }
+    
+    // Delete votes first (foreign key constraint)
+    await db.delete(feedbackVotes).where(eq(feedbackVotes.feedbackId, feedbackId));
+    
+    // Delete the feedback post
+    await db.delete(feedbackPosts).where(eq(feedbackPosts.id, feedbackId));
+    
+    await logAdminAction(adminId, "delete_feedback", feedback.userId, {
+      feedbackId,
+      title: feedback.title,
+      category: feedback.category,
+    }, getClientIP(req));
+    
+    res.json({ message: "Feedback deleted successfully" });
+  } catch (error) {
+    console.error("Admin delete feedback error:", error);
+    res.status(500).json({ message: "Failed to delete feedback" });
   }
 });
 
