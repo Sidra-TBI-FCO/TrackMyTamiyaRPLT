@@ -311,123 +311,150 @@ export default function CommunityModelDetailPage() {
             </div>
           )}
 
-          {hopUps && hopUps.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-mono text-lg flex items-center gap-2">
-                  <Cog className="h-5 w-5" />
-                  Hop-Up Parts ({hopUps.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {hopUps.map((part) => (
-                    <div key={part.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div>
-                        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                          {part.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          {part.brand && (
-                            <span className="text-xs font-mono text-gray-500">{part.brand}</span>
-                          )}
-                          {part.category && (
-                            <Badge variant="outline" className="text-xs font-mono">
-                              {part.category}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {part.isInstalled && (
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 font-mono text-xs">
-                          Installed
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {isLoadingBuildLogs ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-mono text-lg flex items-center gap-2">
-                  <Wrench className="h-5 w-5" />
-                  Build Log
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex gap-4">
-                      <Skeleton className="w-8 h-8 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-1/3" />
-                        <Skeleton className="h-3 w-1/4" />
-                        <Skeleton className="h-16 w-full" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : sortedBuildLogs.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-mono text-lg flex items-center gap-2">
-                  <Wrench className="h-5 w-5" />
-                  Build Log ({sortedBuildLogs.length} entries)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {sortedBuildLogs.map((entry, index) => (
-                    <div key={entry.id} className="relative">
-                      {index < sortedBuildLogs.length - 1 && (
-                        <div className="absolute left-4 top-10 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
-                      )}
-                      <div className="flex gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-mono text-sm font-bold" style={{ backgroundColor: 'var(--theme-primary)' }}>
-                          {entry.entryNumber}
-                        </div>
-                        <div className="flex-1 pb-6">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-mono font-semibold text-gray-900 dark:text-white">
-                              {entry.title}
-                            </h4>
+          {/* Two-column layout: Build Log (left) and Hop-Ups (right) on desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Build Log - takes 2/3 width on desktop */}
+            <div className="lg:col-span-2">
+              {isLoadingBuildLogs ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-mono text-lg flex items-center gap-2">
+                      <Wrench className="h-5 w-5" />
+                      Build Log
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex gap-4">
+                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-3 w-1/4" />
+                            <Skeleton className="h-16 w-full" />
                           </div>
-                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-2">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(entry.entryDate), 'MMM d, yyyy')}
-                          </p>
-                          {entry.content && (
-                            <p className="font-mono text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">
-                              {entry.content}
-                            </p>
-                          )}
-                          {entry.photos && entry.photos.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2">
-                              {entry.photos.map((photoLink) => (
-                                <img
-                                  key={photoLink.photo.id}
-                                  src={addStorageFallbackParam(photoLink.photo.url)}
-                                  alt={photoLink.photo.caption || "Build log photo"}
-                                  className="w-full h-20 object-cover rounded cursor-pointer hover:opacity-90"
-                                  onClick={() => handlePhotoClick(photoLink.photo.id)}
-                                />
-                              ))}
-                            </div>
-                          )}
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : null}
+                  </CardContent>
+                </Card>
+              ) : sortedBuildLogs.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-mono text-lg flex items-center gap-2">
+                      <Wrench className="h-5 w-5" />
+                      Build Log ({sortedBuildLogs.length} entries)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {sortedBuildLogs.map((entry, index) => (
+                        <div key={entry.id} className="relative">
+                          {index < sortedBuildLogs.length - 1 && (
+                            <div className="absolute left-4 top-10 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+                          )}
+                          <div className="flex gap-4">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white font-mono text-sm font-bold" style={{ backgroundColor: 'var(--theme-primary)' }}>
+                              {entry.entryNumber}
+                            </div>
+                            <div className="flex-1 pb-6">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-mono font-semibold text-gray-900 dark:text-white">
+                                  {entry.title}
+                                </h4>
+                              </div>
+                              <p className="text-xs font-mono text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-2">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(entry.entryDate), 'MMM d, yyyy')}
+                              </p>
+                              {entry.content && (
+                                <p className="font-mono text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">
+                                  {entry.content}
+                                </p>
+                              )}
+                              {entry.photos && entry.photos.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {entry.photos.map((photoLink) => (
+                                    <div key={photoLink.photo.id} className="aspect-square overflow-hidden rounded">
+                                      <img
+                                        src={addStorageFallbackParam(photoLink.photo.url)}
+                                        alt={photoLink.photo.caption || "Build log photo"}
+                                        className="w-full h-full object-cover cursor-pointer hover:opacity-90"
+                                        onClick={() => handlePhotoClick(photoLink.photo.id)}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+            </div>
+
+            {/* Hop-Up Parts - takes 1/3 width on desktop, sticky */}
+            {hopUps && hopUps.length > 0 && (
+              <div className="lg:col-span-1">
+                <Card className="lg:sticky lg:top-4">
+                  <CardHeader>
+                    <CardTitle className="font-mono text-lg flex items-center gap-2">
+                      <Cog className="h-5 w-5" />
+                      Installed Parts ({hopUps.filter(p => p.isInstalled).length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {hopUps.filter(p => p.isInstalled).map((part) => (
+                        <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                            {part.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {part.brand && (
+                              <span className="text-xs font-mono text-gray-500">{part.brand}</span>
+                            )}
+                            {part.category && (
+                              <Badge variant="outline" className="text-xs font-mono">
+                                {part.category}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {hopUps.filter(p => !p.isInstalled).length > 0 && (
+                        <>
+                          <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-xs font-mono text-gray-500 mb-2">Planned ({hopUps.filter(p => !p.isInstalled).length})</p>
+                          </div>
+                          {hopUps.filter(p => !p.isInstalled).map((part) => (
+                            <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg opacity-60">
+                              <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                                {part.name}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {part.brand && (
+                                  <span className="text-xs font-mono text-gray-500">{part.brand}</span>
+                                )}
+                                {part.category && (
+                                  <Badge variant="outline" className="text-xs font-mono">
+                                    {part.category}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
 
           <Card>
             <CardHeader>
