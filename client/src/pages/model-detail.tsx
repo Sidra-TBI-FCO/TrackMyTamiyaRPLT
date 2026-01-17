@@ -43,19 +43,24 @@ import { useSlideshow } from "@/lib/slideshow-context";
 import { useState, useEffect } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
 
+const optionalNumber = z.preprocess(
+  (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+  z.number().optional()
+);
+
 const quickMotorSchema = z.object({
   name: z.string().min(1, "Name is required"),
   manufacturer: z.string().optional(),
   motorType: z.enum(["brushed", "brushless"]),
-  kv: z.coerce.number().optional(),
-  turns: z.coerce.number().optional(),
+  kv: optionalNumber,
+  turns: optionalNumber,
 });
 
 const quickEscSchema = z.object({
   name: z.string().min(1, "Name is required"),
   manufacturer: z.string().optional(),
   escType: z.enum(["brushed", "brushless", "sensored"]),
-  maxAmps: z.coerce.number().optional(),
+  maxAmps: optionalNumber,
 });
 
 const quickServoSchema = z.object({
@@ -69,7 +74,7 @@ const quickReceiverSchema = z.object({
   name: z.string().min(1, "Name is required"),
   manufacturer: z.string().optional(),
   protocol: z.string().optional(),
-  channels: z.coerce.number().optional(),
+  channels: optionalNumber,
 });
 
 export default function ModelDetail() {
