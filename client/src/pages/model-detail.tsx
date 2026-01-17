@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe, Zap, Gauge, Settings2, Radio } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe, Zap, Gauge, Settings2, Radio, Upload } from "lucide-react";
 import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
 import type { Motor, Esc, Servo, Receiver, ModelElectronicsWithDetails } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +43,35 @@ import { useSlideshow } from "@/lib/slideshow-context";
 import { useState, useEffect } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
 
+const quickMotorSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  manufacturer: z.string().optional(),
+  motorType: z.enum(["brushed", "brushless"]),
+  kv: z.coerce.number().optional(),
+  turns: z.coerce.number().optional(),
+});
+
+const quickEscSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  manufacturer: z.string().optional(),
+  escType: z.enum(["brushed", "brushless", "sensored"]),
+  maxAmps: z.coerce.number().optional(),
+});
+
+const quickServoSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  manufacturer: z.string().optional(),
+  servoType: z.enum(["standard", "low-profile", "mini", "micro"]),
+  torque: z.string().optional(),
+});
+
+const quickReceiverSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  manufacturer: z.string().optional(),
+  protocol: z.string().optional(),
+  channels: z.coerce.number().optional(),
+});
+
 export default function ModelDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
@@ -49,6 +85,10 @@ export default function ModelDetail() {
   const [isAddBuildLogOpen, setIsAddBuildLogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<BuildLogEntryWithPhotos | null>(null);
+  const [isAddMotorOpen, setIsAddMotorOpen] = useState(false);
+  const [isAddEscOpen, setIsAddEscOpen] = useState(false);
+  const [isAddServoOpen, setIsAddServoOpen] = useState(false);
+  const [isAddReceiverOpen, setIsAddReceiverOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -208,6 +248,102 @@ export default function ModelDetail() {
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
+  });
+
+  const createMotorMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof quickMotorSchema>) => {
+      const res = await apiRequest("POST", "/api/electronics/motors", data);
+      return res.json();
+    },
+    onSuccess: (newMotor: Motor) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/electronics/motors"] });
+      toast({ title: "Motor added" });
+      setIsAddMotorOpen(false);
+      updateElectronicsMutation.mutate({
+        motorId: newMotor.id,
+        escId: modelElectronics?.escId ?? null,
+        servoId: modelElectronics?.servoId ?? null,
+        receiverId: modelElectronics?.receiverId ?? null,
+      });
+    },
+    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const createEscMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof quickEscSchema>) => {
+      const res = await apiRequest("POST", "/api/electronics/escs", data);
+      return res.json();
+    },
+    onSuccess: (newEsc: Esc) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/electronics/escs"] });
+      toast({ title: "ESC added" });
+      setIsAddEscOpen(false);
+      updateElectronicsMutation.mutate({
+        motorId: modelElectronics?.motorId ?? null,
+        escId: newEsc.id,
+        servoId: modelElectronics?.servoId ?? null,
+        receiverId: modelElectronics?.receiverId ?? null,
+      });
+    },
+    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const createServoMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof quickServoSchema>) => {
+      const res = await apiRequest("POST", "/api/electronics/servos", data);
+      return res.json();
+    },
+    onSuccess: (newServo: Servo) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/electronics/servos"] });
+      toast({ title: "Servo added" });
+      setIsAddServoOpen(false);
+      updateElectronicsMutation.mutate({
+        motorId: modelElectronics?.motorId ?? null,
+        escId: modelElectronics?.escId ?? null,
+        servoId: newServo.id,
+        receiverId: modelElectronics?.receiverId ?? null,
+      });
+    },
+    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const createReceiverMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof quickReceiverSchema>) => {
+      const res = await apiRequest("POST", "/api/electronics/receivers", data);
+      return res.json();
+    },
+    onSuccess: (newReceiver: Receiver) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/electronics/receivers"] });
+      toast({ title: "Receiver added" });
+      setIsAddReceiverOpen(false);
+      updateElectronicsMutation.mutate({
+        motorId: modelElectronics?.motorId ?? null,
+        escId: modelElectronics?.escId ?? null,
+        servoId: modelElectronics?.servoId ?? null,
+        receiverId: newReceiver.id,
+      });
+    },
+    onError: (error: any) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const motorForm = useForm<z.infer<typeof quickMotorSchema>>({
+    resolver: zodResolver(quickMotorSchema),
+    defaultValues: { name: "", manufacturer: "", motorType: "brushed" },
+  });
+
+  const escForm = useForm<z.infer<typeof quickEscSchema>>({
+    resolver: zodResolver(quickEscSchema),
+    defaultValues: { name: "", manufacturer: "", escType: "brushed" },
+  });
+
+  const servoForm = useForm<z.infer<typeof quickServoSchema>>({
+    resolver: zodResolver(quickServoSchema),
+    defaultValues: { name: "", manufacturer: "", servoType: "standard", torque: "" },
+  });
+
+  const receiverForm = useForm<z.infer<typeof quickReceiverSchema>>({
+    resolver: zodResolver(quickReceiverSchema),
+    defaultValues: { name: "", manufacturer: "", protocol: "" },
   });
 
   const getStatusColor = (status: string) => {
@@ -678,39 +814,34 @@ export default function ModelDetail() {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
                       <p className="text-gray-500 dark:text-gray-400 font-mono">Loading electronics...</p>
                     </div>
-                  ) : (motors.length === 0 && escs.length === 0 && servos.length === 0 && receivers.length === 0) ? (
-                    <div className="text-center py-8">
-                      <Zap className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-500 dark:text-gray-400 font-mono mb-4">
-                        No electronics in your collection yet.
-                      </p>
-                      <Button variant="outline" onClick={() => window.location.href = '/electronics'} className="font-mono">
-                        <Plus className="h-4 w-4 mr-2" />Add Electronics
-                      </Button>
-                    </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Zap className="h-4 w-4" />Motor
                         </label>
-                        <Select
-                          value={modelElectronics?.motorId?.toString() || "none"}
-                          onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: value === "none" ? null : parseInt(value),
-                            escId: modelElectronics?.escId ?? null,
-                            servoId: modelElectronics?.servoId ?? null,
-                            receiverId: modelElectronics?.receiverId ?? null,
-                          })}
-                        >
-                          <SelectTrigger><SelectValue placeholder="Select motor..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {motors.map((m) => (
-                              <SelectItem key={m.id} value={m.id.toString()}>{m.name} {m.manufacturer && `(${m.manufacturer})`}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select
+                            value={modelElectronics?.motorId?.toString() || "none"}
+                            onValueChange={(value) => updateElectronicsMutation.mutate({
+                              motorId: value === "none" ? null : parseInt(value),
+                              escId: modelElectronics?.escId ?? null,
+                              servoId: modelElectronics?.servoId ?? null,
+                              receiverId: modelElectronics?.receiverId ?? null,
+                            })}
+                          >
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select motor..." /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {motors.map((m) => (
+                                <SelectItem key={m.id} value={m.id.toString()}>{m.name} {m.manufacturer && `(${m.manufacturer})`}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="icon" variant="outline" onClick={() => { motorForm.reset(); setIsAddMotorOpen(true); }} title="Add new motor">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         {modelElectronics?.motor && (
                           <div className="text-xs text-gray-500 font-mono">
                             {modelElectronics.motor.motorType} {modelElectronics.motor.kv && `• ${modelElectronics.motor.kv}KV`} {modelElectronics.motor.turns && `• ${modelElectronics.motor.turns}T`}
@@ -722,23 +853,28 @@ export default function ModelDetail() {
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Gauge className="h-4 w-4" />ESC
                         </label>
-                        <Select
-                          value={modelElectronics?.escId?.toString() || "none"}
-                          onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: modelElectronics?.motorId ?? null,
-                            escId: value === "none" ? null : parseInt(value),
-                            servoId: modelElectronics?.servoId ?? null,
-                            receiverId: modelElectronics?.receiverId ?? null,
-                          })}
-                        >
-                          <SelectTrigger><SelectValue placeholder="Select ESC..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {escs.map((e) => (
-                              <SelectItem key={e.id} value={e.id.toString()}>{e.name} {e.manufacturer && `(${e.manufacturer})`}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select
+                            value={modelElectronics?.escId?.toString() || "none"}
+                            onValueChange={(value) => updateElectronicsMutation.mutate({
+                              motorId: modelElectronics?.motorId ?? null,
+                              escId: value === "none" ? null : parseInt(value),
+                              servoId: modelElectronics?.servoId ?? null,
+                              receiverId: modelElectronics?.receiverId ?? null,
+                            })}
+                          >
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select ESC..." /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {escs.map((e) => (
+                                <SelectItem key={e.id} value={e.id.toString()}>{e.name} {e.manufacturer && `(${e.manufacturer})`}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="icon" variant="outline" onClick={() => { escForm.reset(); setIsAddEscOpen(true); }} title="Add new ESC">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         {modelElectronics?.esc && (
                           <div className="text-xs text-gray-500 font-mono">
                             {modelElectronics.esc.escType} {modelElectronics.esc.maxAmps && `• ${modelElectronics.esc.maxAmps}A`} {modelElectronics.esc.maxVoltage && `• ${modelElectronics.esc.maxVoltage}`}
@@ -750,23 +886,28 @@ export default function ModelDetail() {
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Settings2 className="h-4 w-4" />Servo
                         </label>
-                        <Select
-                          value={modelElectronics?.servoId?.toString() || "none"}
-                          onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: modelElectronics?.motorId ?? null,
-                            escId: modelElectronics?.escId ?? null,
-                            servoId: value === "none" ? null : parseInt(value),
-                            receiverId: modelElectronics?.receiverId ?? null,
-                          })}
-                        >
-                          <SelectTrigger><SelectValue placeholder="Select servo..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {servos.map((s) => (
-                              <SelectItem key={s.id} value={s.id.toString()}>{s.name} {s.manufacturer && `(${s.manufacturer})`}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select
+                            value={modelElectronics?.servoId?.toString() || "none"}
+                            onValueChange={(value) => updateElectronicsMutation.mutate({
+                              motorId: modelElectronics?.motorId ?? null,
+                              escId: modelElectronics?.escId ?? null,
+                              servoId: value === "none" ? null : parseInt(value),
+                              receiverId: modelElectronics?.receiverId ?? null,
+                            })}
+                          >
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select servo..." /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {servos.map((s) => (
+                                <SelectItem key={s.id} value={s.id.toString()}>{s.name} {s.manufacturer && `(${s.manufacturer})`}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="icon" variant="outline" onClick={() => { servoForm.reset(); setIsAddServoOpen(true); }} title="Add new servo">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         {modelElectronics?.servo && (
                           <div className="text-xs text-gray-500 font-mono">
                             {modelElectronics.servo.servoType} {modelElectronics.servo.torque && `• ${modelElectronics.servo.torque}`}
@@ -778,23 +919,28 @@ export default function ModelDetail() {
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Radio className="h-4 w-4" />Receiver
                         </label>
-                        <Select
-                          value={modelElectronics?.receiverId?.toString() || "none"}
-                          onValueChange={(value) => updateElectronicsMutation.mutate({
-                            motorId: modelElectronics?.motorId ?? null,
-                            escId: modelElectronics?.escId ?? null,
-                            servoId: modelElectronics?.servoId ?? null,
-                            receiverId: value === "none" ? null : parseInt(value),
-                          })}
-                        >
-                          <SelectTrigger><SelectValue placeholder="Select receiver..." /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {receivers.map((r) => (
-                              <SelectItem key={r.id} value={r.id.toString()}>{r.name} {r.manufacturer && `(${r.manufacturer})`}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <Select
+                            value={modelElectronics?.receiverId?.toString() || "none"}
+                            onValueChange={(value) => updateElectronicsMutation.mutate({
+                              motorId: modelElectronics?.motorId ?? null,
+                              escId: modelElectronics?.escId ?? null,
+                              servoId: modelElectronics?.servoId ?? null,
+                              receiverId: value === "none" ? null : parseInt(value),
+                            })}
+                          >
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select receiver..." /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {receivers.map((r) => (
+                                <SelectItem key={r.id} value={r.id.toString()}>{r.name} {r.manufacturer && `(${r.manufacturer})`}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="icon" variant="outline" onClick={() => { receiverForm.reset(); setIsAddReceiverOpen(true); }} title="Add new receiver">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         {modelElectronics?.receiver && (
                           <div className="text-xs text-gray-500 font-mono">
                             {modelElectronics.receiver.protocol} {modelElectronics.receiver.channels && `• ${modelElectronics.receiver.channels}CH`}
@@ -1407,6 +1553,146 @@ export default function ModelDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isAddMotorOpen} onOpenChange={setIsAddMotorOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2"><Zap className="h-5 w-5" />Add Motor</DialogTitle>
+          </DialogHeader>
+          <Form {...motorForm}>
+            <form onSubmit={motorForm.handleSubmit((data) => createMotorMutation.mutate(data))} className="space-y-4">
+              <FormField control={motorForm.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Tamiya Sport Tuned" /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={motorForm.control} name="manufacturer" render={({ field }) => (
+                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Tamiya" /></FormControl></FormItem>
+              )} />
+              <FormField control={motorForm.control} name="motorType" render={({ field }) => (
+                <FormItem><FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="brushed">Brushed</SelectItem>
+                      <SelectItem value="brushless">Brushless</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={motorForm.control} name="kv" render={({ field }) => (
+                  <FormItem><FormLabel>KV Rating</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 3000" /></FormControl></FormItem>
+                )} />
+                <FormField control={motorForm.control} name="turns" render={({ field }) => (
+                  <FormItem><FormLabel>Turns</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 17" /></FormControl></FormItem>
+                )} />
+              </div>
+              <Button type="submit" className="w-full" disabled={createMotorMutation.isPending}>
+                {createMotorMutation.isPending ? "Adding..." : "Add Motor & Assign"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddEscOpen} onOpenChange={setIsAddEscOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2"><Gauge className="h-5 w-5" />Add ESC</DialogTitle>
+          </DialogHeader>
+          <Form {...escForm}>
+            <form onSubmit={escForm.handleSubmit((data) => createEscMutation.mutate(data))} className="space-y-4">
+              <FormField control={escForm.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Hobbywing 1060" /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={escForm.control} name="manufacturer" render={({ field }) => (
+                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Hobbywing" /></FormControl></FormItem>
+              )} />
+              <FormField control={escForm.control} name="escType" render={({ field }) => (
+                <FormItem><FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="brushed">Brushed</SelectItem>
+                      <SelectItem value="brushless">Brushless</SelectItem>
+                      <SelectItem value="sensored">Sensored</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+              <FormField control={escForm.control} name="maxAmps" render={({ field }) => (
+                <FormItem><FormLabel>Max Amps</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 60" /></FormControl></FormItem>
+              )} />
+              <Button type="submit" className="w-full" disabled={createEscMutation.isPending}>
+                {createEscMutation.isPending ? "Adding..." : "Add ESC & Assign"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddServoOpen} onOpenChange={setIsAddServoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2"><Settings2 className="h-5 w-5" />Add Servo</DialogTitle>
+          </DialogHeader>
+          <Form {...servoForm}>
+            <form onSubmit={servoForm.handleSubmit((data) => createServoMutation.mutate(data))} className="space-y-4">
+              <FormField control={servoForm.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Savox SC-1258TG" /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={servoForm.control} name="manufacturer" render={({ field }) => (
+                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Savox" /></FormControl></FormItem>
+              )} />
+              <FormField control={servoForm.control} name="servoType" render={({ field }) => (
+                <FormItem><FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="low-profile">Low Profile</SelectItem>
+                      <SelectItem value="mini">Mini</SelectItem>
+                      <SelectItem value="micro">Micro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+              <FormField control={servoForm.control} name="torque" render={({ field }) => (
+                <FormItem><FormLabel>Torque</FormLabel><FormControl><Input {...field} placeholder="e.g., 12kg-cm" /></FormControl></FormItem>
+              )} />
+              <Button type="submit" className="w-full" disabled={createServoMutation.isPending}>
+                {createServoMutation.isPending ? "Adding..." : "Add Servo & Assign"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddReceiverOpen} onOpenChange={setIsAddReceiverOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono flex items-center gap-2"><Radio className="h-5 w-5" />Add Receiver</DialogTitle>
+          </DialogHeader>
+          <Form {...receiverForm}>
+            <form onSubmit={receiverForm.handleSubmit((data) => createReceiverMutation.mutate(data))} className="space-y-4">
+              <FormField control={receiverForm.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Futaba R304SB" /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={receiverForm.control} name="manufacturer" render={({ field }) => (
+                <FormItem><FormLabel>Manufacturer</FormLabel><FormControl><Input {...field} placeholder="e.g., Futaba" /></FormControl></FormItem>
+              )} />
+              <FormField control={receiverForm.control} name="protocol" render={({ field }) => (
+                <FormItem><FormLabel>Protocol</FormLabel><FormControl><Input {...field} placeholder="e.g., T-FHSS" /></FormControl></FormItem>
+              )} />
+              <FormField control={receiverForm.control} name="channels" render={({ field }) => (
+                <FormItem><FormLabel>Channels</FormLabel><FormControl><Input type="number" {...field} placeholder="e.g., 4" /></FormControl></FormItem>
+              )} />
+              <Button type="submit" className="w-full" disabled={createReceiverMutation.isPending}>
+                {createReceiverMutation.isPending ? "Adding..." : "Add Receiver & Assign"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
