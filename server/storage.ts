@@ -1,6 +1,7 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
   feedbackPosts, feedbackVotes, modelComments, fieldOptions,
+  motors, escs, servos, receivers, modelElectronics, hopUpLibrary,
   type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
@@ -9,7 +10,13 @@ import {
   type BuildLogPhoto,
   type FeedbackPost, type InsertFeedbackPost, type FeedbackPostWithUser,
   type ModelComment, type InsertModelComment, type ModelCommentWithUser,
-  type FieldOption, type InsertFieldOption
+  type FieldOption, type InsertFieldOption,
+  type Motor, type InsertMotor,
+  type Esc, type InsertEsc,
+  type Servo, type InsertServo,
+  type Receiver, type InsertReceiver,
+  type HopUpLibraryItem, type InsertHopUpLibraryItem,
+  type ModelElectronics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
@@ -93,6 +100,38 @@ export interface IStorage {
   deleteFieldOption(id: number): Promise<boolean>;
   replaceFieldOptionValue(fieldKey: string, oldValue: string, newValue: string): Promise<number>;
   getFieldOptionUsageCount(fieldKey: string, value: string): Promise<number>;
+
+  // Electronics methods
+  getMotors(userId: string): Promise<Motor[]>;
+  getMotor(id: number, userId: string): Promise<Motor | undefined>;
+  createMotor(motor: InsertMotor): Promise<Motor>;
+  updateMotor(id: number, userId: string, motor: Partial<InsertMotor>): Promise<Motor | undefined>;
+  deleteMotor(id: number, userId: string): Promise<boolean>;
+
+  getEscs(userId: string): Promise<Esc[]>;
+  getEsc(id: number, userId: string): Promise<Esc | undefined>;
+  createEsc(esc: InsertEsc): Promise<Esc>;
+  updateEsc(id: number, userId: string, esc: Partial<InsertEsc>): Promise<Esc | undefined>;
+  deleteEsc(id: number, userId: string): Promise<boolean>;
+
+  getServos(userId: string): Promise<Servo[]>;
+  getServo(id: number, userId: string): Promise<Servo | undefined>;
+  createServo(servo: InsertServo): Promise<Servo>;
+  updateServo(id: number, userId: string, servo: Partial<InsertServo>): Promise<Servo | undefined>;
+  deleteServo(id: number, userId: string): Promise<boolean>;
+
+  getReceivers(userId: string): Promise<Receiver[]>;
+  getReceiver(id: number, userId: string): Promise<Receiver | undefined>;
+  createReceiver(receiver: InsertReceiver): Promise<Receiver>;
+  updateReceiver(id: number, userId: string, receiver: Partial<InsertReceiver>): Promise<Receiver | undefined>;
+  deleteReceiver(id: number, userId: string): Promise<boolean>;
+
+  // Hop-up library methods
+  getHopUpLibraryItems(userId: string): Promise<HopUpLibraryItem[]>;
+  getHopUpLibraryItem(id: number, userId: string): Promise<HopUpLibraryItem | undefined>;
+  createHopUpLibraryItem(item: InsertHopUpLibraryItem): Promise<HopUpLibraryItem>;
+  updateHopUpLibraryItem(id: number, userId: string, item: Partial<InsertHopUpLibraryItem>): Promise<HopUpLibraryItem | undefined>;
+  deleteHopUpLibraryItem(id: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1089,6 +1128,139 @@ export class DatabaseStorage implements IStorage {
       );
     }
     return Number(result.rows[0]?.count ?? 0);
+  }
+
+  // Electronics methods - Motors
+  async getMotors(userId: string): Promise<Motor[]> {
+    return await db.select().from(motors).where(eq(motors.userId, userId)).orderBy(desc(motors.createdAt));
+  }
+
+  async getMotor(id: number, userId: string): Promise<Motor | undefined> {
+    const [motor] = await db.select().from(motors).where(and(eq(motors.id, id), eq(motors.userId, userId)));
+    return motor;
+  }
+
+  async createMotor(motor: InsertMotor): Promise<Motor> {
+    const dbMotor = { ...motor, cost: motor.cost?.toString() || null };
+    const [created] = await db.insert(motors).values(dbMotor as any).returning();
+    return created;
+  }
+
+  async updateMotor(id: number, userId: string, motor: Partial<InsertMotor>): Promise<Motor | undefined> {
+    const dbMotor = motor.cost !== undefined ? { ...motor, cost: motor.cost?.toString() || null } : motor;
+    const [updated] = await db.update(motors).set(dbMotor as any).where(and(eq(motors.id, id), eq(motors.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteMotor(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(motors).where(and(eq(motors.id, id), eq(motors.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Electronics methods - ESCs
+  async getEscs(userId: string): Promise<Esc[]> {
+    return await db.select().from(escs).where(eq(escs.userId, userId)).orderBy(desc(escs.createdAt));
+  }
+
+  async getEsc(id: number, userId: string): Promise<Esc | undefined> {
+    const [esc] = await db.select().from(escs).where(and(eq(escs.id, id), eq(escs.userId, userId)));
+    return esc;
+  }
+
+  async createEsc(esc: InsertEsc): Promise<Esc> {
+    const dbEsc = { ...esc, cost: esc.cost?.toString() || null };
+    const [created] = await db.insert(escs).values(dbEsc as any).returning();
+    return created;
+  }
+
+  async updateEsc(id: number, userId: string, esc: Partial<InsertEsc>): Promise<Esc | undefined> {
+    const dbEsc = esc.cost !== undefined ? { ...esc, cost: esc.cost?.toString() || null } : esc;
+    const [updated] = await db.update(escs).set(dbEsc as any).where(and(eq(escs.id, id), eq(escs.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteEsc(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(escs).where(and(eq(escs.id, id), eq(escs.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Electronics methods - Servos
+  async getServos(userId: string): Promise<Servo[]> {
+    return await db.select().from(servos).where(eq(servos.userId, userId)).orderBy(desc(servos.createdAt));
+  }
+
+  async getServo(id: number, userId: string): Promise<Servo | undefined> {
+    const [servo] = await db.select().from(servos).where(and(eq(servos.id, id), eq(servos.userId, userId)));
+    return servo;
+  }
+
+  async createServo(servo: InsertServo): Promise<Servo> {
+    const dbServo = { ...servo, cost: servo.cost?.toString() || null };
+    const [created] = await db.insert(servos).values(dbServo as any).returning();
+    return created;
+  }
+
+  async updateServo(id: number, userId: string, servo: Partial<InsertServo>): Promise<Servo | undefined> {
+    const dbServo = servo.cost !== undefined ? { ...servo, cost: servo.cost?.toString() || null } : servo;
+    const [updated] = await db.update(servos).set(dbServo as any).where(and(eq(servos.id, id), eq(servos.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteServo(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(servos).where(and(eq(servos.id, id), eq(servos.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Electronics methods - Receivers
+  async getReceivers(userId: string): Promise<Receiver[]> {
+    return await db.select().from(receivers).where(eq(receivers.userId, userId)).orderBy(desc(receivers.createdAt));
+  }
+
+  async getReceiver(id: number, userId: string): Promise<Receiver | undefined> {
+    const [receiver] = await db.select().from(receivers).where(and(eq(receivers.id, id), eq(receivers.userId, userId)));
+    return receiver;
+  }
+
+  async createReceiver(receiver: InsertReceiver): Promise<Receiver> {
+    const dbReceiver = { ...receiver, cost: receiver.cost?.toString() || null };
+    const [created] = await db.insert(receivers).values(dbReceiver as any).returning();
+    return created;
+  }
+
+  async updateReceiver(id: number, userId: string, receiver: Partial<InsertReceiver>): Promise<Receiver | undefined> {
+    const dbReceiver = receiver.cost !== undefined ? { ...receiver, cost: receiver.cost?.toString() || null } : receiver;
+    const [updated] = await db.update(receivers).set(dbReceiver as any).where(and(eq(receivers.id, id), eq(receivers.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteReceiver(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(receivers).where(and(eq(receivers.id, id), eq(receivers.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Hop-up library methods
+  async getHopUpLibraryItems(userId: string): Promise<HopUpLibraryItem[]> {
+    return await db.select().from(hopUpLibrary).where(eq(hopUpLibrary.userId, userId)).orderBy(desc(hopUpLibrary.createdAt));
+  }
+
+  async getHopUpLibraryItem(id: number, userId: string): Promise<HopUpLibraryItem | undefined> {
+    const [item] = await db.select().from(hopUpLibrary).where(and(eq(hopUpLibrary.id, id), eq(hopUpLibrary.userId, userId)));
+    return item;
+  }
+
+  async createHopUpLibraryItem(item: InsertHopUpLibraryItem): Promise<HopUpLibraryItem> {
+    const [created] = await db.insert(hopUpLibrary).values(item).returning();
+    return created;
+  }
+
+  async updateHopUpLibraryItem(id: number, userId: string, item: Partial<InsertHopUpLibraryItem>): Promise<HopUpLibraryItem | undefined> {
+    const [updated] = await db.update(hopUpLibrary).set(item).where(and(eq(hopUpLibrary.id, id), eq(hopUpLibrary.userId, userId))).returning();
+    return updated;
+  }
+
+  async deleteHopUpLibraryItem(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(hopUpLibrary).where(and(eq(hopUpLibrary.id, id), eq(hopUpLibrary.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

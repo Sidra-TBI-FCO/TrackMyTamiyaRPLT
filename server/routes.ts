@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
+import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, insertMotorSchema, insertEscSchema, insertServoSchema, insertReceiverSchema, insertHopUpLibrarySchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -192,6 +192,279 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Screenshots fetch error:", error);
       res.status(500).json({ message: "Failed to fetch screenshots" });
+    }
+  });
+
+  // ==================== ELECTRONICS ROUTES ====================
+
+  // Motors
+  app.get('/api/electronics/motors', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const motors = await storage.getMotors(userId);
+      res.json(motors);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/electronics/motors', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const data = insertMotorSchema.parse({ ...req.body, userId });
+      const motor = await storage.createMotor(data);
+      res.status(201).json(motor);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/electronics/motors/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const data = insertMotorSchema.partial().parse(req.body);
+      const motor = await storage.updateMotor(id, userId, data);
+      if (!motor) return res.status(404).json({ message: 'Motor not found' });
+      res.json(motor);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/electronics/motors/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteMotor(id, userId);
+      if (!deleted) return res.status(404).json({ message: 'Motor not found' });
+      res.json({ message: 'Motor deleted' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ESCs
+  app.get('/api/electronics/escs', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const escs = await storage.getEscs(userId);
+      res.json(escs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/electronics/escs', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const data = insertEscSchema.parse({ ...req.body, userId });
+      const esc = await storage.createEsc(data);
+      res.status(201).json(esc);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/electronics/escs/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const data = insertEscSchema.partial().parse(req.body);
+      const esc = await storage.updateEsc(id, userId, data);
+      if (!esc) return res.status(404).json({ message: 'ESC not found' });
+      res.json(esc);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/electronics/escs/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteEsc(id, userId);
+      if (!deleted) return res.status(404).json({ message: 'ESC not found' });
+      res.json({ message: 'ESC deleted' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Servos
+  app.get('/api/electronics/servos', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const servos = await storage.getServos(userId);
+      res.json(servos);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/electronics/servos', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const data = insertServoSchema.parse({ ...req.body, userId });
+      const servo = await storage.createServo(data);
+      res.status(201).json(servo);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/electronics/servos/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const data = insertServoSchema.partial().parse(req.body);
+      const servo = await storage.updateServo(id, userId, data);
+      if (!servo) return res.status(404).json({ message: 'Servo not found' });
+      res.json(servo);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/electronics/servos/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteServo(id, userId);
+      if (!deleted) return res.status(404).json({ message: 'Servo not found' });
+      res.json({ message: 'Servo deleted' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Receivers
+  app.get('/api/electronics/receivers', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const receivers = await storage.getReceivers(userId);
+      res.json(receivers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/electronics/receivers', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const data = insertReceiverSchema.parse({ ...req.body, userId });
+      const receiver = await storage.createReceiver(data);
+      res.status(201).json(receiver);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/electronics/receivers/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const data = insertReceiverSchema.partial().parse(req.body);
+      const receiver = await storage.updateReceiver(id, userId, data);
+      if (!receiver) return res.status(404).json({ message: 'Receiver not found' });
+      res.json(receiver);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/electronics/receivers/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteReceiver(id, userId);
+      if (!deleted) return res.status(404).json({ message: 'Receiver not found' });
+      res.json({ message: 'Receiver deleted' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ==================== HOP-UP LIBRARY ROUTES ====================
+
+  app.get('/api/hop-up-library', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const items = await storage.getHopUpLibraryItems(userId);
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post('/api/hop-up-library', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const data = insertHopUpLibrarySchema.parse({ ...req.body, userId });
+      const item = await storage.createHopUpLibraryItem(data);
+      res.status(201).json(item);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/hop-up-library/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const data = insertHopUpLibrarySchema.partial().parse(req.body);
+      const item = await storage.updateHopUpLibraryItem(id, userId, data);
+      if (!item) return res.status(404).json({ message: 'Item not found' });
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/hop-up-library/:id', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteHopUpLibraryItem(id, userId);
+      if (!deleted) return res.status(404).json({ message: 'Item not found' });
+      res.json({ message: 'Item deleted' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 
