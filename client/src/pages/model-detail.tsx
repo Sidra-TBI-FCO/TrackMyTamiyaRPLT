@@ -1,7 +1,9 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe } from "lucide-react";
+import { ArrowLeft, Camera, Wrench, Cog, Edit, Trash2, X, Play, ExternalLink, Calendar, FileText, Plus, Share2, Link2, Globe, Zap, Gauge, Settings2, Radio } from "lucide-react";
 import { ModelWithRelations, BuildLogEntryWithPhotos } from "@/types";
+import type { Motor, Esc, Servo, Receiver, ModelElectronicsWithDetails } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +62,18 @@ export default function ModelDetail() {
   // Fetch build log entries for this model
   const { data: buildLogEntries, isLoading: isLoadingBuildLog } = useQuery<BuildLogEntryWithPhotos[]>({
     queryKey: [`/api/models/${id}/build-log-entries`],
+    enabled: !!id,
+  });
+
+  // Fetch user's electronics collection for assignment
+  const { data: motors = [] } = useQuery<Motor[]>({ queryKey: ["/api/motors"] });
+  const { data: escs = [] } = useQuery<Esc[]>({ queryKey: ["/api/escs"] });
+  const { data: servos = [] } = useQuery<Servo[]>({ queryKey: ["/api/servos"] });
+  const { data: receivers = [] } = useQuery<Receiver[]>({ queryKey: ["/api/receivers"] });
+
+  // Fetch this model's assigned electronics
+  const { data: modelElectronics } = useQuery<ModelElectronicsWithDetails | null>({
+    queryKey: ["/api/models", id, "electronics"],
     enabled: !!id,
   });
 
@@ -181,6 +195,19 @@ export default function ModelDetail() {
       });
     }
   };
+
+  const updateElectronicsMutation = useMutation({
+    mutationFn: async (data: { motorId?: number | null; escId?: number | null; servoId?: number | null; receiverId?: number | null }) => {
+      await apiRequest("PUT", `/api/models/${id}/electronics`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", id, "electronics"] });
+      toast({ title: "Electronics updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -466,7 +493,7 @@ export default function ModelDetail() {
 
           {/* Tabs for different sections */}
           <Tabs defaultValue="photos" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-3 font-mono">
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-4 font-mono">
               <TabsTrigger value="photos" className="text-xs sm:text-sm">
                 <span className="hidden sm:inline">Photos ({model.photos.length})</span>
                 <span className="sm:hidden">Photos</span>
@@ -478,6 +505,10 @@ export default function ModelDetail() {
               <TabsTrigger value="parts" className="text-xs sm:text-sm">
                 <span className="hidden sm:inline">Hop-Ups ({model.hopUpParts.length})</span>
                 <span className="sm:hidden">Parts</span>
+              </TabsTrigger>
+              <TabsTrigger value="electronics" className="text-xs sm:text-sm">
+                <span className="hidden sm:inline">Electronics</span>
+                <span className="sm:hidden"><Zap className="h-4 w-4" /></span>
               </TabsTrigger>
               <TabsTrigger value="details" className="lg:hidden text-xs sm:text-sm">Details</TabsTrigger>
             </TabsList>
@@ -630,6 +661,144 @@ export default function ModelDetail() {
 
             <TabsContent value="parts">
               <HopUpPartsList modelId={model.id} />
+            </TabsContent>
+
+            <TabsContent value="electronics" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-mono text-lg flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    Assigned Electronics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(motors.length === 0 && escs.length === 0 && servos.length === 0 && receivers.length === 0) ? (
+                    <div className="text-center py-8">
+                      <Zap className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                      <p className="text-gray-500 dark:text-gray-400 font-mono mb-4">
+                        No electronics in your collection yet.
+                      </p>
+                      <Button variant="outline" onClick={() => window.location.href = '/electronics'} className="font-mono">
+                        <Plus className="h-4 w-4 mr-2" />Add Electronics
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
+                          <Zap className="h-4 w-4" />Motor
+                        </label>
+                        <Select
+                          value={modelElectronics?.motorId?.toString() || "none"}
+                          onValueChange={(value) => updateElectronicsMutation.mutate({
+                            motorId: value === "none" ? null : parseInt(value),
+                            escId: modelElectronics?.escId,
+                            servoId: modelElectronics?.servoId,
+                            receiverId: modelElectronics?.receiverId,
+                          })}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select motor..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {motors.map((m) => (
+                              <SelectItem key={m.id} value={m.id.toString()}>{m.name} {m.manufacturer && `(${m.manufacturer})`}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {modelElectronics?.motor && (
+                          <div className="text-xs text-gray-500 font-mono">
+                            {modelElectronics.motor.motorType} {modelElectronics.motor.kv && `• ${modelElectronics.motor.kv}KV`} {modelElectronics.motor.turns && `• ${modelElectronics.motor.turns}T`}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
+                          <Gauge className="h-4 w-4" />ESC
+                        </label>
+                        <Select
+                          value={modelElectronics?.escId?.toString() || "none"}
+                          onValueChange={(value) => updateElectronicsMutation.mutate({
+                            motorId: modelElectronics?.motorId,
+                            escId: value === "none" ? null : parseInt(value),
+                            servoId: modelElectronics?.servoId,
+                            receiverId: modelElectronics?.receiverId,
+                          })}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select ESC..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {escs.map((e) => (
+                              <SelectItem key={e.id} value={e.id.toString()}>{e.name} {e.manufacturer && `(${e.manufacturer})`}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {modelElectronics?.esc && (
+                          <div className="text-xs text-gray-500 font-mono">
+                            {modelElectronics.esc.escType} {modelElectronics.esc.maxAmps && `• ${modelElectronics.esc.maxAmps}A`} {modelElectronics.esc.maxVoltage && `• ${modelElectronics.esc.maxVoltage}`}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
+                          <Settings2 className="h-4 w-4" />Servo
+                        </label>
+                        <Select
+                          value={modelElectronics?.servoId?.toString() || "none"}
+                          onValueChange={(value) => updateElectronicsMutation.mutate({
+                            motorId: modelElectronics?.motorId,
+                            escId: modelElectronics?.escId,
+                            servoId: value === "none" ? null : parseInt(value),
+                            receiverId: modelElectronics?.receiverId,
+                          })}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select servo..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {servos.map((s) => (
+                              <SelectItem key={s.id} value={s.id.toString()}>{s.name} {s.manufacturer && `(${s.manufacturer})`}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {modelElectronics?.servo && (
+                          <div className="text-xs text-gray-500 font-mono">
+                            {modelElectronics.servo.servoType} {modelElectronics.servo.torque && `• ${modelElectronics.servo.torque}`}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
+                          <Radio className="h-4 w-4" />Receiver
+                        </label>
+                        <Select
+                          value={modelElectronics?.receiverId?.toString() || "none"}
+                          onValueChange={(value) => updateElectronicsMutation.mutate({
+                            motorId: modelElectronics?.motorId,
+                            escId: modelElectronics?.escId,
+                            servoId: modelElectronics?.servoId,
+                            receiverId: value === "none" ? null : parseInt(value),
+                          })}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select receiver..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {receivers.map((r) => (
+                              <SelectItem key={r.id} value={r.id.toString()}>{r.name} {r.manufacturer && `(${r.manufacturer})`}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {modelElectronics?.receiver && (
+                          <div className="text-xs text-gray-500 font-mono">
+                            {modelElectronics.receiver.protocol} {modelElectronics.receiver.channels && `• ${modelElectronics.receiver.channels}CH`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Mobile-only Details Tab */}

@@ -483,6 +483,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== MODEL ELECTRONICS ROUTES ====================
+  
+  app.get('/api/models/:modelId/electronics', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const modelId = parseInt(req.params.modelId);
+      if (isNaN(modelId)) return res.status(400).json({ message: 'Invalid model ID' });
+      const electronics = await storage.getModelElectronics(modelId, userId);
+      res.json(electronics || null);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/models/:modelId/electronics', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const modelId = parseInt(req.params.modelId);
+      if (isNaN(modelId)) return res.status(400).json({ message: 'Invalid model ID' });
+      const { motorId, escId, servoId, receiverId, notes } = req.body;
+      const electronics = await storage.upsertModelElectronics(modelId, userId, { 
+        motorId: motorId || null, 
+        escId: escId || null, 
+        servoId: servoId || null, 
+        receiverId: receiverId || null, 
+        notes 
+      });
+      res.json(electronics);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete('/api/models/:modelId/electronics', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const modelId = parseInt(req.params.modelId);
+      if (isNaN(modelId)) return res.status(400).json({ message: 'Invalid model ID' });
+      const deleted = await storage.deleteModelElectronics(modelId, userId);
+      if (!deleted) return res.status(404).json({ message: 'Not found' });
+      res.json({ message: 'Electronics assignment removed' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // ==================== FEEDBACK ROUTES ====================
   
   // Get all feedback posts (public, but shows vote status if authenticated)

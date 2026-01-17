@@ -16,7 +16,7 @@ import {
   type Servo, type InsertServo,
   type Receiver, type InsertReceiver,
   type HopUpLibraryItem, type InsertHopUpLibraryItem,
-  type ModelElectronics
+  type ModelElectronics, type InsertModelElectronics, type ModelElectronicsWithDetails
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
@@ -132,6 +132,11 @@ export interface IStorage {
   createHopUpLibraryItem(item: InsertHopUpLibraryItem): Promise<HopUpLibraryItem>;
   updateHopUpLibraryItem(id: number, userId: string, item: Partial<InsertHopUpLibraryItem>): Promise<HopUpLibraryItem | undefined>;
   deleteHopUpLibraryItem(id: number, userId: string): Promise<boolean>;
+
+  // Model electronics methods (assign electronics to specific models)
+  getModelElectronics(modelId: number, userId: string): Promise<ModelElectronicsWithDetails | undefined>;
+  upsertModelElectronics(modelId: number, userId: string, data: Partial<InsertModelElectronics>): Promise<ModelElectronics>;
+  deleteModelElectronics(modelId: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1260,6 +1265,50 @@ export class DatabaseStorage implements IStorage {
 
   async deleteHopUpLibraryItem(id: number, userId: string): Promise<boolean> {
     const result = await db.delete(hopUpLibrary).where(and(eq(hopUpLibrary.id, id), eq(hopUpLibrary.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Model electronics methods
+  async getModelElectronics(modelId: number, userId: string): Promise<ModelElectronicsWithDetails | undefined> {
+    const model = await db.select().from(models).where(and(eq(models.id, modelId), eq(models.userId, userId))).limit(1);
+    if (!model.length) return undefined;
+
+    const [electronics] = await db.select().from(modelElectronics).where(eq(modelElectronics.modelId, modelId));
+    if (!electronics) return undefined;
+
+    const [motor] = electronics.motorId ? await db.select().from(motors).where(eq(motors.id, electronics.motorId)) : [null];
+    const [esc] = electronics.escId ? await db.select().from(escs).where(eq(escs.id, electronics.escId)) : [null];
+    const [servo] = electronics.servoId ? await db.select().from(servos).where(eq(servos.id, electronics.servoId)) : [null];
+    const [receiver] = electronics.receiverId ? await db.select().from(receivers).where(eq(receivers.id, electronics.receiverId)) : [null];
+
+    return { ...electronics, motor, esc, servo, receiver };
+  }
+
+  async upsertModelElectronics(modelId: number, userId: string, data: Partial<InsertModelElectronics>): Promise<ModelElectronics> {
+    const model = await db.select().from(models).where(and(eq(models.id, modelId), eq(models.userId, userId))).limit(1);
+    if (!model.length) throw new Error("Model not found");
+
+    const existing = await db.select().from(modelElectronics).where(eq(modelElectronics.modelId, modelId)).limit(1);
+    
+    if (existing.length) {
+      const [updated] = await db.update(modelElectronics)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(modelElectronics.modelId, modelId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(modelElectronics)
+        .values({ modelId, ...data })
+        .returning();
+      return created;
+    }
+  }
+
+  async deleteModelElectronics(modelId: number, userId: string): Promise<boolean> {
+    const model = await db.select().from(models).where(and(eq(models.id, modelId), eq(models.userId, userId))).limit(1);
+    if (!model.length) return false;
+    
+    const result = await db.delete(modelElectronics).where(eq(modelElectronics.modelId, modelId));
     return (result.rowCount ?? 0) > 0;
   }
 }

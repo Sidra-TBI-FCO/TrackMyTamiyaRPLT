@@ -749,6 +749,14 @@ export type InsertModelElectronics = z.infer<typeof insertModelElectronicsSchema
 export type HopUpLibraryItem = typeof hopUpLibrary.$inferSelect;
 export type InsertHopUpLibraryItem = z.infer<typeof insertHopUpLibrarySchema>;
 
+// Model electronics with related details
+export type ModelElectronicsWithDetails = ModelElectronics & {
+  motor?: Motor | null;
+  esc?: Esc | null;
+  servo?: Servo | null;
+  receiver?: Receiver | null;
+};
+
 // Supported field keys for field options
 export const FIELD_OPTION_KEYS = [
   'scale',
