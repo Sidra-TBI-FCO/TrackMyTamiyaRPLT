@@ -104,6 +104,7 @@ export const buildLogPhotos = pgTable("build_log_photos", {
 export const hopUpParts = pgTable("hop_up_parts", {
   id: serial("id").primaryKey(),
   modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }).notNull(),
+  libraryItemId: integer("library_item_id").references(() => hopUpLibrary.id), // Reference to library item
   name: text("name").notNull(),
   itemNumber: text("item_number"),
   category: text("category").notNull(), // motor, suspension, tires, body, electronics, etc.

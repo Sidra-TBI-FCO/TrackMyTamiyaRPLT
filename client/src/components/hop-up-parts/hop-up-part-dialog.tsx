@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { insertHopUpPartSchema, type HopUpPart } from "@shared/schema";
+import { insertHopUpPartSchema, type HopUpPart, type HopUpLibraryItem } from "@shared/schema";
 import { z } from "zod";
 import {
   Dialog,
@@ -22,15 +22,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useFieldOptions } from "@/hooks/useFieldOptions";
-import { Loader2, ExternalLink, Upload, X, Image as ImageIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Loader2, ExternalLink, Upload, X, Image as ImageIcon, Search, Library, PlusCircle, Package } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 
 const formSchema = insertHopUpPartSchema.extend({
   cost: z.coerce.number().optional(),
@@ -84,9 +85,66 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
   const [productPhoto, setProductPhoto] = useState<File | null>(null);
   const [productPhotoPreview, setProductPhotoPreview] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("library");
+  const [selectedLibraryItem, setSelectedLibraryItem] = useState<HopUpLibraryItem | null>(null);
+  const [addQuantity, setAddQuantity] = useState(1);
+  const [addStatus, setAddStatus] = useState<string>("planned");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { getOptions } = useFieldOptions();
+
+  // Fetch library items for search
+  const { data: libraryItems = [] } = useQuery<HopUpLibraryItem[]>({
+    queryKey: ["/api/hop-up-library"],
+    enabled: open && !part, // Only fetch when creating new (not editing)
+  });
+
+  // Filter library items based on search
+  const filteredLibraryItems = useMemo(() => {
+    if (!librarySearch.trim()) return libraryItems;
+    const searchLower = librarySearch.toLowerCase();
+    return libraryItems.filter(item => 
+      item.name.toLowerCase().includes(searchLower) ||
+      item.itemNumber?.toLowerCase().includes(searchLower) ||
+      item.manufacturer?.toLowerCase().includes(searchLower) ||
+      item.category.toLowerCase().includes(searchLower)
+    );
+  }, [libraryItems, librarySearch]);
+
+  // Mutation for adding from library
+  const addFromLibraryMutation = useMutation({
+    mutationFn: async ({ libraryItemId, quantity, installationStatus }: { libraryItemId: number; quantity: number; installationStatus: string }) => {
+      return apiRequest("POST", `/api/models/${modelId}/hop-up-parts/from-library`, {
+        libraryItemId,
+        quantity,
+        installationStatus,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/models", modelId, "hop-up-parts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/models"] });
+      toast({ title: "Part added from library" });
+      onOpenChange(false);
+      setSelectedLibraryItem(null);
+      setAddQuantity(1);
+      setAddStatus("planned");
+    },
+    onError: () => {
+      toast({ title: "Failed to add part from library", variant: "destructive" });
+    },
+  });
+
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (open && !part) {
+      setActiveTab("library");
+      setLibrarySearch("");
+      setSelectedLibraryItem(null);
+      setAddQuantity(1);
+      setAddStatus("planned");
+    }
+  }, [open, part]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -575,21 +633,158 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const handleAddFromLibrary = () => {
+    if (!selectedLibraryItem) return;
+    addFromLibraryMutation.mutate({
+      libraryItemId: selectedLibraryItem.id,
+      quantity: addQuantity,
+      installationStatus: addStatus,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{part ? "Edit" : "Add"} Hop-Up Part</DialogTitle>
           <DialogDescription>
-            {part ? "Update the details of this hop-up part." : "Add a new hop-up part to your model."}
+            {part ? "Update the details of this hop-up part." : "Search your library or create a new part."}
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Quick Add Section */}
-            <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Quick Add from Store</h4>
+        {/* Show tabs only when creating new (not editing) */}
+        {!part ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="library" className="flex items-center gap-2">
+                <Library className="h-4 w-4" />
+                From Library ({libraryItems.length})
+              </TabsTrigger>
+              <TabsTrigger value="create" className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" />
+                Create New
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Library Search Tab */}
+            <TabsContent value="library" className="space-y-4 mt-4">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search your parts library..."
+                  value={librarySearch}
+                  onChange={(e) => setLibrarySearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Library Items List */}
+              <ScrollArea className="h-[300px] border rounded-lg">
+                {filteredLibraryItems.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    {libraryItems.length === 0 ? (
+                      <div className="space-y-2">
+                        <Package className="h-12 w-12 mx-auto opacity-50" />
+                        <p>Your parts library is empty.</p>
+                        <p className="text-sm">Create a new part to add it to your library.</p>
+                      </div>
+                    ) : (
+                      <p>No parts match "{librarySearch}"</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {filteredLibraryItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-3 cursor-pointer hover:bg-accent transition-colors ${
+                          selectedLibraryItem?.id === item.id ? 'bg-accent border-l-4 border-primary' : ''
+                        }`}
+                        onClick={() => setSelectedLibraryItem(item)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{item.name}</p>
+                            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                              <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                              {item.manufacturer && <span>{item.manufacturer}</span>}
+                              {item.itemNumber && <span className="font-mono">#{item.itemNumber}</span>}
+                            </div>
+                          </div>
+                          {item.cost && (
+                            <span className="text-sm font-medium text-green-600">${parseFloat(item.cost).toFixed(2)}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+
+              {/* Selected Item Actions */}
+              {selectedLibraryItem && (
+                <div className="bg-accent/50 rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{selectedLibraryItem.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedLibraryItem.manufacturer} • {selectedLibraryItem.category}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedLibraryItem(null)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Quantity</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={addQuantity}
+                        onChange={(e) => setAddQuantity(parseInt(e.target.value) || 1)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Status</label>
+                      <Select value={addStatus} onValueChange={setAddStatus}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="planned">Planned</SelectItem>
+                          <SelectItem value="installed">Installed</SelectItem>
+                          <SelectItem value="removed">Removed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    onClick={handleAddFromLibrary}
+                    disabled={addFromLibraryMutation.isPending}
+                  >
+                    {addFromLibraryMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                    )}
+                    Add to Model
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Create New Tab - Contains the existing form */}
+            <TabsContent value="create" className="mt-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Quick Add Section */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm">Quick Add from Store</h4>
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border space-y-4">
                 {/* URL Parser */}
                 <FormField
@@ -1158,8 +1353,121 @@ export default function HopUpPartDialog({ modelId, part, open, onOpenChange }: H
                 {part ? "Update" : "Add"} Part
               </Button>
             </DialogFooter>
-          </form>
-        </Form>
+                </form>
+              </Form>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          /* Edit mode - show full form directly without tabs */
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Quick Add Section */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm">Quick Add from Store</h4>
+                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="productUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Store URL</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input 
+                              placeholder="https://www.rcmart.com/..." 
+                              {...field}
+                              value={field.value || ""}
+                              className="font-mono text-sm"
+                            />
+                          </FormControl>
+                          <Button type="button" variant="default" onClick={() => { const url = form.getValues('productUrl'); if (url) parseProductUrl(url); }} disabled={isParsingUrl || !field.value} className="whitespace-nowrap px-3">
+                            {isParsingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : "Parse URL"}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Product Photo Section */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm">Product Photo</h4>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border space-y-4">
+                  {productPhotoPreview ? (
+                    <div className="relative">
+                      <img src={productPhotoPreview} alt="Product preview" className="w-full h-48 object-contain bg-white dark:bg-gray-800 rounded border" />
+                      <Button type="button" variant="destructive" size="sm" className="absolute top-2 right-2" onClick={() => { setProductPhoto(null); setProductPhotoPreview(null); }}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center">
+                      <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">No product photo uploaded</p>
+                      <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { setProductPhoto(file); const reader = new FileReader(); reader.onloadend = () => setProductPhotoPreview(reader.result as string); reader.readAsDataURL(file); } }} className="hidden" id="edit-product-photo-upload" />
+                      <label htmlFor="edit-product-photo-upload">
+                        <Button type="button" variant="outline" size="sm" asChild>
+                          <span className="cursor-pointer"><Upload className="h-4 w-4 mr-2" />Upload Photo</span>
+                        </Button>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Part Details */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm">Part Details</h4>
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem><FormLabel>Part Name</FormLabel><FormControl><Input placeholder="e.g., Carbon Chassis Conversion" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="isTamiyaBrand" render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5"><FormLabel className="text-base">Official Tamiya Part</FormLabel><FormDescription>Is this an official Tamiya brand part?</FormDescription></div>
+                    <FormControl><Switch checked={field.value || false} onCheckedChange={(checked) => { field.onChange(checked); if (checked) form.setValue('manufacturer', 'Tamiya'); }} /></FormControl>
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="category" render={({ field }) => (
+                    <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl><SelectContent>{getOptions('hopUpCategory').map((cat) => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="manufacturer" render={({ field }) => (
+                    <FormItem><FormLabel>Manufacturer</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{manufacturers.map((m) => (<SelectItem key={m} value={m}>{m}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="itemNumber" render={({ field }) => (
+                    <FormItem><FormLabel>Item Number</FormLabel><FormControl><Input placeholder="e.g., 54321" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="supplier" render={({ field }) => (
+                    <FormItem><FormLabel>Supplier</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{suppliers.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="quantity" render={({ field }) => (
+                    <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="cost" render={({ field }) => (
+                    <FormItem><FormLabel>Cost ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ""} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="installationStatus" render={({ field }) => (
+                  <FormItem><FormLabel>Installation Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="planned">Planned</SelectItem><SelectItem value="installed">Installed</SelectItem><SelectItem value="removed">Removed</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="notes" render={({ field }) => (
+                  <FormItem><FormLabel>Notes</FormLabel><FormControl><textarea placeholder="Installation notes..." className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Update Part</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

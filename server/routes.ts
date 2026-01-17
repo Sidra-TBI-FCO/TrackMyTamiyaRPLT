@@ -1660,6 +1660,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Hop-up parts routes
+  
+  // Add a library item to a model as a hop-up part
+  app.post('/api/models/:modelId/hop-up-parts/from-library', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const modelId = parseInt(req.params.modelId);
+      if (isNaN(modelId)) return res.status(400).json({ message: 'Invalid model ID' });
+      
+      const { libraryItemId, quantity = 1, installationStatus = 'planned', notes } = req.body;
+      if (!libraryItemId) return res.status(400).json({ message: 'Library item ID is required' });
+      
+      // Get the library item
+      const libraryItem = await storage.getHopUpLibraryItem(libraryItemId, userId);
+      if (!libraryItem) return res.status(404).json({ message: 'Library item not found' });
+      
+      // Create hop-up part from library item data
+      const partData = {
+        modelId,
+        libraryItemId: libraryItem.id,
+        name: libraryItem.name,
+        itemNumber: libraryItem.itemNumber,
+        category: libraryItem.category,
+        manufacturer: libraryItem.manufacturer,
+        supplier: libraryItem.supplier,
+        cost: libraryItem.cost ? parseFloat(libraryItem.cost) : undefined,
+        quantity: parseInt(quantity),
+        installationStatus,
+        notes: notes || libraryItem.notes,
+        isTamiyaBrand: libraryItem.isTamiyaBrand,
+        productUrl: libraryItem.productUrl,
+        tamiyaBaseUrl: libraryItem.tamiyaBaseUrl,
+        compatibility: libraryItem.compatibility || [],
+        color: libraryItem.color,
+        material: libraryItem.material,
+        photoId: libraryItem.photoId,
+      };
+      
+      const part = await storage.createHopUpPart(partData);
+      
+      // Log activity
+      await logUserActivity(userId, 'hop_up_created', {
+        partId: part.id,
+        modelId,
+        partName: part.name,
+        category: part.category,
+        fromLibrary: true,
+        libraryItemId
+      }, req);
+      
+      // Fetch with photo relation
+      const partWithPhoto = await db.query.hopUpParts.findFirst({
+        where: eq(hopUpParts.id, part.id),
+        with: { photo: true },
+      });
+      
+      res.status(201).json(partWithPhoto);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   app.get('/api/models/:modelId/hop-up-parts', async (req, res) => {
     try {
       const userId = getUserId(req);
@@ -1721,6 +1783,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partData.photoId = photoId;
       }
       
+      // Also add to library if not already there (by item number match)
+      let libraryItemId: number | null = null;
+      if (partData.itemNumber && userId) {
+        // Check if item exists in library
+        const existingLibraryItems = await storage.getHopUpLibraryItems(userId);
+        const existingItem = existingLibraryItems.find(item => 
+          item.itemNumber && item.itemNumber.toLowerCase() === partData.itemNumber?.toLowerCase()
+        );
+        
+        if (existingItem) {
+          libraryItemId = existingItem.id;
+        } else {
+          // Create library item
+          const libraryItem = await storage.createHopUpLibraryItem({
+            userId,
+            name: partData.name,
+            itemNumber: partData.itemNumber,
+            category: partData.category,
+            manufacturer: partData.manufacturer,
+            supplier: partData.supplier,
+            cost: partData.cost?.toString(),
+            isTamiyaBrand: partData.isTamiyaBrand,
+            productUrl: partData.productUrl,
+            tamiyaBaseUrl: partData.tamiyaBaseUrl,
+            compatibility: partData.compatibility || [],
+            color: partData.color,
+            material: partData.material,
+            notes: partData.notes,
+            photoId: partData.photoId,
+          });
+          libraryItemId = libraryItem.id;
+        }
+      }
+      
+      // Add libraryItemId to partData if we found/created one
+      if (libraryItemId) {
+        (partData as any).libraryItemId = libraryItemId;
+      }
+      
       const part = await storage.createHopUpPart(partData);
       
       // Log hop-up part creation activity
@@ -1728,7 +1829,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partId: part.id,
         modelId: modelId,
         partName: part.name,
-        category: part.category
+        category: part.category,
+        libraryItemId: libraryItemId
       }, req);
       
       // Fetch the part with photo relation to return complete data
