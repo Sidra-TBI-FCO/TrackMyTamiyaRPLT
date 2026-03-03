@@ -28,6 +28,7 @@ interface HopUp {
   brand: string | null;
   partNumber: string | null;
   isInstalled: boolean | null;
+  photo?: { id: number; url: string } | null;
 }
 
 interface BuildLogPhoto {
@@ -668,20 +669,30 @@ export default function CommunityModelDetailPage() {
               <CardContent>
                 <div className="space-y-2">
                   {hopUps.filter(p => p.isInstalled).map((part) => (
-                    <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                        {part.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {part.brand && (
-                          <span className="text-xs font-mono text-gray-500">{part.brand}</span>
-                        )}
-                        {part.category && (
-                          <Badge variant="outline" className="text-xs font-mono">
-                            {part.category}
-                          </Badge>
-                        )}
+                    <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
+                      <div className="flex-1">
+                        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          {part.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {part.brand && (
+                            <span className="text-xs font-mono text-gray-500">{part.brand}</span>
+                          )}
+                          {part.category && (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {part.category}
+                            </Badge>
+                          )}
+                          {part.partNumber && (
+                            <span className="text-xs font-mono text-gray-400">{part.partNumber}</span>
+                          )}
+                        </div>
                       </div>
+                      {part.photo?.url && (
+                        <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
+                          <img src={addStorageFallbackParam(part.photo.url)} alt={part.name} className="w-full h-full object-contain" loading="lazy" />
+                        </div>
+                      )}
                     </div>
                   ))}
                   {hopUps.filter(p => !p.isInstalled).length > 0 && (
@@ -690,20 +701,30 @@ export default function CommunityModelDetailPage() {
                         <p className="text-xs font-mono text-gray-500 mb-2">Planned ({hopUps.filter(p => !p.isInstalled).length})</p>
                       </div>
                       {hopUps.filter(p => !p.isInstalled).map((part) => (
-                        <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg opacity-60">
-                          <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                            {part.name}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {part.brand && (
-                              <span className="text-xs font-mono text-gray-500">{part.brand}</span>
-                            )}
-                            {part.category && (
-                              <Badge variant="outline" className="text-xs font-mono">
-                                {part.category}
-                              </Badge>
-                            )}
+                        <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg opacity-60 flex gap-2 items-stretch">
+                          <div className="flex-1">
+                            <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                              {part.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              {part.brand && (
+                                <span className="text-xs font-mono text-gray-500">{part.brand}</span>
+                              )}
+                              {part.category && (
+                                <Badge variant="outline" className="text-xs font-mono">
+                                  {part.category}
+                                </Badge>
+                              )}
+                              {part.partNumber && (
+                                <span className="text-xs font-mono text-gray-400">{part.partNumber}</span>
+                              )}
+                            </div>
                           </div>
+                          {part.photo?.url && (
+                            <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
+                              <img src={addStorageFallbackParam(part.photo.url)} alt={part.name} className="w-full h-full object-contain" loading="lazy" />
+                            </div>
+                          )}
                         </div>
                       ))}
                     </>
