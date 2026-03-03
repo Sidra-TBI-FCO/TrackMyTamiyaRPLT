@@ -1,11 +1,11 @@
 import jsPDF from "jspdf";
 import { ModelWithRelations } from "@/types";
 
-import tamiyaLogo from "@assets/brand_logos/Tamiya.png";
-import vwLogo from "@assets/brand_logos/VW.png";
-import bmwLogo from "@assets/brand_logos/BMW.png";
-import audiLogo from "@assets/brand_logos/audi.png";
-import lanciaLogo from "@assets/brand_logos/Lancia.png";
+import tamiyaLogo from "@/assets/brand_logos/Tamiya.png";
+import vwLogo from "@/assets/brand_logos/VW.png";
+import bmwLogo from "@/assets/brand_logos/BMW.png";
+import audiLogo from "@/assets/brand_logos/audi.png";
+import lanciaLogo from "@/assets/brand_logos/Lancia.png";
 
 const BRAND_LOGO_MAP: Record<string, string> = {
   vw: vwLogo,
