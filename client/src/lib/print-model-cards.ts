@@ -210,8 +210,8 @@ export async function printModelCards(models: ModelWithRelations[]) {
 
     drawCropMarks(doc, cx, cy, cardW, cardH);
 
-    const logoBoxW = 26;
-    const logoBoxH = 14;
+    const logoBoxW = 39;
+    const logoBoxH = 21;
     addImageProportional(doc, stampData, cx + 3, cy + 3, logoBoxW, logoBoxH, "left");
 
     const brand = detectBrand(model);
