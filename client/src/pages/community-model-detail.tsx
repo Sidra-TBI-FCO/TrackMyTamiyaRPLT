@@ -27,7 +27,7 @@ interface HopUp {
   category: string | null;
   brand: string | null;
   partNumber: string | null;
-  isInstalled: boolean | null;
+  installationStatus: string | null;
   photo?: { id: number; url: string } | null;
 }
 
@@ -663,12 +663,12 @@ export default function CommunityModelDetailPage() {
               <CardHeader>
                 <CardTitle className="font-mono text-lg flex items-center gap-2">
                   <Cog className="h-5 w-5" />
-                  Installed Parts ({hopUps.filter(p => p.isInstalled).length})
+                  Installed Parts ({hopUps.filter(p => p.installationStatus === 'installed').length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {hopUps.filter(p => p.isInstalled).map((part) => (
+                  {hopUps.filter(p => p.installationStatus === 'installed').map((part) => (
                     <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
                       <div className="flex-1">
                         {part.category && (
@@ -695,12 +695,12 @@ export default function CommunityModelDetailPage() {
                       )}
                     </div>
                   ))}
-                  {hopUps.filter(p => !p.isInstalled).length > 0 && (
+                  {hopUps.filter(p => p.installationStatus === 'planned').length > 0 && (
                     <>
                       <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
-                        <p className="text-xs font-mono text-gray-500 mb-2">Planned ({hopUps.filter(p => !p.isInstalled).length})</p>
+                        <p className="text-xs font-mono text-gray-500 mb-2">Planned ({hopUps.filter(p => p.installationStatus === 'planned').length})</p>
                       </div>
-                      {hopUps.filter(p => !p.isInstalled).map((part) => (
+                      {hopUps.filter(p => p.installationStatus === 'planned').map((part) => (
                         <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg opacity-60 flex gap-2 items-stretch">
                           <div className="flex-1">
                             {part.category && (
