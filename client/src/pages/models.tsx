@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { LayoutGrid, List, Filter, Tag, Search, Play } from "lucide-react";
+import { LayoutGrid, List, Filter, Tag, Search, Play, Printer } from "lucide-react";
+import { printModelCards } from "@/lib/print-model-cards";
 import { ModelWithRelations } from "@/types";
 import ModelCard from "@/components/models/model-card";
 import AddModelDialog from "@/components/models/add-model-dialog";
@@ -28,6 +29,16 @@ export default function Models() {
   const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
   const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
   const [selectedModelForPhoto, setSelectedModelForPhoto] = useState<number | null>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printModelCards(filteredModels);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   const { data: models, isLoading } = useQuery<ModelWithRelations[]>({
     queryKey: ["/api/models"],
@@ -263,6 +274,17 @@ export default function Models() {
                   <List className="h-4 w-4" />
                 </Button>
               </div>
+
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                size="sm"
+                className="font-mono"
+                disabled={isPrinting}
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                {isPrinting ? "Generating..." : "Print Cards"}
+              </Button>
             </div>
           </div>
 
@@ -272,6 +294,16 @@ export default function Models() {
               My Collection ({filteredModels.length})
             </h1>
             <div className="flex items-center space-x-3">
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                size="sm"
+                className="font-mono"
+                disabled={isPrinting}
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                {isPrinting ? "Generating..." : "Print Cards"}
+              </Button>
               <Button
                 onClick={() => setIsSlideshowOpen(true)}
                 variant="outline"
