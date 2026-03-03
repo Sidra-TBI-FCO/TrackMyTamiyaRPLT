@@ -220,7 +220,10 @@ export async function printModelCards(models: ModelWithRelations[]) {
     }
 
     const centerY = cy + cardH / 2;
-    const nameLines = wrapText(model.name, 22);
+    const displayName = (model.buildType === "custom" && model.bodyName)
+      ? model.bodyName
+      : model.name;
+    const nameLines = wrapText(displayName, 22);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
