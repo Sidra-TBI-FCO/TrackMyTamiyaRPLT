@@ -115,10 +115,15 @@ export async function printModelCards(models: ModelWithRelations[]) {
     stampData = await loadImageAsDataUrl(stampUrl);
   } catch {}
 
+  function getBrandSearchText(model: ModelWithRelations): string {
+    const parts = [model.bodyManufacturer, model.bodyName].filter(Boolean);
+    return parts.length > 0 ? parts.join(" ") : model.name;
+  }
+
   const brandCache: Record<string, string | null> = {};
   const uniqueUrls = new Map<string, string>();
   for (const model of models) {
-    const lower = model.name.toLowerCase();
+    const lower = getBrandSearchText(model).toLowerCase();
     for (const [kw, url] of Object.entries(brandLogoMap)) {
       if (kw === "tamiya") continue;
       if (lower.includes(kw) && !uniqueUrls.has(url)) {
@@ -138,8 +143,8 @@ export async function printModelCards(models: ModelWithRelations[]) {
     }
   }
 
-  function detectBrand(name: string): string | null {
-    const lower = name.toLowerCase();
+  function detectBrand(model: ModelWithRelations): string | null {
+    const lower = getBrandSearchText(model).toLowerCase();
     for (const kw of Object.keys(brandLogoMap)) {
       if (kw === "tamiya") continue;
       if (lower.includes(kw) && brandCache[kw]) return kw;
@@ -186,7 +191,7 @@ export async function printModelCards(models: ModelWithRelations[]) {
 
     addImageSafe(doc, stampData, cx + 3, cy + 3, 22, 9);
 
-    const brand = detectBrand(model.name);
+    const brand = detectBrand(model);
     if (brand) {
       addImageSafe(doc, brandCache[brand] ?? null, cx + cardW - 22 - 3, cy + 3, 22, 9);
     }
