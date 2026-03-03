@@ -57,10 +57,31 @@ function drawCropMarks(doc: jsPDF, x: number, y: number, w: number, h: number) {
   }
 }
 
-function addImageSafe(doc: jsPDF, dataUrl: string | null, x: number, y: number, w: number, h: number) {
+function addImageProportional(
+  doc: jsPDF,
+  dataUrl: string | null,
+  boxX: number,
+  boxY: number,
+  boxW: number,
+  boxH: number,
+  align: "left" | "right" = "left"
+) {
   if (!dataUrl) return;
   try {
-    doc.addImage(dataUrl, "PNG", x, y, w, h);
+    const props = doc.getImageProperties(dataUrl);
+    const imgAspect = props.width / props.height;
+    const boxAspect = boxW / boxH;
+    let drawW: number, drawH: number;
+    if (imgAspect > boxAspect) {
+      drawW = boxW;
+      drawH = boxW / imgAspect;
+    } else {
+      drawH = boxH;
+      drawW = boxH * imgAspect;
+    }
+    const drawX = align === "right" ? boxX + boxW - drawW : boxX;
+    const drawY = boxY + (boxH - drawH) / 2;
+    doc.addImage(dataUrl, "PNG", drawX, drawY, drawW, drawH);
   } catch {}
 }
 
@@ -189,31 +210,34 @@ export async function printModelCards(models: ModelWithRelations[]) {
 
     drawCropMarks(doc, cx, cy, cardW, cardH);
 
-    addImageSafe(doc, stampData, cx + 3, cy + 3, 22, 9);
+    const logoBoxW = 26;
+    const logoBoxH = 14;
+    addImageProportional(doc, stampData, cx + 3, cy + 3, logoBoxW, logoBoxH, "left");
 
     const brand = detectBrand(model);
     if (brand) {
-      addImageSafe(doc, brandCache[brand] ?? null, cx + cardW - 22 - 3, cy + 3, 22, 9);
+      addImageProportional(doc, brandCache[brand] ?? null, cx + cardW - logoBoxW - 3, cy + 3, logoBoxW, logoBoxH, "right");
     }
 
     const centerY = cy + cardH / 2;
-    const nameLines = wrapText(model.name, 28);
+    const nameLines = wrapText(model.name, 22);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
 
-    const lineHeight = 4.5;
-    const totalTextH = nameLines.length * lineHeight + (model.chassis ? lineHeight : 0);
-    let textY = centerY - totalTextH / 2 + lineHeight;
+    const nameLineH = 6;
+    const chassisLineH = 5;
+    const totalTextH = nameLines.length * nameLineH + (model.chassis ? chassisLineH : 0);
+    let textY = centerY - totalTextH / 2 + nameLineH;
 
     for (const line of nameLines) {
       doc.text(line, cx + cardW / 2, textY, { align: "center" });
-      textY += lineHeight;
+      textY += nameLineH;
     }
 
     if (model.chassis) {
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.5);
+      doc.setFontSize(8.5);
       doc.setTextColor(90, 90, 90);
       doc.text(model.chassis, cx + cardW / 2, textY, { align: "center" });
     }
