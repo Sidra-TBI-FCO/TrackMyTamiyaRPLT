@@ -2,16 +2,25 @@ import jsPDF from "jspdf";
 import { ModelWithRelations } from "@/types";
 
 import tamiyaLogo from "@/assets/brand_logos/Tamiya.png";
-import vwLogo from "@/assets/brand_logos/VW.png";
+import vwLogo from "@/assets/brand_logos/volkswagen.png";
 import bmwLogo from "@/assets/brand_logos/BMW.png";
 import audiLogo from "@/assets/brand_logos/audi.png";
 import lanciaLogo from "@/assets/brand_logos/Lancia.png";
+import mazdaLogo from "@/assets/brand_logos/mazda.png";
+import nissanLogo from "@/assets/brand_logos/nissan.png";
+import opelLogo from "@/assets/brand_logos/opel.png";
+import porscheLogo from "@/assets/brand_logos/porsche.png";
 
 const BRAND_LOGO_MAP: Record<string, string> = {
+  volkswagen: vwLogo,
   vw: vwLogo,
   bmw: bmwLogo,
   audi: audiLogo,
   lancia: lanciaLogo,
+  mazda: mazdaLogo,
+  nissan: nissanLogo,
+  opel: opelLogo,
+  porsche: porscheLogo,
 };
 
 function detectBrand(modelName: string): string | null {
