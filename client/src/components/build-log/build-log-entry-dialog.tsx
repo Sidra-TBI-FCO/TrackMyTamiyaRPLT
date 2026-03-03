@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Camera, Mic, MicOff, Upload, X } from "lucide-react";
+import { Calendar, Camera, Mic, MicOff, Trash2, Upload, X } from "lucide-react";
 import { insertBuildLogEntrySchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +29,7 @@ import { addStorageFallbackParam } from "@/lib/file-utils";
 
 const formSchema = insertBuildLogEntrySchema.extend({
   title: z.string().min(1, "Title is required"),
-  entryDate: z.string(), // Override to accept string for datetime-local input
+  entryDate: z.string(),
   photos: z.array(z.object({
     file: z.any(),
     caption: z.string(),
@@ -67,6 +67,12 @@ export default function BuildLogEntryDialog({
     enabled: open,
   });
 
+  // Fetch photos already attached to this entry when editing
+  const { data: entryPhotos = [], refetch: refetchEntryPhotos } = useQuery<any[]>({
+    queryKey: [`/api/build-log-entries/${existingEntry?.id}/photos`],
+    enabled: open && !!existingEntry?.id,
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -79,7 +85,6 @@ export default function BuildLogEntryDialog({
     },
   });
 
-  // Update form values when existingEntry changes
   useEffect(() => {
     if (existingEntry) {
       form.reset({
@@ -100,11 +105,27 @@ export default function BuildLogEntryDialog({
         photos: [],
       });
     }
-  }, [existingEntry, modelId, nextEntryNumber, form]);
+    setSelectedFiles([]);
+    setSelectedExistingPhotos([]);
+  }, [existingEntry, modelId, nextEntryNumber, open]);
+
+  // Remove photo mutation (unlinks photo from entry)
+  const removePhotoMutation = useMutation({
+    mutationFn: async (photoId: number) => {
+      await apiRequest("DELETE", `/api/build-log-entries/${existingEntry.id}/photos/${photoId}`);
+    },
+    onSuccess: () => {
+      refetchEntryPhotos();
+      queryClient.invalidateQueries({ queryKey: [`/api/models/${modelId}/build-log-entries`] });
+      toast({ title: "Photo removed", description: "Photo unlinked from this entry." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to remove photo.", variant: "destructive" });
+    },
+  });
 
   const createEntryMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Create or update the build log entry
       const entryData = {
         modelId: data.modelId,
         entryNumber: data.entryNumber,
@@ -119,7 +140,6 @@ export default function BuildLogEntryDialog({
       
       const response = await responseRaw.json();
       
-      // Upload new photos if any
       if (selectedFiles.length > 0) {
         const formData = new FormData();
         selectedFiles.forEach((item, index) => {
@@ -127,11 +147,9 @@ export default function BuildLogEntryDialog({
           formData.append(`caption_${index}`, item.caption);
         });
         formData.append('buildLogEntryId', response.id.toString());
-
         await apiRequest("POST", `/api/build-log-entries/${response.id}/photos`, formData);
       }
 
-      // Link existing photos if any
       if (selectedExistingPhotos.length > 0) {
         for (const existingPhoto of selectedExistingPhotos) {
           await apiRequest("POST", `/api/build-log-entries/${response.id}/existing-photos`, {
@@ -143,10 +161,8 @@ export default function BuildLogEntryDialog({
       return response;
     },
     onSuccess: () => {
-      // Use the correct query key format to match what's used in the component
       queryClient.invalidateQueries({ queryKey: [`/api/models/${modelId}/build-log-entries`] });
       queryClient.invalidateQueries({ queryKey: [`/api/models/${modelId}`] });
-      // Force immediate refetch
       queryClient.refetchQueries({ queryKey: [`/api/models/${modelId}/build-log-entries`] });
       toast({
         title: existingEntry ? "Build log entry updated" : "Build log entry created",
@@ -160,7 +176,7 @@ export default function BuildLogEntryDialog({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create build log entry",
+        description: error.message || "Failed to save build log entry",
         variant: "destructive",
       });
     },
@@ -176,9 +192,7 @@ export default function BuildLogEntryDialog({
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
-        recognition.onstart = () => {
-          setIsRecording(true);
-        };
+        recognition.onstart = () => setIsRecording(true);
 
         recognition.onresult = (event) => {
           let finalTranscript = '';
@@ -187,7 +201,6 @@ export default function BuildLogEntryDialog({
               finalTranscript += event.results[i][0].transcript + ' ';
             }
           }
-          
           if (finalTranscript) {
             const currentContent = form.getValues("content") || "";
             form.setValue("content", currentContent + finalTranscript);
@@ -204,9 +217,7 @@ export default function BuildLogEntryDialog({
           });
         };
 
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
+        recognition.onend = () => setIsRecording(false);
 
         recognitionRef.current = recognition;
         recognition.start();
@@ -254,6 +265,10 @@ export default function BuildLogEntryDialog({
     createEntryMutation.mutate(data);
   };
 
+  // Photos already on the model (for picking from gallery — exclude ones already on entry)
+  const entryPhotoIds = new Set(entryPhotos.map((p: any) => p.id));
+  const availableGalleryPhotos = (modelData as any)?.photos?.filter((p: any) => !entryPhotoIds.has(p.id)) ?? [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -265,7 +280,6 @@ export default function BuildLogEntryDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Entry Date */}
             <FormField
               control={form.control}
               name="entryDate"
@@ -286,7 +300,6 @@ export default function BuildLogEntryDialog({
               )}
             />
 
-            {/* Title */}
             <FormField
               control={form.control}
               name="title"
@@ -305,7 +318,6 @@ export default function BuildLogEntryDialog({
               )}
             />
 
-            {/* Content with Voice Recording */}
             <FormField
               control={form.control}
               name="content"
@@ -321,15 +333,9 @@ export default function BuildLogEntryDialog({
                       className="font-mono"
                     >
                       {isRecording ? (
-                        <>
-                          <MicOff className="h-4 w-4 mr-2" />
-                          Stop Recording
-                        </>
+                        <><MicOff className="h-4 w-4 mr-2" />Stop Recording</>
                       ) : (
-                        <>
-                          <Mic className="h-4 w-4 mr-2" />
-                          Voice Input
-                        </>
+                        <><Mic className="h-4 w-4 mr-2" />Voice Input</>
                       )}
                     </Button>
                   </div>
@@ -352,7 +358,7 @@ export default function BuildLogEntryDialog({
               )}
             />
 
-            {/* Photo Upload */}
+            {/* Photos Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="font-mono text-sm font-medium">Photos</label>
@@ -377,8 +383,51 @@ export default function BuildLogEntryDialog({
                 className="hidden"
               />
 
+              {/* Existing entry photos (only shown when editing) */}
+              {existingEntry && entryPhotos.length > 0 && (
+                <div className="space-y-2">
+                  <label className="font-mono text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Attached photos ({entryPhotos.length})
+                  </label>
+                  <div className="space-y-2">
+                    {entryPhotos.map((photo: any) => (
+                      <div key={photo.id} className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-900">
+                        <img
+                          src={addStorageFallbackParam(photo.url)}
+                          alt={photo.caption || 'Build log photo'}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-mono text-gray-700 dark:text-gray-300 truncate">
+                            {photo.caption || photo.originalName || 'No caption'}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (confirm("Remove this photo from the entry?")) {
+                              removePhotoMutation.mutate(photo.id);
+                            }
+                          }}
+                          disabled={removePhotoMutation.isPending}
+                          className="text-red-500 hover:text-red-700 shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New files to upload */}
               {selectedFiles.length > 0 && (
                 <div className="space-y-3">
+                  <label className="font-mono text-sm font-medium text-gray-600 dark:text-gray-400">
+                    New photos to add
+                  </label>
                   {selectedFiles.map((item, index) => (
                     <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
                       <img
@@ -412,12 +461,12 @@ export default function BuildLogEntryDialog({
                 </div>
               )}
 
-              {/* Existing Photos Selection */}
-              {modelData?.photos && modelData.photos.length > 0 && (
+              {/* Gallery photo picker — exclude already-attached photos */}
+              {availableGalleryPhotos.length > 0 && (
                 <div className="space-y-3">
-                  <label className="font-mono text-sm font-medium">Or select from existing photos</label>
+                  <label className="font-mono text-sm font-medium">Or select from model gallery</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                    {modelData.photos.map((photo: any) => {
+                    {availableGalleryPhotos.map((photo: any) => {
                       const isSelected = selectedExistingPhotos.some(p => p.id === photo.id);
                       return (
                         <div 
@@ -441,9 +490,7 @@ export default function BuildLogEntryDialog({
                             className="w-full h-20 object-cover"
                           />
                           {photo.isBoxArt && (
-                            <Badge 
-                              className="absolute top-1 left-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
-                            >
+                            <Badge className="absolute top-1 left-1 text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
                               Box Art
                             </Badge>
                           )}
@@ -463,7 +510,7 @@ export default function BuildLogEntryDialog({
                     <div className="space-y-2">
                       <label className="font-mono text-sm font-medium">Add captions to selected photos</label>
                       {selectedExistingPhotos.map((selectedPhoto, index) => {
-                        const photo = modelData.photos.find((p: any) => p.id === selectedPhoto.id);
+                        const photo = availableGalleryPhotos.find((p: any) => p.id === selectedPhoto.id);
                         return (
                           <div key={selectedPhoto.id} className="flex items-center space-x-3 p-2 border rounded">
                             <img
@@ -500,7 +547,6 @@ export default function BuildLogEntryDialog({
               )}
             </div>
 
-            {/* Submit Buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"

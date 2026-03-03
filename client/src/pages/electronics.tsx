@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Zap, Radio, Settings2, Gauge, Plus, Pencil, Trash2, Search, DollarSign, Package } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Motor, Esc, Servo, Receiver } from "@shared/schema";
+import type { MotorWithPhoto, EscWithPhoto, ServoWithPhoto, ReceiverWithPhoto } from "@shared/schema";
 import { MotorDialog, EscDialog, ServoDialog, ReceiverDialog } from "@/components/electronics";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 
 export default function Electronics() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,17 +18,17 @@ export default function Electronics() {
   const [escDialogOpen, setEscDialogOpen] = useState(false);
   const [servoDialogOpen, setServoDialogOpen] = useState(false);
   const [receiverDialogOpen, setReceiverDialogOpen] = useState(false);
-  const [editingMotor, setEditingMotor] = useState<Motor | undefined>();
-  const [editingEsc, setEditingEsc] = useState<Esc | undefined>();
-  const [editingServo, setEditingServo] = useState<Servo | undefined>();
-  const [editingReceiver, setEditingReceiver] = useState<Receiver | undefined>();
+  const [editingMotor, setEditingMotor] = useState<MotorWithPhoto | undefined>();
+  const [editingEsc, setEditingEsc] = useState<EscWithPhoto | undefined>();
+  const [editingServo, setEditingServo] = useState<ServoWithPhoto | undefined>();
+  const [editingReceiver, setEditingReceiver] = useState<ReceiverWithPhoto | undefined>();
 
   const { toast } = useToast();
 
-  const { data: motors = [], isLoading: motorsLoading } = useQuery<Motor[]>({ queryKey: ["/api/electronics/motors"] });
-  const { data: escs = [], isLoading: escsLoading } = useQuery<Esc[]>({ queryKey: ["/api/electronics/escs"] });
-  const { data: servos = [], isLoading: servosLoading } = useQuery<Servo[]>({ queryKey: ["/api/electronics/servos"] });
-  const { data: receivers = [], isLoading: receiversLoading } = useQuery<Receiver[]>({ queryKey: ["/api/electronics/receivers"] });
+  const { data: motors = [], isLoading: motorsLoading } = useQuery<MotorWithPhoto[]>({ queryKey: ["/api/electronics/motors"] });
+  const { data: escs = [], isLoading: escsLoading } = useQuery<EscWithPhoto[]>({ queryKey: ["/api/electronics/escs"] });
+  const { data: servos = [], isLoading: servosLoading } = useQuery<ServoWithPhoto[]>({ queryKey: ["/api/electronics/servos"] });
+  const { data: receivers = [], isLoading: receiversLoading } = useQuery<ReceiverWithPhoto[]>({ queryKey: ["/api/electronics/receivers"] });
 
   const deleteMotor = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/electronics/motors/${id}`),
@@ -173,6 +174,11 @@ export default function Electronics() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filterItems(motors).map((motor) => (
                 <Card key={motor.id}>
+                  {motor.photo?.url && (
+                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
+                      <img src={addStorageFallbackParam(motor.photo.url)} alt={motor.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="font-mono text-lg">{motor.name}</CardTitle>
@@ -211,6 +217,11 @@ export default function Electronics() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filterItems(escs).map((esc) => (
                 <Card key={esc.id}>
+                  {esc.photo?.url && (
+                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
+                      <img src={addStorageFallbackParam(esc.photo.url)} alt={esc.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="font-mono text-lg">{esc.name}</CardTitle>
@@ -249,6 +260,11 @@ export default function Electronics() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filterItems(servos).map((servo) => (
                 <Card key={servo.id}>
+                  {servo.photo?.url && (
+                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
+                      <img src={addStorageFallbackParam(servo.photo.url)} alt={servo.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="font-mono text-lg">{servo.name}</CardTitle>
@@ -288,6 +304,11 @@ export default function Electronics() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filterItems(receivers).map((receiver) => (
                 <Card key={receiver.id}>
+                  {receiver.photo?.url && (
+                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
+                      <img src={addStorageFallbackParam(receiver.photo.url)} alt={receiver.name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="font-mono text-lg">{receiver.name}</CardTitle>

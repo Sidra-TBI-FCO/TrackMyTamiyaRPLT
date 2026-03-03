@@ -749,8 +749,13 @@ export default function ModelDetail() {
                           </Button>
                         </div>
                         {modelElectronics?.motor && (
-                          <div className="text-xs text-gray-500 font-mono">
-                            {modelElectronics.motor.motorType} {modelElectronics.motor.kv && `• ${modelElectronics.motor.kv}KV`} {modelElectronics.motor.turns && `• ${modelElectronics.motor.turns}T`}
+                          <div className="space-y-1">
+                            <div className="text-xs text-gray-500 font-mono">
+                              {modelElectronics.motor.motorType} {modelElectronics.motor.kv && `• ${modelElectronics.motor.kv}KV`} {modelElectronics.motor.turns && `• ${modelElectronics.motor.turns}T`}
+                            </div>
+                            {modelElectronics.motor.photo?.url && (
+                              <img src={addStorageFallbackParam(modelElectronics.motor.photo.url)} alt={modelElectronics.motor.name} className="h-20 w-full object-cover rounded-md mt-1" />
+                            )}
                           </div>
                         )}
                       </div>
@@ -782,8 +787,13 @@ export default function ModelDetail() {
                           </Button>
                         </div>
                         {modelElectronics?.esc && (
-                          <div className="text-xs text-gray-500 font-mono">
-                            {modelElectronics.esc.escType} {modelElectronics.esc.maxAmps && `• ${modelElectronics.esc.maxAmps}A`} {modelElectronics.esc.maxVoltage && `• ${modelElectronics.esc.maxVoltage}`}
+                          <div className="space-y-1">
+                            <div className="text-xs text-gray-500 font-mono">
+                              {modelElectronics.esc.escType} {modelElectronics.esc.maxAmps && `• ${modelElectronics.esc.maxAmps}A`} {modelElectronics.esc.maxVoltage && `• ${modelElectronics.esc.maxVoltage}`}
+                            </div>
+                            {modelElectronics.esc.photo?.url && (
+                              <img src={addStorageFallbackParam(modelElectronics.esc.photo.url)} alt={modelElectronics.esc.name} className="h-20 w-full object-cover rounded-md mt-1" />
+                            )}
                           </div>
                         )}
                       </div>
@@ -815,8 +825,13 @@ export default function ModelDetail() {
                           </Button>
                         </div>
                         {modelElectronics?.servo && (
-                          <div className="text-xs text-gray-500 font-mono">
-                            {modelElectronics.servo.servoType} {modelElectronics.servo.torque && `• ${modelElectronics.servo.torque}`}
+                          <div className="space-y-1">
+                            <div className="text-xs text-gray-500 font-mono">
+                              {modelElectronics.servo.servoType} {modelElectronics.servo.torque && `• ${modelElectronics.servo.torque}`}
+                            </div>
+                            {modelElectronics.servo.photo?.url && (
+                              <img src={addStorageFallbackParam(modelElectronics.servo.photo.url)} alt={modelElectronics.servo.name} className="h-20 w-full object-cover rounded-md mt-1" />
+                            )}
                           </div>
                         )}
                       </div>
@@ -848,8 +863,13 @@ export default function ModelDetail() {
                           </Button>
                         </div>
                         {modelElectronics?.receiver && (
-                          <div className="text-xs text-gray-500 font-mono">
-                            {modelElectronics.receiver.protocol} {modelElectronics.receiver.channels && `• ${modelElectronics.receiver.channels}CH`}
+                          <div className="space-y-1">
+                            <div className="text-xs text-gray-500 font-mono">
+                              {modelElectronics.receiver.protocol} {modelElectronics.receiver.channels && `• ${modelElectronics.receiver.channels}CH`}
+                            </div>
+                            {modelElectronics.receiver.photo?.url && (
+                              <img src={addStorageFallbackParam(modelElectronics.receiver.photo.url)} alt={modelElectronics.receiver.name} className="h-20 w-full object-cover rounded-md mt-1" />
+                            )}
                           </div>
                         )}
                       </div>

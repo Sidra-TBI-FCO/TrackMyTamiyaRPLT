@@ -34,6 +34,8 @@ export const users = pgTable("users", {
   manuallyGrantedModels: integer("manually_granted_models").default(0), // Admin can grant extra models
   // Sharing preferences: 'public' (anyone), 'authenticated' (logged-in users), 'private' (no sharing)
   sharePreference: varchar("share_preference").notNull().default("private"),
+  // Theme/app preferences saved server-side so they persist across devices/sessions
+  themeSettings: jsonb("theme_settings"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -750,13 +752,19 @@ export type InsertModelElectronics = z.infer<typeof insertModelElectronicsSchema
 export type HopUpLibraryItem = typeof hopUpLibrary.$inferSelect;
 export type InsertHopUpLibraryItem = z.infer<typeof insertHopUpLibrarySchema>;
 
-// Model electronics with related details
+// Model electronics with related details (including photos on each component)
 export type ModelElectronicsWithDetails = ModelElectronics & {
-  motor?: Motor | null;
-  esc?: Esc | null;
-  servo?: Servo | null;
-  receiver?: Receiver | null;
+  motor?: MotorWithPhoto | null;
+  esc?: EscWithPhoto | null;
+  servo?: ServoWithPhoto | null;
+  receiver?: ReceiverWithPhoto | null;
 };
+
+// Electronics with photo data included
+export type MotorWithPhoto = Motor & { photo?: Photo | null };
+export type EscWithPhoto = Esc & { photo?: Photo | null };
+export type ServoWithPhoto = Servo & { photo?: Photo | null };
+export type ReceiverWithPhoto = Receiver & { photo?: Photo | null };
 
 // Supported field keys for field options
 export const FIELD_OPTION_KEYS = [

@@ -11,10 +11,10 @@ import {
   type FeedbackPost, type InsertFeedbackPost, type FeedbackPostWithUser,
   type ModelComment, type InsertModelComment, type ModelCommentWithUser,
   type FieldOption, type InsertFieldOption,
-  type Motor, type InsertMotor,
-  type Esc, type InsertEsc,
-  type Servo, type InsertServo,
-  type Receiver, type InsertReceiver,
+  type Motor, type InsertMotor, type MotorWithPhoto,
+  type Esc, type InsertEsc, type EscWithPhoto,
+  type Servo, type InsertServo, type ServoWithPhoto,
+  type Receiver, type InsertReceiver, type ReceiverWithPhoto,
   type HopUpLibraryItem, type InsertHopUpLibraryItem,
   type ModelElectronics, type InsertModelElectronics, type ModelElectronicsWithDetails
 } from "@shared/schema";
@@ -32,6 +32,8 @@ export interface IStorage {
   getUserByResetToken(token: string): Promise<User | undefined>;
   updateResetPasswordToken(userId: string, token: string | null, expires: Date | null): Promise<void>;
   updateUserPassword(userId: string, hashedPassword: string): Promise<void>;
+  saveUserThemeSettings(userId: string, settings: Record<string, any>): Promise<void>;
+  getUserThemeSettings(userId: string): Promise<Record<string, any> | null>;
 
   // Model methods
   getModels(userId: string): Promise<ModelWithRelations[]>;
@@ -54,6 +56,8 @@ export interface IStorage {
   updateBuildLogEntry(id: number, userId: string, entry: Partial<InsertBuildLogEntry>): Promise<BuildLogEntry | undefined>;
   deleteBuildLogEntry(id: number, userId: string): Promise<boolean>;
   addPhotosToEntry(entryId: number, photoIds: number[]): Promise<BuildLogPhoto[]>;
+  getBuildLogEntryPhotos(entryId: number, userId: string): Promise<Photo[]>;
+  removePhotoFromEntry(entryId: number, photoId: number, userId: string): Promise<boolean>;
 
   // Hop-up parts methods
   getHopUpParts(modelId: number, userId: string): Promise<HopUpPartWithPhoto[]>;
@@ -103,25 +107,25 @@ export interface IStorage {
   getFieldOptionUsageCount(fieldKey: string, value: string): Promise<number>;
 
   // Electronics methods
-  getMotors(userId: string): Promise<Motor[]>;
+  getMotors(userId: string): Promise<MotorWithPhoto[]>;
   getMotor(id: number, userId: string): Promise<Motor | undefined>;
   createMotor(motor: InsertMotor): Promise<Motor>;
   updateMotor(id: number, userId: string, motor: Partial<InsertMotor>): Promise<Motor | undefined>;
   deleteMotor(id: number, userId: string): Promise<boolean>;
 
-  getEscs(userId: string): Promise<Esc[]>;
+  getEscs(userId: string): Promise<EscWithPhoto[]>;
   getEsc(id: number, userId: string): Promise<Esc | undefined>;
   createEsc(esc: InsertEsc): Promise<Esc>;
   updateEsc(id: number, userId: string, esc: Partial<InsertEsc>): Promise<Esc | undefined>;
   deleteEsc(id: number, userId: string): Promise<boolean>;
 
-  getServos(userId: string): Promise<Servo[]>;
+  getServos(userId: string): Promise<ServoWithPhoto[]>;
   getServo(id: number, userId: string): Promise<Servo | undefined>;
   createServo(servo: InsertServo): Promise<Servo>;
   updateServo(id: number, userId: string, servo: Partial<InsertServo>): Promise<Servo | undefined>;
   deleteServo(id: number, userId: string): Promise<boolean>;
 
-  getReceivers(userId: string): Promise<Receiver[]>;
+  getReceivers(userId: string): Promise<ReceiverWithPhoto[]>;
   getReceiver(id: number, userId: string): Promise<Receiver | undefined>;
   createReceiver(receiver: InsertReceiver): Promise<Receiver>;
   updateReceiver(id: number, userId: string, receiver: Partial<InsertReceiver>): Promise<Receiver | undefined>;
@@ -238,6 +242,17 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
+  }
+
+  async saveUserThemeSettings(userId: string, settings: Record<string, any>): Promise<void> {
+    await db.update(users)
+      .set({ themeSettings: settings, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserThemeSettings(userId: string): Promise<Record<string, any> | null> {
+    const [user] = await db.select({ themeSettings: users.themeSettings }).from(users).where(eq(users.id, userId));
+    return (user?.themeSettings as Record<string, any>) || null;
   }
 
   async getModels(userId: string): Promise<ModelWithRelations[]> {
@@ -522,6 +537,25 @@ export class DatabaseStorage implements IStorage {
   async addPhotosToEntry(entryId: number, photoIds: number[]): Promise<BuildLogPhoto[]> {
     const values = photoIds.map(photoId => ({ buildLogEntryId: entryId, photoId }));
     return await db.insert(buildLogPhotos).values(values).returning();
+  }
+
+  async getBuildLogEntryPhotos(entryId: number, userId: string): Promise<Photo[]> {
+    const entry = await this.getBuildLogEntry(entryId, userId);
+    if (!entry) return [];
+    const links = await db.query.buildLogPhotos.findMany({
+      where: eq(buildLogPhotos.buildLogEntryId, entryId),
+      with: { photo: true },
+    });
+    return links.map((l: any) => l.photo).filter(Boolean);
+  }
+
+  async removePhotoFromEntry(entryId: number, photoId: number, userId: string): Promise<boolean> {
+    const entry = await this.getBuildLogEntry(entryId, userId);
+    if (!entry) return false;
+    const result = await db.delete(buildLogPhotos).where(
+      and(eq(buildLogPhotos.buildLogEntryId, entryId), eq(buildLogPhotos.photoId, photoId))
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getHopUpParts(modelId: number, userId: string): Promise<HopUpPartWithPhoto[]> {
@@ -1156,8 +1190,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Electronics methods - Motors
-  async getMotors(userId: string): Promise<Motor[]> {
-    return await db.select().from(motors).where(eq(motors.userId, userId)).orderBy(desc(motors.createdAt));
+  async getMotors(userId: string): Promise<MotorWithPhoto[]> {
+    return await db.query.motors.findMany({
+      where: eq(motors.userId, userId),
+      orderBy: desc(motors.createdAt),
+      with: { photo: true },
+    }) as MotorWithPhoto[];
   }
 
   async getMotor(id: number, userId: string): Promise<Motor | undefined> {
@@ -1183,8 +1221,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Electronics methods - ESCs
-  async getEscs(userId: string): Promise<Esc[]> {
-    return await db.select().from(escs).where(eq(escs.userId, userId)).orderBy(desc(escs.createdAt));
+  async getEscs(userId: string): Promise<EscWithPhoto[]> {
+    return await db.query.escs.findMany({
+      where: eq(escs.userId, userId),
+      orderBy: desc(escs.createdAt),
+      with: { photo: true },
+    }) as EscWithPhoto[];
   }
 
   async getEsc(id: number, userId: string): Promise<Esc | undefined> {
@@ -1210,8 +1252,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Electronics methods - Servos
-  async getServos(userId: string): Promise<Servo[]> {
-    return await db.select().from(servos).where(eq(servos.userId, userId)).orderBy(desc(servos.createdAt));
+  async getServos(userId: string): Promise<ServoWithPhoto[]> {
+    return await db.query.servos.findMany({
+      where: eq(servos.userId, userId),
+      orderBy: desc(servos.createdAt),
+      with: { photo: true },
+    }) as ServoWithPhoto[];
   }
 
   async getServo(id: number, userId: string): Promise<Servo | undefined> {
@@ -1237,8 +1283,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Electronics methods - Receivers
-  async getReceivers(userId: string): Promise<Receiver[]> {
-    return await db.select().from(receivers).where(eq(receivers.userId, userId)).orderBy(desc(receivers.createdAt));
+  async getReceivers(userId: string): Promise<ReceiverWithPhoto[]> {
+    return await db.query.receivers.findMany({
+      where: eq(receivers.userId, userId),
+      orderBy: desc(receivers.createdAt),
+      with: { photo: true },
+    }) as ReceiverWithPhoto[];
   }
 
   async getReceiver(id: number, userId: string): Promise<Receiver | undefined> {
@@ -1296,10 +1346,18 @@ export class DatabaseStorage implements IStorage {
     const [electronics] = await db.select().from(modelElectronics).where(eq(modelElectronics.modelId, modelId));
     if (!electronics) return undefined;
 
-    const [motor] = electronics.motorId ? await db.select().from(motors).where(eq(motors.id, electronics.motorId)) : [null];
-    const [esc] = electronics.escId ? await db.select().from(escs).where(eq(escs.id, electronics.escId)) : [null];
-    const [servo] = electronics.servoId ? await db.select().from(servos).where(eq(servos.id, electronics.servoId)) : [null];
-    const [receiver] = electronics.receiverId ? await db.select().from(receivers).where(eq(receivers.id, electronics.receiverId)) : [null];
+    const motor = electronics.motorId
+      ? (await db.query.motors.findFirst({ where: eq(motors.id, electronics.motorId), with: { photo: true } }) ?? null)
+      : null;
+    const esc = electronics.escId
+      ? (await db.query.escs.findFirst({ where: eq(escs.id, electronics.escId), with: { photo: true } }) ?? null)
+      : null;
+    const servo = electronics.servoId
+      ? (await db.query.servos.findFirst({ where: eq(servos.id, electronics.servoId), with: { photo: true } }) ?? null)
+      : null;
+    const receiver = electronics.receiverId
+      ? (await db.query.receivers.findFirst({ where: eq(receivers.id, electronics.receiverId), with: { photo: true } }) ?? null)
+      : null;
 
     return { ...electronics, motor, esc, servo, receiver };
   }

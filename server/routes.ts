@@ -930,6 +930,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Theme settings - persist user's theme preference server-side
+  app.get('/api/user/theme-settings', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const settings = await storage.getUserThemeSettings(userId);
+      res.json(settings || {});
+    } catch (error) {
+      console.error("Theme settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch theme settings" });
+    }
+  });
+
+  app.put('/api/user/theme-settings', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { colorScheme, darkMode } = req.body;
+      await storage.saveUserThemeSettings(userId, { colorScheme, darkMode });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Theme settings save error:", error);
+      res.status(500).json({ message: "Failed to save theme settings" });
+    }
+  });
+
   // ==================== END COMMUNITY/SHARING ROUTES ====================
 
   // Purchase complete route - records purchase after Stripe payment succeeds
@@ -1669,6 +1699,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(result);
     } catch (error: any) {
       console.error('Error linking existing photo to build log entry:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get photos attached to a build log entry
+  app.get('/api/build-log-entries/:entryId/photos', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const entryId = parseInt(req.params.entryId);
+      const photos = await storage.getBuildLogEntryPhotos(entryId, userId);
+      res.json(photos);
+    } catch (error: any) {
+      console.error('Error fetching build log entry photos:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Remove a photo from a build log entry (unlinks it, does not delete the photo)
+  app.delete('/api/build-log-entries/:entryId/photos/:photoId', async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const entryId = parseInt(req.params.entryId);
+      const photoId = parseInt(req.params.photoId);
+      const removed = await storage.removePhotoFromEntry(entryId, photoId, userId);
+      if (!removed) {
+        return res.status(404).json({ message: 'Photo link not found' });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error removing photo from build log entry:', error);
       res.status(500).json({ message: error.message });
     }
   });
