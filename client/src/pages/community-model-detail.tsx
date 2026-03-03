@@ -65,37 +65,47 @@ interface SharedModelOwner {
   profileImageUrl: string | null;
 }
 
+interface ElectronicPhoto {
+  id: number;
+  url: string;
+}
+
 interface Motor {
   id: number;
   name: string;
-  brand: string | null;
+  manufacturer: string | null;
   turns: number | null;
   kv: number | null;
-  type: string | null;
+  motorType: string | null;
+  photo?: ElectronicPhoto | null;
 }
 
 interface Esc {
   id: number;
   name: string;
-  brand: string | null;
-  ampRating: number | null;
-  type: string | null;
+  manufacturer: string | null;
+  maxAmps: number | null;
+  maxVoltage: string | null;
+  escType: string | null;
+  photo?: ElectronicPhoto | null;
 }
 
 interface Servo {
   id: number;
   name: string;
-  brand: string | null;
+  manufacturer: string | null;
+  servoType: string | null;
   torque: string | null;
-  speed: string | null;
+  photo?: ElectronicPhoto | null;
 }
 
 interface Receiver {
   id: number;
   name: string;
-  brand: string | null;
+  manufacturer: string | null;
   channels: number | null;
   protocol: string | null;
+  photo?: ElectronicPhoto | null;
 }
 
 interface ModelElectronics {
@@ -715,17 +725,18 @@ export default function CommunityModelDetailPage() {
               <CardContent>
                 <div className="space-y-2">
                   {electronics.motor && (
-                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div className="flex items-center justify-between">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
+                      <div className="flex-1">
                         <span className="text-xs font-mono text-gray-500">Motor</span>
-                      </div>
-                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                        {electronics.motor.name}
-                      </p>
-                      {(electronics.motor.brand || electronics.motor.turns || electronics.motor.kv) && (
+                        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          {electronics.motor.name}
+                        </p>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {electronics.motor.brand && (
-                            <span className="text-xs font-mono text-gray-500">{electronics.motor.brand}</span>
+                          {electronics.motor.manufacturer && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.motor.manufacturer}</span>
+                          )}
+                          {electronics.motor.motorType && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.motor.motorType}</Badge>
                           )}
                           {electronics.motor.turns && (
                             <Badge variant="outline" className="text-xs font-mono">{electronics.motor.turns}T</Badge>
@@ -734,58 +745,91 @@ export default function CommunityModelDetailPage() {
                             <Badge variant="outline" className="text-xs font-mono">{electronics.motor.kv}KV</Badge>
                           )}
                         </div>
+                      </div>
+                      {electronics.motor.photo?.url && (
+                        <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
+                          <img src={addStorageFallbackParam(electronics.motor.photo.url)} alt={electronics.motor.name} className="w-full h-full object-contain" loading="lazy" />
+                        </div>
                       )}
                     </div>
                   )}
                   {electronics.esc && (
-                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div className="flex items-center justify-between">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
+                      <div className="flex-1">
                         <span className="text-xs font-mono text-gray-500">ESC</span>
+                        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          {electronics.esc.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {electronics.esc.manufacturer && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.esc.manufacturer}</span>
+                          )}
+                          {electronics.esc.escType && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.esc.escType}</Badge>
+                          )}
+                          {electronics.esc.maxAmps && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.esc.maxAmps}A</Badge>
+                          )}
+                          {electronics.esc.maxVoltage && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.esc.maxVoltage}</Badge>
+                          )}
+                        </div>
                       </div>
-                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                        {electronics.esc.name}
-                      </p>
-                      {(electronics.esc.brand || electronics.esc.ampRating) && (
-                        <div className="flex items-center gap-2 mt-1">
-                          {electronics.esc.brand && (
-                            <span className="text-xs font-mono text-gray-500">{electronics.esc.brand}</span>
-                          )}
-                          {electronics.esc.ampRating && (
-                            <Badge variant="outline" className="text-xs font-mono">{electronics.esc.ampRating}A</Badge>
-                          )}
+                      {electronics.esc.photo?.url && (
+                        <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
+                          <img src={addStorageFallbackParam(electronics.esc.photo.url)} alt={electronics.esc.name} className="w-full h-full object-contain" loading="lazy" />
                         </div>
                       )}
                     </div>
                   )}
                   {electronics.servo && (
-                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div className="flex items-center justify-between">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
+                      <div className="flex-1">
                         <span className="text-xs font-mono text-gray-500">Servo</span>
+                        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          {electronics.servo.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {electronics.servo.manufacturer && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.servo.manufacturer}</span>
+                          )}
+                          {electronics.servo.servoType && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.servo.servoType}</Badge>
+                          )}
+                          {electronics.servo.torque && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.servo.torque}</Badge>
+                          )}
+                        </div>
                       </div>
-                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                        {electronics.servo.name}
-                      </p>
-                      {electronics.servo.brand && (
-                        <span className="text-xs font-mono text-gray-500">{electronics.servo.brand}</span>
+                      {electronics.servo.photo?.url && (
+                        <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
+                          <img src={addStorageFallbackParam(electronics.servo.photo.url)} alt={electronics.servo.name} className="w-full h-full object-contain" loading="lazy" />
+                        </div>
                       )}
                     </div>
                   )}
                   {electronics.receiver && (
-                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                      <div className="flex items-center justify-between">
+                    <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
+                      <div className="flex-1">
                         <span className="text-xs font-mono text-gray-500">Receiver</span>
-                      </div>
-                      <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                        {electronics.receiver.name}
-                      </p>
-                      {(electronics.receiver.brand || electronics.receiver.channels) && (
-                        <div className="flex items-center gap-2 mt-1">
-                          {electronics.receiver.brand && (
-                            <span className="text-xs font-mono text-gray-500">{electronics.receiver.brand}</span>
+                        <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          {electronics.receiver.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {electronics.receiver.manufacturer && (
+                            <span className="text-xs font-mono text-gray-500">{electronics.receiver.manufacturer}</span>
+                          )}
+                          {electronics.receiver.protocol && (
+                            <Badge variant="outline" className="text-xs font-mono">{electronics.receiver.protocol}</Badge>
                           )}
                           {electronics.receiver.channels && (
                             <Badge variant="outline" className="text-xs font-mono">{electronics.receiver.channels}CH</Badge>
                           )}
+                        </div>
+                      </div>
+                      {electronics.receiver.photo?.url && (
+                        <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
+                          <img src={addStorageFallbackParam(electronics.receiver.photo.url)} alt={electronics.receiver.name} className="w-full h-full object-contain" loading="lazy" />
                         </div>
                       )}
                     </div>
