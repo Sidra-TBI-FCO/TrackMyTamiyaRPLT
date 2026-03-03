@@ -784,6 +784,18 @@ export type ModelCommentWithUser = ModelComment & {
   user: Pick<User, 'id' | 'firstName' | 'lastName' | 'profileImageUrl'>;
 };
 
+// Brand logos for Print Model Cards feature (admin-managed)
+export const brandLogos = pgTable("brand_logos", {
+  id: serial("id").primaryKey(),
+  keyword: text("keyword").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  url: text("url").notNull(),
+  isTamiyaStamp: boolean("is_tamiya_stamp").notNull().default(false),
+});
+export const insertBrandLogoSchema = createInsertSchema(brandLogos).omit({ id: true });
+export type InsertBrandLogo = z.infer<typeof insertBrandLogoSchema>;
+export type BrandLogo = typeof brandLogos.$inferSelect;
+
 // Extended feedback type with user info and vote status
 export type FeedbackPostWithUser = FeedbackPost & {
   user: Pick<User, 'id' | 'firstName' | 'lastName' | 'profileImageUrl'>;

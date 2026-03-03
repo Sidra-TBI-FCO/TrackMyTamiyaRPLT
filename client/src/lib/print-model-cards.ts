@@ -1,35 +1,26 @@
 import jsPDF from "jspdf";
 import { ModelWithRelations } from "@/types";
 
-import tamiyaLogo from "@/assets/brand_logos/Tamiya.png";
-import vwLogo from "@/assets/brand_logos/volkswagen.png";
-import bmwLogo from "@/assets/brand_logos/BMW.png";
-import audiLogo from "@/assets/brand_logos/audi.png";
-import lanciaLogo from "@/assets/brand_logos/Lancia.png";
-import mazdaLogo from "@/assets/brand_logos/mazda.png";
-import nissanLogo from "@/assets/brand_logos/nissan.png";
-import opelLogo from "@/assets/brand_logos/opel.png";
-import porscheLogo from "@/assets/brand_logos/porsche.png";
-
-const BRAND_LOGO_MAP: Record<string, string> = {
-  volkswagen: vwLogo,
-  vw: vwLogo,
-  bmw: bmwLogo,
-  audi: audiLogo,
-  lancia: lanciaLogo,
-  mazda: mazdaLogo,
-  nissan: nissanLogo,
-  opel: opelLogo,
-  porsche: porscheLogo,
-};
-
-function detectBrand(modelName: string): string | null {
-  const lower = modelName.toLowerCase();
-  for (const keyword of Object.keys(BRAND_LOGO_MAP)) {
-    if (lower.includes(keyword)) return keyword;
-  }
-  return null;
+interface BrandLogo {
+  id: number;
+  keyword: string;
+  displayName: string;
+  url: string;
+  isTamiyaStamp: boolean;
 }
+
+const STATIC_FALLBACKS: Record<string, string> = {
+  tamiya: "/brand_logos/Tamiya.png",
+  volkswagen: "/brand_logos/volkswagen.png",
+  vw: "/brand_logos/volkswagen.png",
+  bmw: "/brand_logos/BMW.png",
+  audi: "/brand_logos/audi.png",
+  lancia: "/brand_logos/Lancia.png",
+  mazda: "/brand_logos/mazda.png",
+  nissan: "/brand_logos/nissan.png",
+  opel: "/brand_logos/opel.png",
+  porsche: "/brand_logos/porsche.png",
+};
 
 function loadImageAsDataUrl(src: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -49,44 +40,28 @@ function loadImageAsDataUrl(src: string): Promise<string> {
   });
 }
 
-function drawCropMarks(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  w: number,
-  h: number
-) {
+function drawCropMarks(doc: jsPDF, x: number, y: number, w: number, h: number) {
   const markLen = 3;
   const offset = 1;
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.2);
-
   const corners = [
     { cx: x, cy: y, dx: -1, dy: -1 },
     { cx: x + w, cy: y, dx: 1, dy: -1 },
     { cx: x, cy: y + h, dx: -1, dy: 1 },
     { cx: x + w, cy: y + h, dx: 1, dy: 1 },
   ];
-
   for (const { cx, cy, dx, dy } of corners) {
     doc.line(cx + dx * offset, cy, cx + dx * (offset + markLen), cy);
     doc.line(cx, cy + dy * offset, cx, cy + dy * (offset + markLen));
   }
 }
 
-function addImageSafe(
-  doc: jsPDF,
-  dataUrl: string | null,
-  x: number,
-  y: number,
-  w: number,
-  h: number
-) {
+function addImageSafe(doc: jsPDF, dataUrl: string | null, x: number, y: number, w: number, h: number) {
   if (!dataUrl) return;
   try {
     doc.addImage(dataUrl, "PNG", x, y, w, h);
-  } catch {
-  }
+  } catch {}
 }
 
 function wrapText(text: string, maxChars: number): string[] {
@@ -111,21 +86,65 @@ export async function printModelCards(models: ModelWithRelations[]) {
     return;
   }
 
-  let tamiyaData: string | null = null;
-  const brandCache: Record<string, string | null> = {};
-
+  let dbLogos: BrandLogo[] = [];
   try {
-    tamiyaData = await loadImageAsDataUrl(tamiyaLogo);
-  } catch {
-    tamiyaData = null;
+    const res = await fetch("/api/brand-logos");
+    if (res.ok) dbLogos = await res.json();
+  } catch {}
+
+  const dbBrandMap: Record<string, string> = {};
+  let stampUrl: string | null = null;
+
+  for (const logo of dbLogos) {
+    if (logo.isTamiyaStamp) {
+      stampUrl = logo.url;
+    } else {
+      dbBrandMap[logo.keyword.toLowerCase()] = logo.url;
+    }
   }
 
-  for (const [key, url] of Object.entries(BRAND_LOGO_MAP)) {
-    try {
-      brandCache[key] = await loadImageAsDataUrl(url);
-    } catch {
-      brandCache[key] = null;
+  if (!stampUrl) stampUrl = STATIC_FALLBACKS.tamiya;
+
+  const brandLogoMap: Record<string, string> = { ...STATIC_FALLBACKS };
+  for (const [kw, url] of Object.entries(dbBrandMap)) {
+    brandLogoMap[kw] = url;
+  }
+
+  let stampData: string | null = null;
+  try {
+    stampData = await loadImageAsDataUrl(stampUrl);
+  } catch {}
+
+  const brandCache: Record<string, string | null> = {};
+  const uniqueUrls = new Map<string, string>();
+  for (const model of models) {
+    const lower = model.name.toLowerCase();
+    for (const [kw, url] of Object.entries(brandLogoMap)) {
+      if (kw === "tamiya") continue;
+      if (lower.includes(kw) && !uniqueUrls.has(url)) {
+        uniqueUrls.set(url, kw);
+      }
     }
+  }
+  for (const [url, kw] of uniqueUrls) {
+    try {
+      const data = await loadImageAsDataUrl(url);
+      brandCache[kw] = data;
+      for (const [k, u] of Object.entries(brandLogoMap)) {
+        if (u === url) brandCache[k] = data;
+      }
+    } catch {
+      brandCache[kw] = null;
+    }
+  }
+
+  function detectBrand(name: string): string | null {
+    const lower = name.toLowerCase();
+    for (const kw of Object.keys(brandLogoMap)) {
+      if (kw === "tamiya") continue;
+      if (lower.includes(kw) && brandCache[kw]) return kw;
+    }
+    return null;
   }
 
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
@@ -146,7 +165,6 @@ export async function printModelCards(models: ModelWithRelations[]) {
   let firstCard = true;
 
   for (const model of models) {
-    const cardX = col === 0 ? col0X : col1X;
     const cardY = marginY + row * (cardH + rowGap);
 
     if (!firstCard && cardY + cardH > 287) {
@@ -166,34 +184,21 @@ export async function printModelCards(models: ModelWithRelations[]) {
 
     drawCropMarks(doc, cx, cy, cardW, cardH);
 
-    const tamiyaW = 22;
-    const tamiyaH = 9;
-    addImageSafe(doc, tamiyaData, cx + 3, cy + 3, tamiyaW, tamiyaH);
+    addImageSafe(doc, stampData, cx + 3, cy + 3, 22, 9);
 
     const brand = detectBrand(model.name);
-    if (brand && brandCache[brand]) {
-      const brandW = 22;
-      const brandH = 9;
-      addImageSafe(
-        doc,
-        brandCache[brand],
-        cx + cardW - brandW - 3,
-        cy + 3,
-        brandW,
-        brandH
-      );
+    if (brand) {
+      addImageSafe(doc, brandCache[brand] ?? null, cx + cardW - 22 - 3, cy + 3, 22, 9);
     }
 
     const centerY = cy + cardH / 2;
-
     const nameLines = wrapText(model.name, 28);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(30, 30, 30);
 
     const lineHeight = 4.5;
-    const totalTextH =
-      nameLines.length * lineHeight + (model.chassis ? lineHeight : 0);
+    const totalTextH = nameLines.length * lineHeight + (model.chassis ? lineHeight : 0);
     let textY = centerY - totalTextH / 2 + lineHeight;
 
     for (const line of nameLines) {
@@ -211,15 +216,9 @@ export async function printModelCards(models: ModelWithRelations[]) {
     doc.setFont("courier", "normal");
     doc.setFontSize(6);
     doc.setTextColor(60, 60, 60);
-
     const bottomY = cy + cardH - 4;
-
-    if (model.scale) {
-      doc.text(model.scale, cx + 3, bottomY);
-    }
-    if (model.itemNumber) {
-      doc.text(model.itemNumber, cx + cardW - 3, bottomY, { align: "right" });
-    }
+    if (model.scale) doc.text(model.scale, cx + 3, bottomY);
+    if (model.itemNumber) doc.text(model.itemNumber, cx + cardW - 3, bottomY, { align: "right" });
 
     col++;
     if (col >= cols) {

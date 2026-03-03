@@ -1,7 +1,7 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
   feedbackPosts, feedbackVotes, modelComments, fieldOptions,
-  motors, escs, servos, receivers, modelElectronics, hopUpLibrary,
+  motors, escs, servos, receivers, modelElectronics, hopUpLibrary, brandLogos,
   type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
@@ -16,7 +16,8 @@ import {
   type Servo, type InsertServo, type ServoWithPhoto,
   type Receiver, type InsertReceiver, type ReceiverWithPhoto,
   type HopUpLibraryItem, type InsertHopUpLibraryItem,
-  type ModelElectronics, type InsertModelElectronics, type ModelElectronicsWithDetails
+  type ModelElectronics, type InsertModelElectronics, type ModelElectronicsWithDetails,
+  type BrandLogo, type InsertBrandLogo
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
@@ -142,6 +143,12 @@ export interface IStorage {
   getModelElectronics(modelId: number, userId: string): Promise<ModelElectronicsWithDetails | undefined>;
   upsertModelElectronics(modelId: number, userId: string, data: Partial<InsertModelElectronics>): Promise<ModelElectronics>;
   deleteModelElectronics(modelId: number, userId: string): Promise<boolean>;
+
+  // Brand logo methods (admin-managed, for Print Model Cards)
+  getBrandLogos(): Promise<BrandLogo[]>;
+  createBrandLogo(logo: InsertBrandLogo): Promise<BrandLogo>;
+  updateBrandLogo(id: number, logo: Partial<InsertBrandLogo>): Promise<BrandLogo | undefined>;
+  deleteBrandLogo(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1395,6 +1402,31 @@ export class DatabaseStorage implements IStorage {
     if (!model.length) return false;
     
     const result = await db.delete(modelElectronics).where(eq(modelElectronics.modelId, modelId));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getBrandLogos(): Promise<BrandLogo[]> {
+    return db.select().from(brandLogos).orderBy(brandLogos.displayName);
+  }
+
+  async createBrandLogo(logo: InsertBrandLogo): Promise<BrandLogo> {
+    if (logo.isTamiyaStamp) {
+      await db.update(brandLogos).set({ isTamiyaStamp: false });
+    }
+    const [created] = await db.insert(brandLogos).values(logo).returning();
+    return created;
+  }
+
+  async updateBrandLogo(id: number, logo: Partial<InsertBrandLogo>): Promise<BrandLogo | undefined> {
+    if (logo.isTamiyaStamp) {
+      await db.update(brandLogos).set({ isTamiyaStamp: false }).where(sql`id != ${id}`);
+    }
+    const [updated] = await db.update(brandLogos).set(logo).where(eq(brandLogos.id, id)).returning();
+    return updated;
+  }
+
+  async deleteBrandLogo(id: number): Promise<boolean> {
+    const result = await db.delete(brandLogos).where(eq(brandLogos.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }

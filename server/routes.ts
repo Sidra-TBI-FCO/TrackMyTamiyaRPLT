@@ -133,7 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/screenshots' ||
         (req.path === '/feedback' && req.method === 'GET') ||
         (req.path.startsWith('/community/') && req.method === 'GET') ||
-        (req.path.startsWith('/field-options') && req.method === 'GET')) {
+        (req.path.startsWith('/field-options') && req.method === 'GET') ||
+        (req.path === '/brand-logos' && req.method === 'GET')) {
       return next();
     }
     
@@ -179,6 +180,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Field options fetch error:", error);
       res.status(500).json({ message: "Failed to fetch field options" });
+    }
+  });
+
+  // ==================== BRAND LOGOS ROUTES ====================
+
+  // Public: get all brand logos (used by print-model-cards)
+  app.get('/api/brand-logos', async (_req, res) => {
+    try {
+      const logos = await storage.getBrandLogos();
+      res.json(logos);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch brand logos" });
+    }
+  });
+
+  // Admin: create brand logo with file upload
+  app.post('/api/admin/brand-logos', upload.single('logo'), async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = userId ? await storage.getUser(userId) : null;
+      if (!user?.isAdmin) return res.status(403).json({ message: 'Admin access required' });
+
+      const file = req.file as Express.Multer.File;
+      if (!file) return res.status(400).json({ message: 'No logo file uploaded' });
+
+      const savedFilename = await fileStorage.uploadFile(file, file.originalname);
+      const url = fileStorage.getFileUrl(savedFilename);
+
+      const logo = await storage.createBrandLogo({
+        keyword: req.body.keyword?.toLowerCase()?.trim(),
+        displayName: req.body.displayName?.trim(),
+        url,
+        isTamiyaStamp: req.body.isTamiyaStamp === 'true',
+      });
+      res.status(201).json(logo);
+    } catch (error) {
+      console.error('Brand logo create error:', error);
+      res.status(500).json({ message: 'Failed to create brand logo' });
+    }
+  });
+
+  // Admin: update brand logo (optionally replace image)
+  app.put('/api/admin/brand-logos/:id', upload.single('logo'), async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = userId ? await storage.getUser(userId) : null;
+      if (!user?.isAdmin) return res.status(403).json({ message: 'Admin access required' });
+
+      const id = parseInt(req.params.id);
+      const updates: Record<string, any> = {};
+
+      if (req.body.keyword) updates.keyword = req.body.keyword.toLowerCase().trim();
+      if (req.body.displayName) updates.displayName = req.body.displayName.trim();
+      if (req.body.isTamiyaStamp !== undefined) updates.isTamiyaStamp = req.body.isTamiyaStamp === 'true';
+
+      if (req.file) {
+        const savedFilename = await fileStorage.uploadFile(req.file, req.file.originalname);
+        updates.url = fileStorage.getFileUrl(savedFilename);
+      }
+
+      const logo = await storage.updateBrandLogo(id, updates);
+      if (!logo) return res.status(404).json({ message: 'Brand logo not found' });
+      res.json(logo);
+    } catch (error) {
+      console.error('Brand logo update error:', error);
+      res.status(500).json({ message: 'Failed to update brand logo' });
+    }
+  });
+
+  // Admin: delete brand logo
+  app.delete('/api/admin/brand-logos/:id', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = userId ? await storage.getUser(userId) : null;
+      if (!user?.isAdmin) return res.status(403).json({ message: 'Admin access required' });
+
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteBrandLogo(id);
+      if (!deleted) return res.status(404).json({ message: 'Brand logo not found' });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete brand logo' });
     }
   });
 
