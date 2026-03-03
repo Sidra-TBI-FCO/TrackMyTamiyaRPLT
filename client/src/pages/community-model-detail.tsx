@@ -671,22 +671,22 @@ export default function CommunityModelDetailPage() {
                   {hopUps.filter(p => p.isInstalled).map((part) => (
                     <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg flex gap-2 items-stretch">
                       <div className="flex-1">
+                        {part.category && (
+                          <span className="text-xs font-mono text-gray-500">{part.category}</span>
+                        )}
                         <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
                           {part.name}
                         </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {part.brand && (
-                            <span className="text-xs font-mono text-gray-500">{part.brand}</span>
-                          )}
-                          {part.category && (
-                            <Badge variant="outline" className="text-xs font-mono">
-                              {part.category}
-                            </Badge>
-                          )}
-                          {part.partNumber && (
-                            <span className="text-xs font-mono text-gray-400">{part.partNumber}</span>
-                          )}
-                        </div>
+                        {(part.brand || part.partNumber) && (
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {part.brand && (
+                              <span className="text-xs font-mono text-gray-500">{part.brand}</span>
+                            )}
+                            {part.partNumber && (
+                              <Badge variant="outline" className="text-xs font-mono">{part.partNumber}</Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {part.photo?.url && (
                         <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
@@ -703,22 +703,22 @@ export default function CommunityModelDetailPage() {
                       {hopUps.filter(p => !p.isInstalled).map((part) => (
                         <div key={part.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg opacity-60 flex gap-2 items-stretch">
                           <div className="flex-1">
+                            {part.category && (
+                              <span className="text-xs font-mono text-gray-500">{part.category}</span>
+                            )}
                             <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">
                               {part.name}
                             </p>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              {part.brand && (
-                                <span className="text-xs font-mono text-gray-500">{part.brand}</span>
-                              )}
-                              {part.category && (
-                                <Badge variant="outline" className="text-xs font-mono">
-                                  {part.category}
-                                </Badge>
-                              )}
-                              {part.partNumber && (
-                                <span className="text-xs font-mono text-gray-400">{part.partNumber}</span>
-                              )}
-                            </div>
+                            {(part.brand || part.partNumber) && (
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                {part.brand && (
+                                  <span className="text-xs font-mono text-gray-500">{part.brand}</span>
+                                )}
+                                {part.partNumber && (
+                                  <Badge variant="outline" className="text-xs font-mono">{part.partNumber}</Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
                           {part.photo?.url && (
                             <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[56px]">
