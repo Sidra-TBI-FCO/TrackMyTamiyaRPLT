@@ -722,164 +722,176 @@ export default function ModelDetail() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                      {/* Motor */}
+                      <div className="space-y-1">
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Zap className="h-4 w-4" />Motor
                         </label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={modelElectronics?.motorId?.toString() || "none"}
-                            onValueChange={(value) => updateElectronicsMutation.mutate({
-                              motorId: value === "none" ? null : parseInt(value),
-                              escId: modelElectronics?.escId ?? null,
-                              servoId: modelElectronics?.servoId ?? null,
-                              receiverId: modelElectronics?.receiverId ?? null,
-                            })}
-                          >
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select motor..." /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {motors.map((m) => (
-                                <SelectItem key={m.id} value={m.id.toString()}>{m.name} {m.manufacturer && `(${m.manufacturer})`}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="icon" variant="outline" onClick={() => setIsAddMotorOpen(true)} title="Add new motor">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {modelElectronics?.motor && (
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <div className="text-xs text-gray-500 font-mono">
-                              {modelElectronics.motor.motorType} {modelElectronics.motor.kv && `• ${modelElectronics.motor.kv}KV`} {modelElectronics.motor.turns && `• ${modelElectronics.motor.turns}T`}
+                        <div className="flex gap-2 items-stretch">
+                          <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <Select
+                                value={modelElectronics?.motorId?.toString() || "none"}
+                                onValueChange={(value) => updateElectronicsMutation.mutate({
+                                  motorId: value === "none" ? null : parseInt(value),
+                                  escId: modelElectronics?.escId ?? null,
+                                  servoId: modelElectronics?.servoId ?? null,
+                                  receiverId: modelElectronics?.receiverId ?? null,
+                                })}
+                              >
+                                <SelectTrigger className="flex-1"><SelectValue placeholder="Select motor..." /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {motors.map((m) => (
+                                    <SelectItem key={m.id} value={m.id.toString()}>{m.name} {m.manufacturer && `(${m.manufacturer})`}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="icon" variant="outline" onClick={() => setIsAddMotorOpen(true)} title="Add new motor">
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            {modelElectronics.motor.photo?.url && (
-                              <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                                <img src={addStorageFallbackParam(modelElectronics.motor.photo.url)} alt={modelElectronics.motor.name} className="w-full h-full object-contain" loading="lazy" />
+                            {modelElectronics?.motor && (
+                              <div className="text-xs text-gray-500 font-mono">
+                                {modelElectronics.motor.motorType} {modelElectronics.motor.kv && `• ${modelElectronics.motor.kv}KV`} {modelElectronics.motor.turns && `• ${modelElectronics.motor.turns}T`}
                               </div>
                             )}
                           </div>
-                        )}
+                          {modelElectronics?.motor?.photo?.url && (
+                            <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[60px]">
+                              <img src={addStorageFallbackParam(modelElectronics.motor.photo.url)} alt={modelElectronics.motor.name} className="w-full h-full object-contain" loading="lazy" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* ESC */}
+                      <div className="space-y-1">
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Gauge className="h-4 w-4" />ESC
                         </label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={modelElectronics?.escId?.toString() || "none"}
-                            onValueChange={(value) => updateElectronicsMutation.mutate({
-                              motorId: modelElectronics?.motorId ?? null,
-                              escId: value === "none" ? null : parseInt(value),
-                              servoId: modelElectronics?.servoId ?? null,
-                              receiverId: modelElectronics?.receiverId ?? null,
-                            })}
-                          >
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select ESC..." /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {escs.map((e) => (
-                                <SelectItem key={e.id} value={e.id.toString()}>{e.name} {e.manufacturer && `(${e.manufacturer})`}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="icon" variant="outline" onClick={() => setIsAddEscOpen(true)} title="Add new ESC">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {modelElectronics?.esc && (
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <div className="text-xs text-gray-500 font-mono">
-                              {modelElectronics.esc.escType} {modelElectronics.esc.maxAmps && `• ${modelElectronics.esc.maxAmps}A`} {modelElectronics.esc.maxVoltage && `• ${modelElectronics.esc.maxVoltage}`}
+                        <div className="flex gap-2 items-stretch">
+                          <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <Select
+                                value={modelElectronics?.escId?.toString() || "none"}
+                                onValueChange={(value) => updateElectronicsMutation.mutate({
+                                  motorId: modelElectronics?.motorId ?? null,
+                                  escId: value === "none" ? null : parseInt(value),
+                                  servoId: modelElectronics?.servoId ?? null,
+                                  receiverId: modelElectronics?.receiverId ?? null,
+                                })}
+                              >
+                                <SelectTrigger className="flex-1"><SelectValue placeholder="Select ESC..." /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {escs.map((e) => (
+                                    <SelectItem key={e.id} value={e.id.toString()}>{e.name} {e.manufacturer && `(${e.manufacturer})`}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="icon" variant="outline" onClick={() => setIsAddEscOpen(true)} title="Add new ESC">
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            {modelElectronics.esc.photo?.url && (
-                              <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                                <img src={addStorageFallbackParam(modelElectronics.esc.photo.url)} alt={modelElectronics.esc.name} className="w-full h-full object-contain" loading="lazy" />
+                            {modelElectronics?.esc && (
+                              <div className="text-xs text-gray-500 font-mono">
+                                {modelElectronics.esc.escType} {modelElectronics.esc.maxAmps && `• ${modelElectronics.esc.maxAmps}A`} {modelElectronics.esc.maxVoltage && `• ${modelElectronics.esc.maxVoltage}`}
                               </div>
                             )}
                           </div>
-                        )}
+                          {modelElectronics?.esc?.photo?.url && (
+                            <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[60px]">
+                              <img src={addStorageFallbackParam(modelElectronics.esc.photo.url)} alt={modelElectronics.esc.name} className="w-full h-full object-contain" loading="lazy" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* Servo */}
+                      <div className="space-y-1">
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Settings2 className="h-4 w-4" />Servo
                         </label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={modelElectronics?.servoId?.toString() || "none"}
-                            onValueChange={(value) => updateElectronicsMutation.mutate({
-                              motorId: modelElectronics?.motorId ?? null,
-                              escId: modelElectronics?.escId ?? null,
-                              servoId: value === "none" ? null : parseInt(value),
-                              receiverId: modelElectronics?.receiverId ?? null,
-                            })}
-                          >
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select servo..." /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {servos.map((s) => (
-                                <SelectItem key={s.id} value={s.id.toString()}>{s.name} {s.manufacturer && `(${s.manufacturer})`}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="icon" variant="outline" onClick={() => setIsAddServoOpen(true)} title="Add new servo">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {modelElectronics?.servo && (
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <div className="text-xs text-gray-500 font-mono">
-                              {modelElectronics.servo.servoType} {modelElectronics.servo.torque && `• ${modelElectronics.servo.torque}`}
+                        <div className="flex gap-2 items-stretch">
+                          <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <Select
+                                value={modelElectronics?.servoId?.toString() || "none"}
+                                onValueChange={(value) => updateElectronicsMutation.mutate({
+                                  motorId: modelElectronics?.motorId ?? null,
+                                  escId: modelElectronics?.escId ?? null,
+                                  servoId: value === "none" ? null : parseInt(value),
+                                  receiverId: modelElectronics?.receiverId ?? null,
+                                })}
+                              >
+                                <SelectTrigger className="flex-1"><SelectValue placeholder="Select servo..." /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {servos.map((s) => (
+                                    <SelectItem key={s.id} value={s.id.toString()}>{s.name} {s.manufacturer && `(${s.manufacturer})`}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="icon" variant="outline" onClick={() => setIsAddServoOpen(true)} title="Add new servo">
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            {modelElectronics.servo.photo?.url && (
-                              <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                                <img src={addStorageFallbackParam(modelElectronics.servo.photo.url)} alt={modelElectronics.servo.name} className="w-full h-full object-contain" loading="lazy" />
+                            {modelElectronics?.servo && (
+                              <div className="text-xs text-gray-500 font-mono">
+                                {modelElectronics.servo.servoType} {modelElectronics.servo.torque && `• ${modelElectronics.servo.torque}`}
                               </div>
                             )}
                           </div>
-                        )}
+                          {modelElectronics?.servo?.photo?.url && (
+                            <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[60px]">
+                              <img src={addStorageFallbackParam(modelElectronics.servo.photo.url)} alt={modelElectronics.servo.name} className="w-full h-full object-contain" loading="lazy" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* Receiver */}
+                      <div className="space-y-1">
                         <label className="text-sm font-mono text-gray-500 flex items-center gap-2">
                           <Radio className="h-4 w-4" />Receiver
                         </label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={modelElectronics?.receiverId?.toString() || "none"}
-                            onValueChange={(value) => updateElectronicsMutation.mutate({
-                              motorId: modelElectronics?.motorId ?? null,
-                              escId: modelElectronics?.escId ?? null,
-                              servoId: modelElectronics?.servoId ?? null,
-                              receiverId: value === "none" ? null : parseInt(value),
-                            })}
-                          >
-                            <SelectTrigger className="flex-1"><SelectValue placeholder="Select receiver..." /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {receivers.map((r) => (
-                                <SelectItem key={r.id} value={r.id.toString()}>{r.name} {r.manufacturer && `(${r.manufacturer})`}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="icon" variant="outline" onClick={() => setIsAddReceiverOpen(true)} title="Add new receiver">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {modelElectronics?.receiver && (
-                          <div className="flex items-center justify-between gap-2 mt-1">
-                            <div className="text-xs text-gray-500 font-mono">
-                              {modelElectronics.receiver.protocol} {modelElectronics.receiver.channels && `• ${modelElectronics.receiver.channels}CH`}
+                        <div className="flex gap-2 items-stretch">
+                          <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <Select
+                                value={modelElectronics?.receiverId?.toString() || "none"}
+                                onValueChange={(value) => updateElectronicsMutation.mutate({
+                                  motorId: modelElectronics?.motorId ?? null,
+                                  escId: modelElectronics?.escId ?? null,
+                                  servoId: modelElectronics?.servoId ?? null,
+                                  receiverId: value === "none" ? null : parseInt(value),
+                                })}
+                              >
+                                <SelectTrigger className="flex-1"><SelectValue placeholder="Select receiver..." /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {receivers.map((r) => (
+                                    <SelectItem key={r.id} value={r.id.toString()}>{r.name} {r.manufacturer && `(${r.manufacturer})`}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="icon" variant="outline" onClick={() => setIsAddReceiverOpen(true)} title="Add new receiver">
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            {modelElectronics.receiver.photo?.url && (
-                              <div className="w-12 h-12 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                                <img src={addStorageFallbackParam(modelElectronics.receiver.photo.url)} alt={modelElectronics.receiver.name} className="w-full h-full object-contain" loading="lazy" />
+                            {modelElectronics?.receiver && (
+                              <div className="text-xs text-gray-500 font-mono">
+                                {modelElectronics.receiver.protocol} {modelElectronics.receiver.channels && `• ${modelElectronics.receiver.channels}CH`}
                               </div>
                             )}
                           </div>
-                        )}
+                          {modelElectronics?.receiver?.photo?.url && (
+                            <div className="w-16 self-stretch rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0 min-h-[60px]">
+                              <img src={addStorageFallbackParam(modelElectronics.receiver.photo.url)} alt={modelElectronics.receiver.name} className="w-full h-full object-contain" loading="lazy" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
