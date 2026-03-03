@@ -74,7 +74,7 @@ export const models = pgTable("models", {
 
 export const photos = pgTable("photos", {
   id: serial("id").primaryKey(),
-  modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }).notNull(),
+  modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }),
   filename: text("filename").notNull(),
   originalName: text("original_name").notNull(),
   url: text("url").notNull(),

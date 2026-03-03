@@ -1,0 +1,26 @@
+-- ============================================================================
+-- TrackMyRC: Make photos.model_id Nullable
+-- Date: March 03, 2026
+-- Target: Google BigQuery
+-- Description: Removes the NOT NULL constraint from photos.model_id so that
+--              photos uploaded for electronics items (motors, ESCs, servos,
+--              receivers) can be stored without being tied to a specific model.
+--              Previously, electronics photo uploads were silently failing
+--              because the NOT NULL constraint rejected null model_id values.
+-- ============================================================================
+
+-- BigQuery does not support ALTER COLUMN DROP NOT NULL directly.
+-- Recreate the table with model_id as NULLABLE (no REQUIRED mode).
+-- NOTE: In BigQuery, columns are NULLABLE by default unless specified otherwise.
+-- If your photos table was created with model_id as REQUIRED, you must
+-- recreate the table or use a CREATE OR REPLACE TABLE statement.
+--
+-- Option 1 (preferred): Use BigQuery console to change the column mode
+-- from REQUIRED to NULLABLE via the schema editor UI.
+--
+-- Option 2: Run the following to migrate data to a new table schema:
+-- CREATE OR REPLACE TABLE photos AS SELECT * FROM photos;
+-- (BigQuery infers NULLABLE by default when creating from a SELECT)
+--
+-- If using standard SQL with schema definition, ensure model_id has no
+-- NOT NULL / REQUIRED constraint in your table DDL.

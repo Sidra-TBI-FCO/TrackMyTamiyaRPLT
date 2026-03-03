@@ -1053,10 +1053,18 @@ export class DatabaseStorage implements IStorage {
     const [electronics] = await db.select().from(modelElectronics).where(eq(modelElectronics.modelId, model.id));
     if (!electronics) return null;
 
-    const [motor] = electronics.motorId ? await db.select().from(motors).where(eq(motors.id, electronics.motorId)) : [null];
-    const [esc] = electronics.escId ? await db.select().from(escs).where(eq(escs.id, electronics.escId)) : [null];
-    const [servo] = electronics.servoId ? await db.select().from(servos).where(eq(servos.id, electronics.servoId)) : [null];
-    const [receiver] = electronics.receiverId ? await db.select().from(receivers).where(eq(receivers.id, electronics.receiverId)) : [null];
+    const motor = electronics.motorId
+      ? (await db.query.motors.findFirst({ where: eq(motors.id, electronics.motorId), with: { photo: true } }) ?? null)
+      : null;
+    const esc = electronics.escId
+      ? (await db.query.escs.findFirst({ where: eq(escs.id, electronics.escId), with: { photo: true } }) ?? null)
+      : null;
+    const servo = electronics.servoId
+      ? (await db.query.servos.findFirst({ where: eq(servos.id, electronics.servoId), with: { photo: true } }) ?? null)
+      : null;
+    const receiver = electronics.receiverId
+      ? (await db.query.receivers.findFirst({ where: eq(receivers.id, electronics.receiverId), with: { photo: true } }) ?? null)
+      : null;
 
     return { ...electronics, motor, esc, servo, receiver };
   }

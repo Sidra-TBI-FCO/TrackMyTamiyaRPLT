@@ -550,7 +550,7 @@ export default function ModelDetail() {
                 <span className="sm:hidden">Parts</span>
               </TabsTrigger>
               <TabsTrigger value="electronics" className="text-xs sm:text-sm">
-                <span className="hidden sm:inline">Electronics</span>
+                <span className="hidden sm:inline">Electronics ({[modelElectronics?.motorId, modelElectronics?.escId, modelElectronics?.servoId, modelElectronics?.receiverId].filter(Boolean).length})</span>
                 <span className="sm:hidden"><Zap className="h-4 w-4" /></span>
               </TabsTrigger>
               <TabsTrigger value="details" className="lg:hidden text-xs sm:text-sm">Details</TabsTrigger>
