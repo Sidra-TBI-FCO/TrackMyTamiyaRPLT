@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart, Share2, Globe, Users, Lock } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart, Share2, Globe, Users, Lock, Printer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme, getAppSettings, saveAppSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -109,9 +109,19 @@ interface PricingTier {
   finalPrice: string;
 }
 
+const DEFAULT_CARD_PREFS = {
+  showRcBrand: true,
+  showCarMake: true,
+  showChassis: true,
+  showScale: true,
+  showItemNumber: true,
+  showReleaseYear: false,
+};
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
   const [appSettings, setAppSettings] = useState(getAppSettings());
+  const [cardPrintPrefs, setCardPrintPrefs] = useState(DEFAULT_CARD_PREFS);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [clientSecret, setClientSecret] = useState<string>("");
@@ -179,6 +189,33 @@ export default function SettingsPage() {
       });
     },
   });
+
+  // Card print preferences
+  const { data: fetchedCardPrintPrefs } = useQuery<Record<string, boolean>>({
+    queryKey: ["/api/user/card-print-prefs"],
+  });
+
+  const saveCardPrintPrefsMutation = useMutation({
+    mutationFn: async (prefs: typeof DEFAULT_CARD_PREFS) => {
+      const response = await apiRequest("PUT", "/api/user/card-print-prefs", prefs);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/card-print-prefs"] });
+      toast({ title: "Card layout saved", description: "Your print card preferences have been updated." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save card preferences", variant: "destructive" });
+    },
+  });
+
+  const effectiveCardPrintPrefs = { ...DEFAULT_CARD_PREFS, ...(fetchedCardPrintPrefs || {}) };
+
+  const toggleCardPref = (key: keyof typeof DEFAULT_CARD_PREFS) => {
+    const updated = { ...effectiveCardPrintPrefs, [key]: !effectiveCardPrintPrefs[key] };
+    setCardPrintPrefs(updated);
+    saveCardPrintPrefsMutation.mutate(updated);
+  };
 
   // Share preference mutation
   const updateSharePreferenceMutation = useMutation({
@@ -538,6 +575,43 @@ export default function SettingsPage() {
               <li>2. Toggle sharing ON for individual models you want to share</li>
               <li>3. Your shared models appear in the community gallery</li>
             </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Print Card Layout */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-lg font-mono">
+            <Printer className="h-5 w-5" />
+            <span>Print Card Layout</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm font-mono text-gray-600 dark:text-gray-400">
+            Choose which fields appear on your printed model cards.
+          </p>
+          <div className="space-y-3">
+            {([
+              { key: "showRcBrand", label: "RC Brand Logo", description: "Tamiya stamp top-left" },
+              { key: "showCarMake", label: "Car Make Logo", description: "Brand logo top-right (Porsche, Lancia, etc.)" },
+              { key: "showChassis", label: "Chassis", description: "Chassis name below model name" },
+              { key: "showScale", label: "Scale", description: "Scale at bottom-left (1/10, 1/12, etc.)" },
+              { key: "showItemNumber", label: "Item Number", description: "Kit number at bottom-right" },
+              { key: "showReleaseYear", label: "Release Year", description: "Year the kit was released" },
+            ] as const).map(({ key, label, description }) => (
+              <div key={key} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                <div>
+                  <p className="text-sm font-mono font-medium">{label}</p>
+                  <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{description}</p>
+                </div>
+                <Switch
+                  checked={effectiveCardPrintPrefs[key]}
+                  onCheckedChange={() => toggleCardPref(key)}
+                  disabled={saveCardPrintPrefsMutation.isPending}
+                />
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

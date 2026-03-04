@@ -35,6 +35,8 @@ export interface IStorage {
   updateUserPassword(userId: string, hashedPassword: string): Promise<void>;
   saveUserThemeSettings(userId: string, settings: Record<string, any>): Promise<void>;
   getUserThemeSettings(userId: string): Promise<Record<string, any> | null>;
+  saveCardPrintPrefs(userId: string, prefs: Record<string, any>): Promise<void>;
+  getCardPrintPrefs(userId: string): Promise<Record<string, any> | null>;
 
   // Model methods
   getModels(userId: string): Promise<ModelWithRelations[]>;
@@ -260,6 +262,17 @@ export class DatabaseStorage implements IStorage {
   async getUserThemeSettings(userId: string): Promise<Record<string, any> | null> {
     const [user] = await db.select({ themeSettings: users.themeSettings }).from(users).where(eq(users.id, userId));
     return (user?.themeSettings as Record<string, any>) || null;
+  }
+
+  async saveCardPrintPrefs(userId: string, prefs: Record<string, any>): Promise<void> {
+    await db.update(users)
+      .set({ cardPrintPrefs: prefs, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async getCardPrintPrefs(userId: string): Promise<Record<string, any> | null> {
+    const [user] = await db.select({ cardPrintPrefs: users.cardPrintPrefs }).from(users).where(eq(users.id, userId));
+    return (user?.cardPrintPrefs as Record<string, any>) || null;
   }
 
   async getModels(userId: string): Promise<ModelWithRelations[]> {

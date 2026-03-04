@@ -58,6 +58,13 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 - The print function fetches logos from `/api/brand-logos` at runtime; falls back to `/brand_logos/*.png` static files in `client/public/brand_logos/`
 - Adding new logos no longer requires code changes — upload via admin panel instead
 
+### Print Card Layout Preferences
+- Per-user card print settings stored in `card_print_prefs` JSONB column on `users` table
+- API: `GET /api/user/card-print-prefs` and `PUT /api/user/card-print-prefs`
+- Toggles: RC Brand Logo, Car Make Logo, Chassis, Scale, Item Number, Release Year
+- Managed in Settings page → "Print Card Layout" section
+- Print function fetches prefs at runtime before generating PDF; defaults shown when unset
+
 ### Recent Migrations
 -   **2025-12-field-options-management.sql**: Creates the field_options table for admin-managed dropdown values. Automatically populates with existing values from models and hop_up_parts tables, plus default options. Run this on production database to enable the Field Options admin feature.
 -   **2025-12-electronics-and-hopup-library.sql**: Creates tables for electronics tracking (motors, escs, servos, receivers, model_electronics) and hop_up_library for global parts catalog. Written in BigQuery SQL syntax.

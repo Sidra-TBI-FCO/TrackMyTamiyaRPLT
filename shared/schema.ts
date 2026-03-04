@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   sharePreference: varchar("share_preference").notNull().default("private"),
   // Theme/app preferences saved server-side so they persist across devices/sessions
   themeSettings: jsonb("theme_settings"),
+  // Card print layout preferences
+  cardPrintPrefs: jsonb("card_print_prefs"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

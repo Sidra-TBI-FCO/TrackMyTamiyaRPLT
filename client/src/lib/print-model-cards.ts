@@ -101,11 +101,27 @@ function wrapText(text: string, maxChars: number): string[] {
   return lines;
 }
 
+const DEFAULT_CARD_PREFS = {
+  showRcBrand: true,
+  showCarMake: true,
+  showChassis: true,
+  showScale: true,
+  showItemNumber: true,
+  showReleaseYear: false,
+};
+
 export async function printModelCards(models: ModelWithRelations[]) {
   if (!models || models.length === 0) {
     alert("No models to print.");
     return;
   }
+
+  let rawPrefs: Record<string, boolean> = {};
+  try {
+    const prefsRes = await fetch("/api/user/card-print-prefs");
+    if (prefsRes.ok) rawPrefs = await prefsRes.json();
+  } catch {}
+  const prefs = { ...DEFAULT_CARD_PREFS, ...rawPrefs };
 
   let dbLogos: BrandLogo[] = [];
   try {
@@ -212,10 +228,12 @@ export async function printModelCards(models: ModelWithRelations[]) {
 
     const logoBoxW = 39;
     const logoBoxH = 21;
-    addImageProportional(doc, stampData, cx + 3, cy + 3, logoBoxW, logoBoxH, "left");
+    if (prefs.showRcBrand) {
+      addImageProportional(doc, stampData, cx + 3, cy + 3, logoBoxW, logoBoxH, "left");
+    }
 
     const brand = detectBrand(model);
-    if (brand) {
+    if (prefs.showCarMake && brand) {
       addImageProportional(doc, brandCache[brand] ?? null, cx + cardW - logoBoxW - 3, cy + 3, logoBoxW, logoBoxH, "right");
     }
 
@@ -230,7 +248,8 @@ export async function printModelCards(models: ModelWithRelations[]) {
 
     const nameLineH = 6;
     const chassisLineH = 5;
-    const totalTextH = nameLines.length * nameLineH + (model.chassis ? chassisLineH : 0);
+    const showChassis = prefs.showChassis && !!model.chassis;
+    const totalTextH = nameLines.length * nameLineH + (showChassis ? chassisLineH : 0);
     let textY = centerY - totalTextH / 2 + nameLineH;
 
     for (const line of nameLines) {
@@ -238,19 +257,22 @@ export async function printModelCards(models: ModelWithRelations[]) {
       textY += nameLineH;
     }
 
-    if (model.chassis) {
+    if (showChassis) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(90, 90, 90);
-      doc.text(model.chassis, cx + cardW / 2, textY, { align: "center" });
+      doc.text(model.chassis!, cx + cardW / 2, textY, { align: "center" });
     }
 
     doc.setFont("courier", "normal");
     doc.setFontSize(6);
     doc.setTextColor(60, 60, 60);
     const bottomY = cy + cardH - 4;
-    if (model.scale) doc.text(model.scale, cx + 3, bottomY);
-    if (model.itemNumber) doc.text(model.itemNumber, cx + cardW - 3, bottomY, { align: "right" });
+    if (prefs.showScale && model.scale) doc.text(model.scale, cx + 3, bottomY);
+    if (prefs.showReleaseYear && model.releaseYear) {
+      doc.text(String(model.releaseYear), cx + cardW / 2, bottomY, { align: "center" });
+    }
+    if (prefs.showItemNumber && model.itemNumber) doc.text(model.itemNumber, cx + cardW - 3, bottomY, { align: "right" });
 
     col++;
     if (col >= cols) {

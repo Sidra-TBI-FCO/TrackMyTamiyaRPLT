@@ -1043,6 +1043,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/user/card-print-prefs', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const prefs = await storage.getCardPrintPrefs(userId);
+      res.json(prefs || {});
+    } catch (error) {
+      console.error("Card print prefs fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch card print preferences" });
+    }
+  });
+
+  app.put('/api/user/card-print-prefs', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const prefs = req.body;
+      await storage.saveCardPrintPrefs(userId, prefs);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Card print prefs save error:", error);
+      res.status(500).json({ message: "Failed to save card print preferences" });
+    }
+  });
+
   // ==================== END COMMUNITY/SHARING ROUTES ====================
 
   // Purchase complete route - records purchase after Stripe payment succeeds
