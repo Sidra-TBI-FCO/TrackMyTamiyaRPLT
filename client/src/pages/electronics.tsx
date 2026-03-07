@@ -175,8 +175,8 @@ export default function Electronics() {
               {filterItems(motors).map((motor) => (
                 <Card key={motor.id}>
                   {motor.photo?.url && (
-                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
-                      <img src={addStorageFallbackParam(motor.photo.url)} alt={motor.name} className="w-full h-full object-cover" />
+                    <div className="w-full h-32 overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <img src={addStorageFallbackParam(motor.photo.url)} alt={motor.name} className="w-full h-full object-contain" />
                     </div>
                   )}
                   <CardHeader className="pb-2">
@@ -218,8 +218,8 @@ export default function Electronics() {
               {filterItems(escs).map((esc) => (
                 <Card key={esc.id}>
                   {esc.photo?.url && (
-                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
-                      <img src={addStorageFallbackParam(esc.photo.url)} alt={esc.name} className="w-full h-full object-cover" />
+                    <div className="w-full h-32 overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <img src={addStorageFallbackParam(esc.photo.url)} alt={esc.name} className="w-full h-full object-contain" />
                     </div>
                   )}
                   <CardHeader className="pb-2">
@@ -261,8 +261,8 @@ export default function Electronics() {
               {filterItems(servos).map((servo) => (
                 <Card key={servo.id}>
                   {servo.photo?.url && (
-                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
-                      <img src={addStorageFallbackParam(servo.photo.url)} alt={servo.name} className="w-full h-full object-cover" />
+                    <div className="w-full h-32 overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <img src={addStorageFallbackParam(servo.photo.url)} alt={servo.name} className="w-full h-full object-contain" />
                     </div>
                   )}
                   <CardHeader className="pb-2">
@@ -305,8 +305,8 @@ export default function Electronics() {
               {filterItems(receivers).map((receiver) => (
                 <Card key={receiver.id}>
                   {receiver.photo?.url && (
-                    <div className="w-full h-36 overflow-hidden rounded-t-lg">
-                      <img src={addStorageFallbackParam(receiver.photo.url)} alt={receiver.name} className="w-full h-full object-cover" />
+                    <div className="w-full h-32 overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <img src={addStorageFallbackParam(receiver.photo.url)} alt={receiver.name} className="w-full h-full object-contain" />
                     </div>
                   )}
                   <CardHeader className="pb-2">
