@@ -6,6 +6,7 @@ TrackMyRC is a comprehensive web application for tracking and managing RC car mo
 ### User Preferences
 - Preferred communication style: Simple, everyday language.
 - Production database: Google BigQuery (NOT PostgreSQL) - always write migrations in BigQuery SQL syntax.
+- Public-facing contact/feedback email: `trackmyrc25@gmail.com` (used on pricing page and feedback links — NOT the personal email)
 
 ### System Architecture
 The application employs a full-stack TypeScript architecture, utilizing React for the frontend, Express.js for the backend, and PostgreSQL as the database. It leverages modern web technologies including shadcn/ui components, Tailwind CSS for styling, and Drizzle ORM for database interactions.
@@ -26,10 +27,10 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 **Database:**
 -   **Type:** PostgreSQL with Drizzle ORM.
 -   **Hosting:** Neon serverless with connection pooling.
--   **Schema:** Includes Users, Models, Photos, Build Log Entries, Hop-Up Parts, Build Log Photos, Model Comments, and Field Options tables.
+-   **Schema:** Includes Users, Models, Photos, Build Log Entries, Hop-Up Parts, Build Log Photos, Model Comments, Field Options, Electronics, and Hop-Up Library tables.
 -   **Key Features:**
     -   **Model Management:** CRUD operations, build status tracking, TamiyaBase data scraping integration.
-    -   **Photo System:** Multi-file upload, metadata, box art designation, Replit Object Storage integration for unified storage.
+    -   **Photo System:** Multi-file upload, metadata, box art designation, Replit Object Storage integration for unified storage. Photos with `modelId = null` are used for standalone library item photos.
     -   **Build Logging:** Timeline-based entries, voice recording with transcription support.
     -   **Hop-Up Parts Tracking:** Catalog management, installation status, cost tracking.
     -   **Community Features:** Model sharing with public/authenticated/private visibility, community gallery, comments on shared models, sequential build log display.
@@ -74,6 +75,18 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 - Toggles: RC Brand Logo, Car Make Logo, Chassis, Scale, Item Number, Release Year
 - Managed in Settings page → "Print Card Layout" section
 - Print function fetches prefs at runtime before generating PDF; defaults shown when unset
+
+### Hop-Up Library System
+- The library (`hop_up_library` table) is a **shared, global community database** — all authenticated users can browse and search all items. Edit/delete is owner-only (filtered by `userId`).
+- `HopUpLibraryItemWithPhoto` type (in schema.ts) extends `HopUpLibraryItem` with a `photoUrl?: string | null` field, populated by `getHopUpLibraryItems()` via a secondary photos lookup.
+- **Auto-population:** when a user adds a new hop-up part to a model that includes an item number, it is automatically added to the shared library (if not already present by item number match). `photoId` is intentionally NOT copied from model parts to library items — model photos are private.
+- **Library photos:** users can upload a dedicated photo when adding/editing a library item (`POST/PUT /api/hop-up-library` accept `multipart/form-data` with `libraryPhoto` field). Library photos are stored in the `photos` table with `modelId = null` (standalone, not tied to any model).
+- **Add from library to model:** `POST /api/models/:modelId/hop-up-parts/from-library` copies all fields from the library item to a new model part. `photoId` is only copied when the library item has a standalone photo (`modelId = null`).
+- Library page (`client/src/pages/hop-up-library.tsx`) shows: explanation banner, photo on each card, photo upload in add/edit dialog.
+
+### Electronics Page
+- Electronics items (motors, ESCs, servos, receivers) display product photos at `h-32` (128px) with `object-contain` and a neutral background, so the full component is always visible without cropping.
+- Component files: `client/src/pages/electronics.tsx`, `client/src/components/electronics/`
 
 ### Recent Migrations
 -   **2025-12-field-options-management.sql**: Creates the field_options table for admin-managed dropdown values. Automatically populates with existing values from models and hop_up_parts tables, plus default options. Run this on production database to enable the Field Options admin feature.
