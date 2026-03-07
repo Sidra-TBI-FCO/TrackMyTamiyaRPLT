@@ -9,9 +9,28 @@ import { useState } from "react";
 import { addStorageFallbackParam } from "@/lib/file-utils";
 
 interface SharedModelOwner {
-  firstName: string | null;
-  lastName: string | null;
+  displayName: string;
   profileImageUrl: string | null;
+}
+
+function OwnerAvatar({ owner, size = 6 }: { owner: SharedModelOwner; size?: number }) {
+  const initial = owner.displayName?.[0]?.toUpperCase() || '?';
+  const colors = ['bg-green-600', 'bg-blue-600', 'bg-purple-600', 'bg-orange-600', 'bg-teal-600', 'bg-rose-600'];
+  const color = colors[initial.charCodeAt(0) % colors.length];
+  if (owner.profileImageUrl) {
+    return (
+      <img
+        src={addStorageFallbackParam(owner.profileImageUrl)}
+        alt={owner.displayName}
+        className={`w-${size} h-${size} rounded-full object-cover`}
+      />
+    );
+  }
+  return (
+    <div className={`w-${size} h-${size} rounded-full ${color} flex items-center justify-center text-white text-xs font-mono font-bold`}>
+      {initial}
+    </div>
+  );
 }
 
 interface SharedModel {
@@ -42,7 +61,7 @@ export default function CommunityPage() {
       model.name.toLowerCase().includes(search) ||
       model.itemNumber.toLowerCase().includes(search) ||
       model.chassis?.toLowerCase().includes(search) ||
-      `${model.owner.firstName} ${model.owner.lastName}`.toLowerCase().includes(search)
+      model.owner.displayName.toLowerCase().includes(search)
     );
   });
 
@@ -169,11 +188,9 @@ export default function CommunityPage() {
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-mono">
-                        {model.owner.firstName?.[0] || '?'}
-                      </div>
+                      <OwnerAvatar owner={model.owner} size={6} />
                       <span className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                        {model.owner.firstName} {model.owner.lastName?.[0]}.
+                        {model.owner.displayName}
                       </span>
                     </div>
                     <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-[var(--theme-primary)] group-hover:translate-x-1 transition-all" />

@@ -45,9 +45,8 @@ interface BuildLogEntry {
 }
 
 interface CommentUser {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
+  id?: string;
+  displayName: string;
   profileImageUrl: string | null;
 }
 
@@ -61,9 +60,28 @@ interface ModelComment {
 }
 
 interface SharedModelOwner {
-  firstName: string | null;
-  lastName: string | null;
+  displayName: string;
   profileImageUrl: string | null;
+}
+
+function CommunityAvatar({ person, size = 8 }: { person: { displayName: string; profileImageUrl: string | null }; size?: number }) {
+  const initial = person.displayName?.[0]?.toUpperCase() || '?';
+  const colors = ['bg-green-600', 'bg-blue-600', 'bg-purple-600', 'bg-orange-600', 'bg-teal-600', 'bg-rose-600'];
+  const color = colors[initial.charCodeAt(0) % colors.length];
+  if (person.profileImageUrl) {
+    return (
+      <img
+        src={addStorageFallbackParam(person.profileImageUrl)}
+        alt={person.displayName}
+        className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0`}
+      />
+    );
+  }
+  return (
+    <div className={`w-${size} h-${size} rounded-full ${color} flex items-center justify-center text-white font-mono font-bold flex-shrink-0`}>
+      {initial}
+    </div>
+  );
 }
 
 interface ElectronicPhoto {
@@ -467,14 +485,10 @@ export default function CommunityModelDetailPage() {
                     <div key={comment.id} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <span className="font-mono text-sm">
-                              {comment.user.firstName?.[0] || '?'}
-                            </span>
-                          </div>
+                          <CommunityAvatar person={comment.user} size={8} />
                           <div>
                             <p className="font-mono font-medium text-sm text-gray-900 dark:text-white">
-                              {comment.user.firstName} {comment.user.lastName}
+                              {comment.user.displayName}
                             </p>
                             <p className="text-xs font-mono text-gray-500">
                               {format(new Date(comment.createdAt), 'MMM d, yyyy')}
@@ -869,14 +883,10 @@ export default function CommunityModelDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <span className="font-mono text-lg">
-                    {model.owner.firstName?.[0] || '?'}
-                  </span>
-                </div>
+                <CommunityAvatar person={model.owner} size={10} />
                 <div>
                   <p className="font-mono font-medium text-gray-900 dark:text-white">
-                    {model.owner.firstName} {model.owner.lastName}
+                    {model.owner.displayName}
                   </p>
                   <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
                     TrackMyRC Member

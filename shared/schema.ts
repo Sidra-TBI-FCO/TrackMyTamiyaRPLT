@@ -21,6 +21,8 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  username: varchar("username", { length: 50 }).unique(),
+  showRealName: boolean("show_real_name").default(false),
   // Traditional auth fields
   password: varchar("password"), // Hashed password for email/password auth
   authProvider: varchar("auth_provider").notNull().default("email"), // "replit" or "email" or "google"
@@ -781,9 +783,16 @@ export const FIELD_OPTION_KEYS = [
 ] as const;
 export type FieldOptionKey = typeof FIELD_OPTION_KEYS[number];
 
+// Community user display shape — uses displayName (username or real name per preference)
+export type CommunityUser = {
+  id?: string;
+  displayName: string;
+  profileImageUrl: string | null;
+};
+
 // Extended types with user info
 export type ModelCommentWithUser = ModelComment & {
-  user: Pick<User, 'id' | 'firstName' | 'lastName' | 'profileImageUrl'>;
+  user: CommunityUser;
 };
 
 // Brand logos for Print Model Cards feature (admin-managed)
@@ -813,6 +822,8 @@ export type ModelWithRelations = Model & {
   photos: Photo[];
   buildLogEntries: BuildLogEntry[];
   hopUpParts: HopUpPartWithPhoto[];
+  hopUpCount?: number;
+  owner?: CommunityUser;
 };
 
 export type BuildLogEntryWithPhotos = BuildLogEntry & {

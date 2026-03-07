@@ -1068,6 +1068,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== PROFILE / USERNAME ROUTES ====================
+
+  app.get('/api/user/check-username/:username', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const { username } = req.params;
+      if (!username || !/^[a-z0-9_]{3,30}$/.test(username.toLowerCase())) {
+        return res.json({ available: false, reason: "invalid" });
+      }
+      const available = await storage.isUsernameAvailable(username, userId);
+      res.json({ available });
+    } catch (error) {
+      console.error("Username check error:", error);
+      res.status(500).json({ message: "Failed to check username" });
+    }
+  });
+
+  app.put('/api/user/username', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const { username } = req.body;
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: "Username is required" });
+      }
+      const clean = username.toLowerCase().trim();
+      if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+        return res.status(400).json({ message: "Username must be 3–30 characters, letters, numbers and underscores only" });
+      }
+      const available = await storage.isUsernameAvailable(clean, userId);
+      if (!available) {
+        return res.status(409).json({ message: "Username is already taken" });
+      }
+      const user = await storage.updateUsername(userId, clean);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.json({ username: user.username });
+    } catch (error) {
+      console.error("Username update error:", error);
+      res.status(500).json({ message: "Failed to update username" });
+    }
+  });
+
+  app.put('/api/user/show-real-name', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const { show } = req.body;
+      if (typeof show !== 'boolean') {
+        return res.status(400).json({ message: "show must be a boolean" });
+      }
+      await storage.updateShowRealName(userId, show);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Show real name update error:", error);
+      res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+
+  app.post('/api/user/profile-image', upload.single('image'), async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const file = req.file;
+      if (!file) return res.status(400).json({ message: "No image uploaded" });
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const filename = `profile-images/${userId}${ext}`;
+      const savedFilename = await fileStorage.uploadFile(file, filename);
+      const url = fileStorage.getFileUrl(savedFilename);
+      await storage.updateProfileImageUrl(userId, url);
+      res.json({ url });
+    } catch (error) {
+      console.error("Profile image upload error:", error);
+      res.status(500).json({ message: "Failed to upload profile image" });
+    }
+  });
+
   // ==================== END COMMUNITY/SHARING ROUTES ====================
 
   // Purchase complete route - records purchase after Stripe payment succeeds

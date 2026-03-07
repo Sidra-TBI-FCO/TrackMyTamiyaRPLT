@@ -86,6 +86,12 @@ export interface IStorage {
   unvoteFeedback(feedbackId: number, userId: string): Promise<boolean>;
   hasUserVoted(feedbackId: number, userId: string): Promise<boolean>;
 
+  // Profile/username methods
+  isUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean>;
+  updateUsername(userId: string, username: string): Promise<User | undefined>;
+  updateShowRealName(userId: string, show: boolean): Promise<void>;
+  updateProfileImageUrl(userId: string, url: string): Promise<void>;
+
   // Community/Sharing methods
   updateUserSharePreference(userId: string, preference: string): Promise<User | undefined>;
   getSharedModels(viewerUserId?: string): Promise<ModelWithRelations[]>;
@@ -846,6 +852,42 @@ export class DatabaseStorage implements IStorage {
     return !!vote;
   }
 
+  // Profile/username methods
+  private computeDisplayName(user: { firstName: string | null; lastName: string | null; username: string | null; showRealName: boolean | null }): string {
+    if (user.showRealName && (user.firstName || user.lastName)) {
+      return [user.firstName, user.lastName].filter(Boolean).join(' ');
+    }
+    return user.username || 'User';
+  }
+
+  async isUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean> {
+    const query = db.select({ id: users.id }).from(users)
+      .where(eq(users.username, username.toLowerCase()));
+    const [existing] = await query;
+    if (!existing) return true;
+    return excludeUserId ? existing.id === excludeUserId : false;
+  }
+
+  async updateUsername(userId: string, username: string): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set({ username: username.toLowerCase(), updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateShowRealName(userId: string, show: boolean): Promise<void> {
+    await db.update(users)
+      .set({ showRealName: show, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async updateProfileImageUrl(userId: string, url: string): Promise<void> {
+    await db.update(users)
+      .set({ profileImageUrl: url, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
   // Community/Sharing methods
   async updateUserSharePreference(userId: string, preference: string): Promise<User | undefined> {
     const validPreferences = ['public', 'authenticated', 'private'];
@@ -873,6 +915,8 @@ export class DatabaseStorage implements IStorage {
           id: users.id,
           firstName: users.firstName,
           lastName: users.lastName,
+          username: users.username,
+          showRealName: users.showRealName,
           profileImageUrl: users.profileImageUrl,
           sharePreference: users.sharePreference,
         }
@@ -907,8 +951,7 @@ export class DatabaseStorage implements IStorage {
         hopUpParts: [],
         hopUpCount: hopUpList.length,
         owner: {
-          firstName: owner.firstName,
-          lastName: owner.lastName,
+          displayName: this.computeDisplayName(owner),
           profileImageUrl: owner.profileImageUrl,
         }
       } as ModelWithRelations);
@@ -925,6 +968,8 @@ export class DatabaseStorage implements IStorage {
           id: users.id,
           firstName: users.firstName,
           lastName: users.lastName,
+          username: users.username,
+          showRealName: users.showRealName,
           profileImageUrl: users.profileImageUrl,
           sharePreference: users.sharePreference,
         }
@@ -957,8 +1002,7 @@ export class DatabaseStorage implements IStorage {
       hopUpParts: [],
       hopUpCount: hopUpList.length,
       owner: {
-        firstName: result.owner.firstName,
-        lastName: result.owner.lastName,
+        displayName: this.computeDisplayName(result.owner),
         profileImageUrl: result.owner.profileImageUrl,
       }
     } as ModelWithRelations;
@@ -1103,8 +1147,7 @@ export class DatabaseStorage implements IStorage {
       ...comment,
       user: {
         id: comment.user.id,
-        firstName: comment.user.firstName,
-        lastName: comment.user.lastName,
+        displayName: this.computeDisplayName(comment.user),
         profileImageUrl: comment.user.profileImageUrl,
       }
     }));

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -12,7 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart, Share2, Globe, Users, Lock, Printer } from "lucide-react";
+import { Settings, Camera, Clock, Tags, Type, LogOut, User, AlertTriangle, Palette, Download, FileSpreadsheet, Database, CheckCircle2, XCircle, Loader2, Package, ShoppingCart, Share2, Globe, Users, Lock, Printer, AtSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { addStorageFallbackParam } from "@/lib/file-utils";
 import { toast } from "@/hooks/use-toast";
 import { getSlideshowSettings, saveSlideshowSettings, SlideshowSettings, ColorScheme, getAppSettings, saveAppSettings } from "@/lib/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -129,6 +131,96 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { colorScheme, darkMode, setColorScheme, toggleDarkMode } = useTheme();
   const queryClient = useQueryClient();
+
+  // Profile state
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [showRealNameLocal, setShowRealNameLocal] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [localProfileImageUrl, setLocalProfileImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      setUsernameInput((user as any).username || "");
+      setShowRealNameLocal((user as any).showRealName ?? false);
+      setLocalProfileImageUrl((user as any).profileImageUrl || null);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const currentUsername = (user as any)?.username || "";
+    if (!usernameInput || usernameInput === currentUsername) {
+      setUsernameAvailable(null);
+      setUsernameChecking(false);
+      return;
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(usernameInput.toLowerCase())) {
+      setUsernameAvailable(false);
+      setUsernameChecking(false);
+      return;
+    }
+    setUsernameChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/user/check-username/${encodeURIComponent(usernameInput)}`);
+        const data = await res.json();
+        setUsernameAvailable(data.available);
+      } catch {
+        setUsernameAvailable(null);
+      } finally {
+        setUsernameChecking(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [usernameInput, user]);
+
+  const updateUsernameMutation = useMutation({
+    mutationFn: async (username: string) => {
+      const res = await apiRequest("PUT", "/api/user/username", { username });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Username saved", description: "Your username has been updated." });
+      setUsernameAvailable(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to save username", variant: "destructive" });
+    },
+  });
+
+  const updateShowRealNameMutation = useMutation({
+    mutationFn: async (show: boolean) => {
+      const res = await apiRequest("PUT", "/api/user/show-real-name", { show });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+  });
+
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/user/profile-image", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      setLocalProfileImageUrl(url);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Profile photo updated" });
+    } catch {
+      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   // Fetch data for exports
   const { data: models } = useQuery<ModelWithRelations[]>({
@@ -457,6 +549,127 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Profile */}
+      <Card className="bg-white dark:bg-gray-800">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-lg font-mono">
+            <User className="h-5 w-5" />
+            <span>Profile</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Profile image */}
+          <div className="flex items-center gap-5">
+            <div className="relative flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-20 h-20 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] group relative"
+                disabled={uploadingImage}
+                title="Change profile photo"
+              >
+                {localProfileImageUrl ? (
+                  <img
+                    src={addStorageFallbackParam(localProfileImageUrl)}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[var(--theme-primary)] flex items-center justify-center text-white text-2xl font-mono font-bold">
+                    {((user as any)?.firstName?.[0] || (user as any)?.username?.[0] || '?').toUpperCase()}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploadingImage ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </div>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleProfileImageChange}
+              />
+            </div>
+            <div>
+              <p className="font-mono text-sm font-medium text-gray-900 dark:text-white">Profile Photo</p>
+              <p className="font-mono text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Click to upload a new photo. Shown next to your models in the community.
+              </p>
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="space-y-2">
+            <Label className="font-mono text-sm font-medium">Username</Label>
+            <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
+              Your public handle in the community (3–30 chars, letters, numbers, underscores).
+            </p>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  className="pl-9 font-mono"
+                  placeholder="your_username"
+                  maxLength={30}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {usernameChecking && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+                  {!usernameChecking && usernameAvailable === true && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                  {!usernameChecking && usernameAvailable === false && <XCircle className="h-4 w-4 text-red-500" />}
+                </div>
+              </div>
+              <Button
+                onClick={() => updateUsernameMutation.mutate(usernameInput)}
+                disabled={
+                  updateUsernameMutation.isPending ||
+                  !usernameInput ||
+                  usernameInput === ((user as any)?.username || "") ||
+                  usernameAvailable === false ||
+                  usernameChecking
+                }
+                className="font-mono"
+                style={{ backgroundColor: 'var(--theme-primary)', color: 'white' }}
+              >
+                {updateUsernameMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+              </Button>
+            </div>
+            {!usernameChecking && usernameAvailable === false && usernameInput && usernameInput !== ((user as any)?.username || "") && (
+              <p className="text-xs font-mono text-red-500">
+                {!/^[a-z0-9_]{3,30}$/.test(usernameInput) ? "Invalid format (3–30 chars, letters/numbers/underscores only)" : "Username is already taken"}
+              </p>
+            )}
+            {!usernameChecking && usernameAvailable === true && (
+              <p className="text-xs font-mono text-green-500">Username is available!</p>
+            )}
+          </div>
+
+          {/* Show real name */}
+          <div className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700">
+            <div>
+              <p className="text-sm font-mono font-medium">Show my real name in community</p>
+              <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                When off, your username is shown. When on, your first and last name are shown.
+              </p>
+            </div>
+            <Switch
+              checked={showRealNameLocal}
+              onCheckedChange={(checked) => {
+                setShowRealNameLocal(checked);
+                updateShowRealNameMutation.mutate(checked);
+              }}
+              disabled={updateShowRealNameMutation.isPending}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Theme Settings */}
       <Card className="bg-white dark:bg-gray-800">

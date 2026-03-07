@@ -51,6 +51,16 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 -   **Date Handling:** date-fns.
 -   **Routing:** Wouter.
 
+### Username & Profile System
+- `username VARCHAR(50) UNIQUE` and `show_real_name BOOLEAN DEFAULT FALSE` on `users` table (T001 migration applied)
+- Usernames auto-generated for all existing users on migration; changeable in Settings → Profile
+- `showRealName` flag: when false, community shows `username`; when true, shows `firstName + lastName`
+- `displayName` computed server-side by `computeDisplayName()` in storage.ts and returned in all community API responses
+- Profile image upload: `POST /api/user/profile-image` → saved to GCS under `profile-images/<userId>.<ext>`
+- New API routes: `GET /api/user/check-username/:username`, `PUT /api/user/username`, `PUT /api/user/show-real-name`, `POST /api/user/profile-image`
+- Community pages (community.tsx, community-model-detail.tsx) use `displayName` + `CommunityAvatar` (photo or colored initial)
+- Settings page has "Profile" section: photo upload circle, username input with debounced availability check, show-real-name toggle
+
 ### Brand Logos System
 - Brand logos for "Print Model Cards" are now admin-managed via the Admin Panel → Logos tab
 - Logos are stored in the `brand_logos` table (keyword, display_name, url, is_tamiya_stamp)
