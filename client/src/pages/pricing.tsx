@@ -13,10 +13,15 @@ import {
   Star,
   Sparkles,
   Lock,
-  ArrowLeft
+  ArrowLeft,
+  Gift,
+  MessageSquare,
+  Mail
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+
+const CONTACT_EMAIL = "wouterhendrickx79@gmail.com";
 
 interface PricingTier {
   id: number;
@@ -120,6 +125,27 @@ export default function PricingPage() {
                 </div>
               </AlertDescription>
             </Alert>
+          </div>
+        </div>
+      </section>
+
+      {/* Free tier callout */}
+      <section className="py-8 bg-gradient-to-b from-green-50 to-background dark:from-green-950/20 dark:to-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-4 p-5 rounded-xl border-2 border-green-300 dark:border-green-700 bg-white dark:bg-gray-900 shadow-sm">
+              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/50 flex-shrink-0">
+                <Gift className="h-7 w-7 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="font-bold text-lg text-gray-900 dark:text-white">
+                  Your first 2 models are completely free — no credit card needed
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sign up and start tracking right away. Upgrade only when your collection grows beyond 2 models.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -401,6 +427,36 @@ export default function PricingPage() {
                   and we'll process a full refund, no questions asked.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feedback welcome */}
+      <section className="py-12 border-t bg-gray-50 dark:bg-gray-900/50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <MessageSquare className="h-6 w-6 text-[var(--theme-primary)]" />
+              <h2 className="text-2xl font-bold">Pricing feedback is very welcome</h2>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Not sure a tier fits your needs, or have a suggestion? I'd genuinely love to hear it — 
+              this is a hobby project and your input shapes how it grows.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href={`mailto:${CONTACT_EMAIL}?subject=TrackMyRC Pricing Feedback`}>
+                <Button variant="outline" className="w-full sm:w-auto gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email me directly
+                </Button>
+              </a>
+              <Link href="/feedback">
+                <Button className="w-full sm:w-auto gap-2 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-dark)] text-white">
+                  <MessageSquare className="h-4 w-4" />
+                  Leave feedback in the app
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
