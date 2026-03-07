@@ -21,7 +21,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
-const CONTACT_EMAIL = "wouterhendrickx79@gmail.com";
+const CONTACT_EMAIL = "trackmyrc25@gmail.com";
 
 interface PricingTier {
   id: number;
