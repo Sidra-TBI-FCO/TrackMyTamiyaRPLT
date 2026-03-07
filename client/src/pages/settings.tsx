@@ -650,24 +650,6 @@ export default function SettingsPage() {
               <p className="text-xs font-mono text-green-500">Username is available!</p>
             )}
           </div>
-
-          {/* Show real name */}
-          <div className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700">
-            <div>
-              <p className="text-sm font-mono font-medium">Show my real name in community</p>
-              <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                When off, your username is shown. When on, your first and last name are shown.
-              </p>
-            </div>
-            <Switch
-              checked={showRealNameLocal}
-              onCheckedChange={(checked) => {
-                setShowRealNameLocal(checked);
-                updateShowRealNameMutation.mutate(checked);
-              }}
-              disabled={updateShowRealNameMutation.isPending}
-            />
-          </div>
         </CardContent>
       </Card>
 
@@ -779,6 +761,23 @@ export default function SettingsPage() {
                 : 'Your models are private and not visible in the community gallery.'
               }
             </p>
+          </div>
+
+          <div className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-700">
+            <div>
+              <p className="text-sm font-mono font-medium">Show my real name in community</p>
+              <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                When off, your username is shown. When on, your first and last name are shown.
+              </p>
+            </div>
+            <Switch
+              checked={showRealNameLocal}
+              onCheckedChange={(checked) => {
+                setShowRealNameLocal(checked);
+                updateShowRealNameMutation.mutate(checked);
+              }}
+              disabled={updateShowRealNameMutation.isPending}
+            />
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
