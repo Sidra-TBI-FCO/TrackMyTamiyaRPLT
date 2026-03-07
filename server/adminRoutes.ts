@@ -3,7 +3,8 @@ import { db } from "./db";
 import { 
   users, models, photos, purchases, pricingTiers, adminAuditLog, userActivityLog,
   featureScreenshots, insertPricingTierSchema, insertPurchaseSchema, insertAdminAuditLogSchema,
-  insertFeatureScreenshotSchema, FIELD_OPTION_KEYS, insertFieldOptionSchema, feedbackPosts, feedbackVotes
+  insertFeatureScreenshotSchema, FIELD_OPTION_KEYS, insertFieldOptionSchema, feedbackPosts, feedbackVotes,
+  modelComments, motors, escs, servos, receivers, hopUpLibrary
 } from "@shared/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAdmin, getClientIP } from "./adminMiddleware";
@@ -253,12 +254,27 @@ router.delete("/users/:userId", requireAdmin, async (req, res) => {
     const modelIds = userModels.map(m => m.id);
     
     // Delete all associated data in correct order
+
+    // Delete comments left by this user on any model
+    await db.delete(modelComments).where(eq(modelComments.userId, userId));
+
+    // Delete feedback votes and posts by this user
+    await db.delete(feedbackVotes).where(eq(feedbackVotes.userId, userId));
+    await db.delete(feedbackPosts).where(eq(feedbackPosts.userId, userId));
+
+    // Delete electronics library items owned by this user
+    await db.delete(motors).where(eq(motors.userId, userId));
+    await db.delete(escs).where(eq(escs.userId, userId));
+    await db.delete(servos).where(eq(servos.userId, userId));
+    await db.delete(receivers).where(eq(receivers.userId, userId));
+    await db.delete(hopUpLibrary).where(eq(hopUpLibrary.userId, userId));
+
     if (modelIds.length > 0) {
-      // Delete build log photos, build log entries, hop-up parts, and photos for each model
+      // Delete photos for each model (build log photos/entries/hop-ups cascade from model)
       for (const modelId of modelIds) {
         await db.delete(photos).where(eq(photos.modelId, modelId));
       }
-      // Delete all models
+      // Delete all models (cascade handles build logs, hop-ups, model electronics, comments)
       await db.delete(models).where(eq(models.userId, userId));
     }
     
