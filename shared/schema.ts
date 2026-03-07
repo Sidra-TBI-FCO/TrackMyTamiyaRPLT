@@ -754,6 +754,7 @@ export type InsertReceiver = z.infer<typeof insertReceiverSchema>;
 export type ModelElectronics = typeof modelElectronics.$inferSelect;
 export type InsertModelElectronics = z.infer<typeof insertModelElectronicsSchema>;
 export type HopUpLibraryItem = typeof hopUpLibrary.$inferSelect;
+export type HopUpLibraryItemWithPhoto = HopUpLibraryItem & { photoUrl?: string | null };
 export type InsertHopUpLibraryItem = z.infer<typeof insertHopUpLibrarySchema>;
 
 // Model electronics with related details (including photos on each component)

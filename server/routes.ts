@@ -552,11 +552,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/hop-up-library', async (req, res) => {
+  app.post('/api/hop-up-library', upload.single('libraryPhoto'), async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-      const data = insertHopUpLibrarySchema.parse({ ...req.body, userId });
+      const body: any = { ...req.body, userId };
+      // Handle photo upload
+      if (req.file) {
+        const savedFilename = await fileStorage.uploadFile(req.file, req.file.originalname);
+        const fileUrl = fileStorage.getFileUrl(savedFilename);
+        const photo = await storage.createPhoto(insertPhotoSchema.parse({
+          modelId: null,
+          filename: savedFilename,
+          originalName: req.file.originalname,
+          url: fileUrl,
+          caption: 'Library part photo',
+          isBoxArt: false,
+        }));
+        body.photoId = photo.id;
+      }
+      const data = insertHopUpLibrarySchema.parse(body);
       const item = await storage.createHopUpLibraryItem(data);
       res.status(201).json(item);
     } catch (error: any) {
@@ -567,13 +582,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/hop-up-library/:id', async (req, res) => {
+  app.put('/api/hop-up-library/:id', upload.single('libraryPhoto'), async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ message: 'Unauthorized' });
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: 'Invalid item ID' });
-      const { userId: _, ...body } = req.body; // Strip userId from request body
+      const { userId: _, ...body } = req.body;
+      // Handle photo upload
+      if (req.file) {
+        const savedFilename = await fileStorage.uploadFile(req.file, req.file.originalname);
+        const fileUrl = fileStorage.getFileUrl(savedFilename);
+        const photo = await storage.createPhoto(insertPhotoSchema.parse({
+          modelId: null,
+          filename: savedFilename,
+          originalName: req.file.originalname,
+          url: fileUrl,
+          caption: 'Library part photo',
+          isBoxArt: false,
+        }));
+        body.photoId = photo.id;
+      }
       const data = insertHopUpLibrarySchema.partial().parse(body);
       const item = await storage.updateHopUpLibraryItem(id, userId, data);
       if (!item) return res.status(404).json({ message: 'Item not found' });
@@ -2046,7 +2075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let libraryItemId: number | null = null;
       if (partData.itemNumber && userId) {
         // Check if item exists in library
-        const existingLibraryItems = await storage.getHopUpLibraryItems(userId);
+        const existingLibraryItems = await storage.getHopUpLibraryItems();
         const existingItem = existingLibraryItems.find(item => 
           item.itemNumber && item.itemNumber.toLowerCase() === partData.itemNumber?.toLowerCase()
         );
@@ -2054,7 +2083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (existingItem) {
           libraryItemId = existingItem.id;
         } else {
-          // Create library item
+          // Create library item (no photoId — model photos are private and shouldn't propagate to shared library)
           const libraryItem = await storage.createHopUpLibraryItem({
             userId,
             name: partData.name,
@@ -2070,7 +2099,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             color: partData.color,
             material: partData.material,
             notes: partData.notes,
-            photoId: partData.photoId,
           });
           libraryItemId = libraryItem.id;
         }

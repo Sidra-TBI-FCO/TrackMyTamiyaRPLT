@@ -15,7 +15,7 @@ import {
   type Esc, type InsertEsc, type EscWithPhoto,
   type Servo, type InsertServo, type ServoWithPhoto,
   type Receiver, type InsertReceiver, type ReceiverWithPhoto,
-  type HopUpLibraryItem, type InsertHopUpLibraryItem,
+  type HopUpLibraryItem, type HopUpLibraryItemWithPhoto, type InsertHopUpLibraryItem,
   type ModelElectronics, type InsertModelElectronics, type ModelElectronicsWithDetails,
   type BrandLogo, type InsertBrandLogo
 } from "@shared/schema";
@@ -141,7 +141,7 @@ export interface IStorage {
   deleteReceiver(id: number, userId: string): Promise<boolean>;
 
   // Hop-up library methods (shared global library - no user filtering for read)
-  getHopUpLibraryItems(): Promise<HopUpLibraryItem[]>;
+  getHopUpLibraryItems(): Promise<HopUpLibraryItemWithPhoto[]>;
   getHopUpLibraryItem(id: number): Promise<HopUpLibraryItem | undefined>;
   createHopUpLibraryItem(item: InsertHopUpLibraryItem): Promise<HopUpLibraryItem>;
   updateHopUpLibraryItem(id: number, userId: string, item: Partial<InsertHopUpLibraryItem>): Promise<HopUpLibraryItem | undefined>;
@@ -1385,8 +1385,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Hop-up library methods - returns ALL items across all users (shared global library)
-  async getHopUpLibraryItems(): Promise<HopUpLibraryItem[]> {
-    return await db.select().from(hopUpLibrary).orderBy(desc(hopUpLibrary.createdAt));
+  async getHopUpLibraryItems(): Promise<HopUpLibraryItemWithPhoto[]> {
+    const items = await db.select().from(hopUpLibrary).orderBy(desc(hopUpLibrary.createdAt));
+    if (items.length === 0) return [];
+    const photoIds = items.map(i => i.photoId).filter(Boolean) as number[];
+    if (photoIds.length === 0) return items.map(i => ({ ...i, photoUrl: null }));
+    const photoRecords = await db.select({ id: photos.id, url: photos.url }).from(photos).where(inArray(photos.id, photoIds));
+    const photoMap = new Map(photoRecords.map(p => [p.id, p.url]));
+    return items.map(item => ({
+      ...item,
+      photoUrl: item.photoId ? (photoMap.get(item.photoId) ?? null) : null,
+    }));
   }
 
   async getHopUpLibraryItem(id: number): Promise<HopUpLibraryItem | undefined> {

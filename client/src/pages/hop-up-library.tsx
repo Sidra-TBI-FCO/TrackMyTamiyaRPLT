@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Library, Plus, Pencil, Trash2, Search, Package, ExternalLink, Filter, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Library, Plus, Pencil, Trash2, Search, Package, ExternalLink, Filter, X, Upload, Image as ImageIcon, Info, Users, BookOpen, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { HopUpLibraryItem } from "@shared/schema";
+import type { HopUpLibraryItemWithPhoto } from "@shared/schema";
 
 const hopUpLibraryFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -49,8 +50,12 @@ const CATEGORIES = [
   "Other",
 ];
 
-function HopUpLibraryDialog({ item, open, onOpenChange }: { item?: HopUpLibraryItem; open: boolean; onOpenChange: (open: boolean) => void }) {
+function HopUpLibraryDialog({ item, open, onOpenChange }: { item?: HopUpLibraryItemWithPhoto; open: boolean; onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<HopUpLibraryFormData>({
     resolver: zodResolver(hopUpLibraryFormSchema),
     defaultValues: {
@@ -70,39 +75,68 @@ function HopUpLibraryDialog({ item, open, onOpenChange }: { item?: HopUpLibraryI
     },
   });
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const buildFormData = (data: HopUpLibraryFormData) => {
+    const fd = new FormData();
+    fd.append("name", data.name);
+    if (data.itemNumber) fd.append("itemNumber", data.itemNumber);
+    fd.append("category", data.category);
+    if (data.manufacturer) fd.append("manufacturer", data.manufacturer);
+    if (data.supplier) fd.append("supplier", data.supplier);
+    if (data.cost) fd.append("cost", data.cost);
+    fd.append("isTamiyaBrand", String(data.isTamiyaBrand ?? false));
+    if (data.productUrl) fd.append("productUrl", data.productUrl);
+    if (data.tamiyaBaseUrl) fd.append("tamiyaBaseUrl", data.tamiyaBaseUrl);
+    const compat = data.compatibility ? data.compatibility.split(",").map(s => s.trim()).filter(Boolean) : [];
+    fd.append("compatibility", JSON.stringify(compat));
+    if (data.color) fd.append("color", data.color);
+    if (data.material) fd.append("material", data.material);
+    if (data.notes) fd.append("notes", data.notes);
+    if (photoFile) fd.append("libraryPhoto", photoFile);
+    return fd;
+  };
+
   const createMutation = useMutation({
     mutationFn: (data: HopUpLibraryFormData) => {
-      const payload = {
-        ...data,
-        compatibility: data.compatibility ? data.compatibility.split(",").map(s => s.trim()).filter(Boolean) : [],
-        productUrl: data.productUrl || null,
-        tamiyaBaseUrl: data.tamiyaBaseUrl || null,
-      };
-      return apiRequest("POST", "/api/hop-up-library", payload);
+      return fetch("/api/hop-up-library", {
+        method: "POST",
+        body: buildFormData(data),
+        credentials: "include",
+      }).then(res => { if (!res.ok) throw new Error("Failed to create"); return res.json(); });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/hop-up-library"] });
       toast({ title: "Item added to library" });
       onOpenChange(false);
       form.reset();
+      setPhotoFile(null);
+      setPhotoPreview(null);
     },
     onError: (error: Error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: HopUpLibraryFormData) => {
-      const payload = {
-        ...data,
-        compatibility: data.compatibility ? data.compatibility.split(",").map(s => s.trim()).filter(Boolean) : [],
-        productUrl: data.productUrl || null,
-        tamiyaBaseUrl: data.tamiyaBaseUrl || null,
-      };
-      return apiRequest("PUT", `/api/hop-up-library/${item?.id}`, payload);
+      return fetch(`/api/hop-up-library/${item?.id}`, {
+        method: "PUT",
+        body: buildFormData(data),
+        credentials: "include",
+      }).then(res => { if (!res.ok) throw new Error("Failed to update"); return res.json(); });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/hop-up-library"] });
       toast({ title: "Item updated" });
       onOpenChange(false);
+      setPhotoFile(null);
+      setPhotoPreview(null);
     },
     onError: (error: Error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
   });
@@ -115,14 +149,61 @@ function HopUpLibraryDialog({ item, open, onOpenChange }: { item?: HopUpLibraryI
     }
   };
 
+  const existingPhotoUrl = item?.photoUrl;
+  const displayPhoto = photoPreview || existingPhotoUrl;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(val) => {
+      if (!val) { setPhotoFile(null); setPhotoPreview(null); }
+      onOpenChange(val);
+    }}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-mono">{item ? "Edit Library Item" : "Add to Library"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Photo upload */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Part Photo</label>
+              <div
+                className="border-2 border-dashed rounded-lg p-3 text-center cursor-pointer hover:bg-accent/50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {displayPhoto ? (
+                  <div className="relative">
+                    <img
+                      src={displayPhoto}
+                      alt="Part preview"
+                      className="max-h-40 mx-auto rounded object-contain"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Click to change photo</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1 py-2">
+                    <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Click to add a photo</p>
+                    <p className="text-xs text-muted-foreground">JPEG, PNG, WebP — max 15MB</p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              {photoFile && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{photoFile.name}</span>
+                  <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Name *</FormLabel><FormControl><Input {...field} placeholder="e.g., Aluminum Shock Dampers" /></FormControl><FormMessage /></FormItem>
             )} />
@@ -198,11 +279,11 @@ export default function HopUpLibraryPage() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterBrand, setFilterBrand] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<HopUpLibraryItem | undefined>();
+  const [editingItem, setEditingItem] = useState<HopUpLibraryItemWithPhoto | undefined>();
 
   const { toast } = useToast();
 
-  const { data: items = [], isLoading } = useQuery<HopUpLibraryItem[]>({ queryKey: ["/api/hop-up-library"] });
+  const { data: items = [], isLoading } = useQuery<HopUpLibraryItemWithPhoto[]>({ queryKey: ["/api/hop-up-library"] });
 
   const deleteItem = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/hop-up-library/${id}`),
@@ -247,13 +328,40 @@ export default function HopUpLibraryPage() {
               Hop-Up Library
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-mono">
-              Your personal catalog of hop-up parts to reuse across models
+              Community catalog of RC hop-up parts
             </p>
           </div>
           <Button onClick={() => { setEditingItem(undefined); setDialogOpen(true); }} className="font-mono">
             <Plus className="h-4 w-4 mr-2" />Add Part
           </Button>
         </div>
+
+        {/* How it works explanation */}
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+              <div className="space-y-3">
+                <p className="font-semibold text-blue-900 dark:text-blue-100 font-mono">How the Hop-Up Library works</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                  <div className="flex items-start gap-2 text-blue-800 dark:text-blue-200">
+                    <Users className="h-4 w-4 mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <span><strong>Shared database</strong> — all users can see and search every part in the library. Anyone can add parts to grow the community catalog.</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-blue-800 dark:text-blue-200">
+                    <BookOpen className="h-4 w-4 mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <span><strong>Auto-populated</strong> — when you add a new hop-up part to a model and include an item number, it is automatically added here so others can find it too.</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-blue-800 dark:text-blue-200">
+                    <ArrowRight className="h-4 w-4 mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <span><strong>Use it on models</strong> — on any model's Hop-Up tab, click Add Part and pick from the library. All details copy over so you don't have to re-enter them.</span>
+                  </div>
+                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-300">You can only edit or delete parts that you added. Photos added here are visible to everyone — photos on your model parts remain private.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
@@ -356,7 +464,7 @@ export default function HopUpLibraryPage() {
             <Library className="h-12 w-12 mx-auto mb-4 text-gray-400" />
             <p className="text-gray-500 dark:text-gray-400 font-mono">
               {items.length === 0 
-                ? "Your hop-up library is empty. Add parts to build your catalog!" 
+                ? "The library is empty. Add parts to build the community catalog!" 
                 : "No parts match your search criteria."}
             </p>
           </CardContent>
@@ -364,7 +472,16 @@ export default function HopUpLibraryPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredItems.map((item) => (
-            <Card key={item.id}>
+            <Card key={item.id} className="overflow-hidden">
+              {item.photoUrl && (
+                <div className="w-full h-40 bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <img
+                    src={item.photoUrl}
+                    alt={item.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div>
