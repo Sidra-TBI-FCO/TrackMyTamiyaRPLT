@@ -709,6 +709,28 @@ export const insertHopUpLibrarySchema = createInsertSchema(hopUpLibrary).omit({
   createdAt: true,
 });
 
+// ============================================================================
+// Model Documents - per-model file/document storage
+// ============================================================================
+
+export const modelDocuments = pgTable("model_documents", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").references(() => models.id, { onDelete: "cascade" }).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  url: text("url").notNull(),
+  description: text("description"),
+  documentType: text("document_type").notNull().default("other"),
+  fileSize: integer("file_size"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertModelDocumentSchema = createInsertSchema(modelDocuments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
@@ -756,6 +778,8 @@ export type InsertModelElectronics = z.infer<typeof insertModelElectronicsSchema
 export type HopUpLibraryItem = typeof hopUpLibrary.$inferSelect;
 export type HopUpLibraryItemWithPhoto = HopUpLibraryItem & { photoUrl?: string | null };
 export type InsertHopUpLibraryItem = z.infer<typeof insertHopUpLibrarySchema>;
+export type ModelDocument = typeof modelDocuments.$inferSelect;
+export type InsertModelDocument = z.infer<typeof insertModelDocumentSchema>;
 
 // Model electronics with related details (including photos on each component)
 export type ModelElectronicsWithDetails = ModelElectronics & {

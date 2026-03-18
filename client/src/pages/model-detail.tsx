@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EditModelDialog from "@/components/models/edit-model-dialog";
+import ModelResources from "@/components/resources/ModelResources";
 import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
 import BoxArtSelector from "@/components/photos/box-art-selector";
@@ -1297,6 +1298,9 @@ export default function ModelDetail() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Resources */}
+          <ModelResources modelId={model.id} />
 
           {/* Share Settings */}
           <Card>

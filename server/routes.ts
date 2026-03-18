@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, insertMotorSchema, insertEscSchema, insertServoSchema, insertReceiverSchema, insertHopUpLibrarySchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
+import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, insertMotorSchema, insertEscSchema, insertServoSchema, insertReceiverSchema, insertHopUpLibrarySchema, insertModelDocumentSchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -80,6 +80,22 @@ const upload = multer({
     files: 10, // Allow up to 10 files per upload
     fieldSize: 2 * 1024 * 1024, // 2MB field size
   }
+});
+
+// Document upload multer (images + PDFs up to 20MB)
+const uploadDocument = multer({
+  storage: storage_multer,
+  fileFilter: (req, file, cb) => {
+    const allowedMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf', 'application/octet-stream', ''];
+    const allowedExt = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (file.mimetype.startsWith('image/') || file.mimetype.includes('pdf') || allowedMime.includes(file.mimetype) || allowedExt.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images and PDFs are allowed for documents') as any, false);
+    }
+  },
+  limits: { fileSize: 20 * 1024 * 1024, files: 1 }
 });
 
 // Helper function to get user ID from authenticated user
@@ -2783,6 +2799,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Get public screenshots error:', error);
       res.status(500).json({ message: 'Failed to load screenshots' });
+    }
+  });
+
+  // ============================================================================
+  // Model Documents Routes
+  // ============================================================================
+
+  app.get('/api/models/:modelId/documents', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const modelId = parseInt(req.params.modelId);
+      const docs = await storage.getModelDocuments(modelId, userId);
+      res.json(docs);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Failed to fetch documents' });
+    }
+  });
+
+  app.post('/api/models/:modelId/documents', isAuthenticated, uploadDocument.single('file'), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const modelId = parseInt(req.params.modelId);
+      const file = req.file;
+      if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+      const ext = path.extname(file.originalname).toLowerCase();
+      const filename = `documents/${userId}/${modelId}/${Date.now()}${ext}`;
+      const url = await fileStorage.uploadFile(file, filename);
+
+      fs.unlink(file.path, () => {});
+
+      const doc = await storage.createModelDocument({
+        modelId,
+        userId,
+        filename,
+        originalName: file.originalname,
+        url,
+        description: req.body.description || null,
+        documentType: req.body.documentType || 'other',
+        fileSize: file.size,
+      });
+      res.json(doc);
+    } catch (error: any) {
+      console.error('Document upload error:', error);
+      res.status(500).json({ message: 'Failed to upload document' });
+    }
+  });
+
+  app.patch('/api/models/:modelId/documents/:docId', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const docId = parseInt(req.params.docId);
+      const { description, documentType } = req.body;
+      const updated = await storage.updateModelDocument(docId, userId, { description, documentType });
+      if (!updated) return res.status(404).json({ message: 'Document not found' });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Failed to update document' });
+    }
+  });
+
+  app.delete('/api/models/:modelId/documents/:docId', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const docId = parseInt(req.params.docId);
+      const modelId = parseInt(req.params.modelId);
+
+      const docs = await storage.getModelDocuments(modelId, userId);
+      const doc = docs.find(d => d.id === docId);
+      if (doc) {
+        try { await fileStorage.deleteFile(doc.filename); } catch {}
+      }
+      const deleted = await storage.deleteModelDocument(docId, userId);
+      if (!deleted) return res.status(404).json({ message: 'Document not found' });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: 'Failed to delete document' });
     }
   });
 

@@ -1,7 +1,7 @@
 import { 
   users, models, photos, buildLogEntries, buildLogPhotos, hopUpParts,
   feedbackPosts, feedbackVotes, modelComments, fieldOptions,
-  motors, escs, servos, receivers, modelElectronics, hopUpLibrary, brandLogos,
+  motors, escs, servos, receivers, modelElectronics, hopUpLibrary, brandLogos, modelDocuments,
   type User, type UpsertUser,
   type Model, type InsertModel, type ModelWithRelations,
   type Photo, type InsertPhoto,
@@ -17,7 +17,8 @@ import {
   type Receiver, type InsertReceiver, type ReceiverWithPhoto,
   type HopUpLibraryItem, type HopUpLibraryItemWithPhoto, type InsertHopUpLibraryItem,
   type ModelElectronics, type InsertModelElectronics, type ModelElectronicsWithDetails,
-  type BrandLogo, type InsertBrandLogo
+  type BrandLogo, type InsertBrandLogo,
+  type ModelDocument, type InsertModelDocument
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray, sql } from "drizzle-orm";
@@ -157,6 +158,12 @@ export interface IStorage {
   createBrandLogo(logo: InsertBrandLogo): Promise<BrandLogo>;
   updateBrandLogo(id: number, logo: Partial<InsertBrandLogo>): Promise<BrandLogo | undefined>;
   deleteBrandLogo(id: number): Promise<boolean>;
+
+  // Model document methods
+  getModelDocuments(modelId: number, userId: string): Promise<ModelDocument[]>;
+  createModelDocument(doc: InsertModelDocument): Promise<ModelDocument>;
+  updateModelDocument(id: number, userId: string, updates: Partial<InsertModelDocument>): Promise<ModelDocument | undefined>;
+  deleteModelDocument(id: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1492,6 +1499,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBrandLogo(id: number): Promise<boolean> {
     const result = await db.delete(brandLogos).where(eq(brandLogos.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getModelDocuments(modelId: number, userId: string): Promise<ModelDocument[]> {
+    return db.select().from(modelDocuments)
+      .where(and(eq(modelDocuments.modelId, modelId), eq(modelDocuments.userId, userId)))
+      .orderBy(desc(modelDocuments.createdAt));
+  }
+
+  async createModelDocument(doc: InsertModelDocument): Promise<ModelDocument> {
+    const [created] = await db.insert(modelDocuments).values(doc).returning();
+    return created;
+  }
+
+  async updateModelDocument(id: number, userId: string, updates: Partial<InsertModelDocument>): Promise<ModelDocument | undefined> {
+    const [updated] = await db.update(modelDocuments)
+      .set(updates)
+      .where(and(eq(modelDocuments.id, id), eq(modelDocuments.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteModelDocument(id: number, userId: string): Promise<boolean> {
+    const result = await db.delete(modelDocuments)
+      .where(and(eq(modelDocuments.id, id), eq(modelDocuments.userId, userId)));
     return (result.rowCount ?? 0) > 0;
   }
 }

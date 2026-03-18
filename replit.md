@@ -88,6 +88,15 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 - Electronics items (motors, ESCs, servos, receivers) display product photos at `h-32` (128px) with `object-contain` and a neutral background, so the full component is always visible without cropping.
 - Component files: `client/src/pages/electronics.tsx`, `client/src/components/electronics/`
 
+### Model Resources Section
+- `model_documents` table: `id`, `model_id`, `user_id`, `filename`, `original_name`, `url`, `description`, `document_type` (manual / setup_sheet / leaflet / other), `file_size`, `created_at`
+- Files stored in GCS under `documents/<userId>/<modelId>/<timestamp>.<ext>`
+- API: `GET/POST /api/models/:modelId/documents`, `PATCH/DELETE /api/models/:modelId/documents/:docId`
+- Document scanner: camera or file picker → perspective-correction UI with 4 draggable corner handles → homography warp → corrected JPEG uploaded
+- **ModelResources** card appears in the model-detail sidebar below Quick Actions; supports Upload File, Scan Document, inline edit (type + description), delete
+- Components: `client/src/components/resources/DocumentScanner.tsx`, `client/src/components/resources/ModelResources.tsx`
+
 ### Recent Migrations
 -   **2025-12-field-options-management.sql**: Creates the field_options table for admin-managed dropdown values. Automatically populates with existing values from models and hop_up_parts tables, plus default options. Run this on production database to enable the Field Options admin feature.
 -   **2025-12-electronics-and-hopup-library.sql**: Creates tables for electronics tracking (motors, escs, servos, receivers, model_electronics) and hop_up_library for global parts catalog. Written in BigQuery SQL syntax.
+-   **2026-03-model-documents**: `CREATE TABLE model_documents` — applied via executeSql (TLS workaround).
