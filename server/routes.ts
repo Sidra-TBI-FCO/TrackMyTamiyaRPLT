@@ -2283,10 +2283,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // File serving endpoint for Google Cloud Storage
-  app.get('/api/files/:filename', async (req, res) => {
+  // File serving endpoint for Google Cloud Storage — supports nested paths (e.g. model-documents/...)
+  app.get('/api/files/*', async (req, res) => {
     try {
-      const { filename } = req.params;
+      const filename = (req.params as any)[0] as string;
       console.log(`📥 Serving file from GCS: ${filename}`);
       
       // Download file from Google Cloud Storage
@@ -2814,9 +2814,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
       const docs = await storage.getModelDocuments(modelId, userId);
-      res.json(docs);
+      // Return protected download URL so files are only accessible to the owner
+      const withUrls = docs.map(d => ({
+        ...d,
+        url: `/api/models/${modelId}/documents/${d.id}/download`,
+      }));
+      res.json(withUrls);
     } catch (error: any) {
       res.status(500).json({ message: 'Failed to fetch documents' });
+    }
+  });
+
+  // Protected document download — verifies model ownership before streaming
+  app.get('/api/models/:modelId/documents/:docId/download', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const modelId = parseInt(req.params.modelId);
+      const docId = parseInt(req.params.docId);
+      const docs = await storage.getModelDocuments(modelId, userId);
+      const doc = docs.find(d => d.id === docId);
+      if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+      const buffer = await fileStorage.downloadFile(doc.filename);
+      const ext = path.extname(doc.originalName).toLowerCase();
+      const contentTypes: Record<string, string> = {
+        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+        '.webp': 'image/webp', '.heic': 'image/heic',
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      };
+      res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName)}"`);
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+      res.setHeader('Content-Length', buffer.length.toString());
+      res.send(buffer);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Failed to download document' });
     }
   });
 
@@ -2837,8 +2873,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const docs = [];
       for (const file of files) {
         const ext = path.extname(file.originalname).toLowerCase();
-        // Flat key compatible with /api/files/:filename single-segment route
-        const gcsKey = `model-doc-${modelId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
+        // Store under model-documents/ prefix; /api/files/* wildcard route handles nested paths
+        const gcsKey = `model-documents/${modelId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
         const savedFilename = await fileStorage.uploadFile(file, gcsKey);
         const url = fileStorage.getFileUrl(savedFilename);
 
@@ -2854,7 +2890,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         docs.push(doc);
       }
-      res.json(docs.length === 1 ? docs[0] : docs);
+      const withUrls = docs.map(d => ({
+        ...d,
+        url: `/api/models/${modelId}/documents/${d.id}/download`,
+      }));
+      res.json(withUrls.length === 1 ? withUrls[0] : withUrls);
     } catch (error: any) {
       console.error('Document upload error:', error);
       res.status(500).json({ message: 'Failed to upload document' });

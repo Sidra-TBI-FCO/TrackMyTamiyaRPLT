@@ -1,17 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, ScanLine, RotateCcw, Check, Loader2 } from "lucide-react";
+import { Camera, Upload, ScanLine, RotateCcw, Check, Loader2, Scan } from "lucide-react";
 
 interface Point { x: number; y: number; }
 
 interface DocumentScannerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onResult: (file: File, originalName: string) => void;
+  onResult: (file: File) => void;
 }
 
-// --- Perspective math ---
+// ─── Perspective math ────────────────────────────────────────────────────────
 
 function gaussianElimination(A: number[][], b: number[]): number[] {
   const n = 8;
@@ -52,7 +52,7 @@ function dist(a: Point, b: Point) {
 
 function warpPerspective(
   src: HTMLCanvasElement,
-  corners: Point[], // [TL, TR, BR, BL] in src coords
+  corners: Point[], // [TL, TR, BR, BL]
   outW: number,
   outH: number
 ): HTMLCanvasElement {
@@ -117,7 +117,99 @@ function warpPerspective(
   return out;
 }
 
-// --- Component ---
+// ─── Automatic document-corner detection ─────────────────────────────────────
+// Works by downsampling, running Sobel edge detection, then finding the four
+// "extreme" edge pixels that correspond to each corner of the document quadrilateral.
+
+function detectDocumentCorners(canvas: HTMLCanvasElement): Point[] | null {
+  const THUMB_LONG = 300;
+  const scale = THUMB_LONG / Math.max(canvas.width, canvas.height);
+  const tw = Math.round(canvas.width * scale);
+  const th = Math.round(canvas.height * scale);
+
+  const thumb = document.createElement("canvas");
+  thumb.width = tw;
+  thumb.height = th;
+  const tctx = thumb.getContext("2d")!;
+  tctx.drawImage(canvas, 0, 0, tw, th);
+  const imgData = tctx.getImageData(0, 0, tw, th);
+  const d = imgData.data;
+
+  // Grayscale
+  const gray = new Float32Array(tw * th);
+  for (let i = 0; i < tw * th; i++) {
+    gray[i] = d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114;
+  }
+
+  // Sobel edge magnitude
+  const edgeMag = new Float32Array(tw * th);
+  let maxMag = 0;
+  for (let y = 1; y < th - 1; y++) {
+    for (let x = 1; x < tw - 1; x++) {
+      const gx =
+        -gray[(y - 1) * tw + (x - 1)] + gray[(y - 1) * tw + (x + 1)] +
+        -2 * gray[y * tw + (x - 1)] + 2 * gray[y * tw + (x + 1)] +
+        -gray[(y + 1) * tw + (x - 1)] + gray[(y + 1) * tw + (x + 1)];
+      const gy =
+        -gray[(y - 1) * tw + (x - 1)] - 2 * gray[(y - 1) * tw + x] - gray[(y - 1) * tw + (x + 1)] +
+        gray[(y + 1) * tw + (x - 1)] + 2 * gray[(y + 1) * tw + x] + gray[(y + 1) * tw + (x + 1)];
+      const mag = Math.sqrt(gx * gx + gy * gy);
+      edgeMag[y * tw + x] = mag;
+      if (mag > maxMag) maxMag = mag;
+    }
+  }
+
+  // Dynamic threshold: 15% of max magnitude, minimum 15
+  const threshold = Math.max(15, maxMag * 0.15);
+
+  // Count qualifying edge pixels
+  let edgeCount = 0;
+  for (let i = 0; i < tw * th; i++) if (edgeMag[i] >= threshold) edgeCount++;
+
+  // Need at least 0.5% of pixels to be edge pixels for a reliable detection
+  if (edgeCount < tw * th * 0.005) return null;
+
+  // Find 4 corner representatives among edge pixels:
+  // TL = min(x + y), TR = min(-x + y), BR = max(x + y), BL = max(-x + y)
+  let bestTL = Infinity, bestTR = Infinity, bestBR = -Infinity, bestBL = -Infinity;
+  let ptTL = { x: tw * 0.1, y: th * 0.1 };
+  let ptTR = { x: tw * 0.9, y: th * 0.1 };
+  let ptBR = { x: tw * 0.9, y: th * 0.9 };
+  let ptBL = { x: tw * 0.1, y: th * 0.9 };
+
+  for (let y = 1; y < th - 1; y++) {
+    for (let x = 1; x < tw - 1; x++) {
+      if (edgeMag[y * tw + x] < threshold) continue;
+      const s = x + y;       // TL score (lower = more TL)
+      const d1 = -x + y;     // TR score (lower = more TR)
+      const s2 = x - y;      // BL score (higher = more BL)
+      const d2 = -(x + y);   // BR score (more negative = more BR, i.e. we want max x+y)
+
+      if (s < bestTL) { bestTL = s; ptTL = { x, y }; }
+      if (d1 < bestTR) { bestTR = d1; ptTR = { x, y }; }
+      if (-d2 > bestBR) { bestBR = -d2; ptBR = { x, y }; }
+      if (s2 > bestBL) { bestBL = s2; ptBL = { x, y }; }
+    }
+  }
+
+  // Sanity check: detected quad should have reasonable area
+  const detectedArea =
+    0.5 * Math.abs(
+      (ptTR.x - ptTL.x) * (ptBR.y - ptTL.y) -
+      (ptBR.x - ptTL.x) * (ptTR.y - ptTL.y)
+    );
+  const imageArea = tw * th;
+  if (detectedArea < imageArea * 0.05) return null; // quad too small, detection unreliable
+
+  // Scale corners back to display canvas size
+  const invScale = 1 / scale;
+  return [ptTL, ptTR, ptBR, ptBL].map(p => ({
+    x: p.x * invScale,
+    y: p.y * invScale,
+  }));
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 type Stage = "pick" | "adjust" | "processing" | "preview";
 
@@ -128,6 +220,7 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
   const [dragging, setDragging] = useState<number | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [autoDetected, setAutoDetected] = useState(false);
 
   const srcCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -141,6 +234,7 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
     setDragging(null);
     setPreviewUrl(null);
     setPreviewFile(null);
+    setAutoDetected(false);
     srcOffscreenRef.current = null;
   }, []);
 
@@ -148,13 +242,23 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
     if (!open) resetState();
   }, [open, resetState]);
 
+  const defaultCorners = (dw: number, dh: number): Point[] => {
+    const inX = dw * 0.08;
+    const inY = dh * 0.08;
+    return [
+      { x: inX, y: inY },
+      { x: dw - inX, y: inY },
+      { x: dw - inX, y: dh - inY },
+      { x: inX, y: dh - inY },
+    ];
+  };
+
   const loadImage = useCallback((file: File) => {
     setOriginalName(file.name);
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      // Offscreen canvas capped at 1400px
       const maxDim = 1400;
       const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
       const iw = Math.round(img.width * scale);
@@ -163,40 +267,54 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
       const offscreen = document.createElement("canvas");
       offscreen.width = iw;
       offscreen.height = ih;
-      const ctx = offscreen.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, iw, ih);
+      offscreen.getContext("2d")!.drawImage(img, 0, 0, iw, ih);
       srcOffscreenRef.current = offscreen;
 
-      // Draw into visible canvas
       const canvas = srcCanvasRef.current;
       if (!canvas) return;
-      const maxW = Math.min(container_w(), 700);
+      const maxW = Math.min((containerRef.current?.clientWidth ?? 700), 700);
       const maxH = 460;
       const dispScale = Math.min(maxW / iw, maxH / ih, 1);
       const dw = Math.round(iw * dispScale);
       const dh = Math.round(ih * dispScale);
       canvas.width = dw;
       canvas.height = dh;
-      const cctx = canvas.getContext("2d")!;
-      cctx.drawImage(offscreen, 0, 0, dw, dh);
+      canvas.getContext("2d")!.drawImage(offscreen, 0, 0, dw, dh);
 
-      // Default corners: 8% inset
-      const inX = dw * 0.08;
-      const inY = dh * 0.08;
-      setCorners([
-        { x: inX, y: inY },
-        { x: dw - inX, y: inY },
-        { x: dw - inX, y: dh - inY },
-        { x: inX, y: dh - inY },
-      ]);
+      // Auto-detect corners on display canvas
+      const detected = detectDocumentCorners(canvas);
+      if (detected) {
+        // Clamp detected corners to canvas bounds
+        const clamped = detected.map(p => ({
+          x: Math.max(0, Math.min(dw, p.x)),
+          y: Math.max(0, Math.min(dh, p.y)),
+        }));
+        setCorners(clamped);
+        setAutoDetected(true);
+      } else {
+        setCorners(defaultCorners(dw, dh));
+        setAutoDetected(false);
+      }
       setStage("adjust");
     };
     img.src = url;
   }, []);
 
-  function container_w() {
-    return containerRef.current?.clientWidth ?? 700;
-  }
+  const resetCorners = useCallback(() => {
+    const canvas = srcCanvasRef.current;
+    if (!canvas) return;
+    const detected = detectDocumentCorners(canvas);
+    if (detected) {
+      setCorners(detected.map(p => ({
+        x: Math.max(0, Math.min(canvas.width, p.x)),
+        y: Math.max(0, Math.min(canvas.height, p.y)),
+      })));
+      setAutoDetected(true);
+    } else {
+      setCorners(defaultCorners(canvas.width, canvas.height));
+      setAutoDetected(false);
+    }
+  }, []);
 
   const applyWarp = useCallback(async () => {
     const srcCanvas = srcCanvasRef.current;
@@ -205,7 +323,6 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
 
     setStage("processing");
 
-    // Scale corners from display canvas to offscreen canvas
     const scaleX = offscreen.width / srcCanvas.width;
     const scaleY = offscreen.height / srcCanvas.height;
     const scaledCorners = corners.map(p => ({ x: p.x * scaleX, y: p.y * scaleY }));
@@ -214,7 +331,6 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
     const outW = Math.round((dist(TL, TR) + dist(BL, BR)) / 2);
     const outH = Math.round((dist(TL, BL) + dist(TR, BR)) / 2);
 
-    // Run warp asynchronously so UI can update
     await new Promise(resolve => setTimeout(resolve, 10));
     const warped = warpPerspective(offscreen, scaledCorners, outW, outH);
 
@@ -245,43 +361,37 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
     setCorners(prev => prev.map((p, i) => i === dragging ? { x, y } : p));
   }, [dragging]);
 
-  const handlePointerUp = useCallback(() => {
-    setDragging(null);
-  }, []);
+  const handlePointerUp = useCallback(() => setDragging(null), []);
 
+  // Redraw canvas overlay whenever corners change
   const drawOverlay = useCallback(() => {
     const canvas = srcCanvasRef.current;
     if (!canvas || corners.length !== 4 || stage !== "adjust") return;
     const ctx = canvas.getContext("2d")!;
-    // Redraw image
     const offscreen = srcOffscreenRef.current;
     if (offscreen) ctx.drawImage(offscreen, 0, 0, canvas.width, canvas.height);
-    // Draw quad
+
+    // Draw the quadrilateral
     ctx.strokeStyle = "#22c55e";
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 4]);
     ctx.beginPath();
-    corners.forEach((p, i) => {
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    });
+    corners.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
     ctx.closePath();
     ctx.stroke();
     ctx.setLineDash([]);
   }, [corners, stage]);
 
-  useEffect(() => {
-    drawOverlay();
-  }, [drawOverlay]);
+  useEffect(() => { drawOverlay(); }, [drawOverlay]);
 
   const handleUse = () => {
     if (!previewFile) return;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    onResult(previewFile, previewFile.name);
+    onResult(previewFile);
     onOpenChange(false);
   };
 
-  const HANDLE_SIZE = 22;
+  const HANDLE_SIZE = 24;
   const CORNER_LABELS = ["TL", "TR", "BR", "BL"];
 
   return (
@@ -299,68 +409,48 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
             <div className="flex flex-col items-center gap-4 py-10">
               <p className="text-sm text-muted-foreground text-center">
                 Take a photo of your document or choose an existing image.<br />
-                You can then adjust the corners for perspective correction.
+                Document edges will be detected automatically so you can fine-tune.
               </p>
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  onClick={() => cameraInputRef.current?.click()}
-                >
+                <Button variant="outline" className="flex items-center gap-2" onClick={() => cameraInputRef.current?.click()}>
                   <Camera className="h-4 w-4" /> Take Photo
                 </Button>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <Button variant="outline" className="flex items-center gap-2" onClick={() => fileInputRef.current?.click()}>
                   <Upload className="h-4 w-4" /> Choose Image
                 </Button>
               </div>
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={e => e.target.files?.[0] && loadImage(e.target.files[0])}
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={e => e.target.files?.[0] && loadImage(e.target.files[0])}
-              />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={e => e.target.files?.[0] && loadImage(e.target.files[0])} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                onChange={e => e.target.files?.[0] && loadImage(e.target.files[0])} />
             </div>
           )}
 
           {(stage === "adjust" || stage === "processing") && (
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                Drag the <span className="font-medium text-green-600">corner handles</span> to align with the document edges, then click <strong>Correct &amp; Use</strong>.
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground flex-1">
+                  {autoDetected
+                    ? <><span className="text-green-600 font-medium">Document edges detected.</span> Drag the corner handles to refine, then click <strong>Correct &amp; Use</strong>.</>
+                    : <>Drag the <span className="font-medium text-green-600">corner handles</span> to align with document edges, then click <strong>Correct &amp; Use</strong>.</>}
+                </p>
+                <Button size="sm" variant="ghost" className="text-xs shrink-0" onClick={resetCorners}>
+                  <Scan className="h-3 w-3 mr-1" /> Re-detect
+                </Button>
+              </div>
               <div
                 className="relative mx-auto select-none"
                 style={{ touchAction: "none" }}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
               >
-                <canvas
-                  ref={srcCanvasRef}
-                  className="block rounded border border-muted"
-                />
+                <canvas ref={srcCanvasRef} className="block rounded border border-muted" />
                 {corners.map((p, i) => (
                   <div
                     key={i}
                     onPointerDown={e => handlePointerDown(e, i)}
                     className="absolute rounded-full bg-green-500 border-2 border-white text-white text-[9px] font-bold flex items-center justify-center cursor-grab active:cursor-grabbing shadow-md"
-                    style={{
-                      width: HANDLE_SIZE,
-                      height: HANDLE_SIZE,
-                      left: p.x - HANDLE_SIZE / 2,
-                      top: p.y - HANDLE_SIZE / 2,
-                    }}
+                    style={{ width: HANDLE_SIZE, height: HANDLE_SIZE, left: p.x - HANDLE_SIZE / 2, top: p.y - HANDLE_SIZE / 2 }}
                   >
                     {CORNER_LABELS[i]}
                   </div>
@@ -370,17 +460,10 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
                 <Button variant="ghost" size="sm" onClick={resetState}>
                   <RotateCcw className="h-4 w-4 mr-1" /> Retake
                 </Button>
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  size="sm"
-                  onClick={applyWarp}
-                  disabled={stage === "processing"}
-                >
-                  {stage === "processing" ? (
-                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Processing…</>
-                  ) : (
-                    <><Check className="h-4 w-4 mr-1" /> Correct &amp; Use</>
-                  )}
+                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm" onClick={applyWarp} disabled={stage === "processing"}>
+                  {stage === "processing"
+                    ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Processing…</>
+                    : <><Check className="h-4 w-4 mr-1" />Correct &amp; Use</>}
                 </Button>
               </div>
             </div>
@@ -389,22 +472,14 @@ export default function DocumentScanner({ open, onOpenChange, onResult }: Docume
           {stage === "preview" && previewUrl && (
             <div className="flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">
-                Perspective-corrected result. Looks good? Click <strong>Use This</strong> to upload it.
+                Perspective-corrected result. Click <strong>Use This</strong> to upload.
               </p>
-              <img
-                src={previewUrl}
-                alt="Corrected scan"
-                className="max-h-80 object-contain mx-auto rounded border border-muted"
-              />
+              <img src={previewUrl} alt="Corrected scan" className="max-h-80 object-contain mx-auto rounded border border-muted" />
               <div className="flex gap-2 justify-end">
                 <Button variant="ghost" size="sm" onClick={resetState}>
                   <RotateCcw className="h-4 w-4 mr-1" /> Start Over
                 </Button>
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  size="sm"
-                  onClick={handleUse}
-                >
+                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm" onClick={handleUse}>
                   <Check className="h-4 w-4 mr-1" /> Use This
                 </Button>
               </div>
