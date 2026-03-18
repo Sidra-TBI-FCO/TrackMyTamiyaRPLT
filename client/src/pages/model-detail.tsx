@@ -504,7 +504,7 @@ export default function ModelDetail() {
           </Card>
 
           {/* Mobile Quick Actions - Show only on mobile, above tabs */}
-          <Card className="lg:hidden mb-6">
+          <Card className="lg:hidden">
             <CardContent className="p-3">
               <div className="grid grid-cols-3 gap-2">
                 <Button 
@@ -534,6 +534,11 @@ export default function ModelDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Resources - mobile only (desktop version is in the sidebar) */}
+          <div className="lg:hidden mb-2">
+            <ModelResources modelId={model.id} />
+          </div>
 
           {/* Tabs for different sections */}
           <Tabs defaultValue="photos" className="w-full">
@@ -1300,7 +1305,7 @@ export default function ModelDetail() {
           </Card>
 
           {/* Resources */}
-          <ModelResources modelId={model.id} />
+          <ModelResources modelId={model.id} className="hidden lg:block" />
 
           {/* Share Settings */}
           <Card>

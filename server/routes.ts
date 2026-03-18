@@ -82,20 +82,23 @@ const upload = multer({
   }
 });
 
-// Document upload multer (images + PDFs up to 20MB)
+// Document upload multer (images, PDFs, Word, Excel up to 20MB)
 const uploadDocument = multer({
   storage: storage_multer,
   fileFilter: (req, file, cb) => {
-    const allowedMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf', 'application/octet-stream', ''];
-    const allowedExt = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf'];
+    const allowedExt = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf', '.doc', '.docx', '.xls', '.xlsx'];
     const ext = path.extname(file.originalname).toLowerCase();
-    if (file.mimetype.startsWith('image/') || file.mimetype.includes('pdf') || allowedMime.includes(file.mimetype) || allowedExt.includes(ext)) {
+    const isImage = file.mimetype.startsWith('image/');
+    const isPdf = file.mimetype.includes('pdf');
+    const isDoc = file.mimetype.includes('word') || file.mimetype.includes('document') || file.mimetype.includes('sheet') || file.mimetype.includes('excel') || file.mimetype.includes('spreadsheet');
+    const isBinary = file.mimetype === 'application/octet-stream' || file.mimetype === '';
+    if (isImage || isPdf || isDoc || (isBinary && allowedExt.includes(ext)) || allowedExt.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Only images and PDFs are allowed for documents') as any, false);
+      cb(new Error('Allowed types: images, PDF, Word, Excel') as any, false);
     }
   },
-  limits: { fileSize: 20 * 1024 * 1024, files: 1 }
+  limits: { fileSize: 20 * 1024 * 1024, files: 5 }
 });
 
 // Helper function to get user ID from authenticated user
@@ -2817,30 +2820,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/models/:modelId/documents', isAuthenticated, uploadDocument.single('file'), async (req, res) => {
+  app.post('/api/models/:modelId/documents', isAuthenticated, uploadDocument.array('file', 5), async (req, res) => {
     try {
       const userId = getUserId(req);
       const modelId = parseInt(req.params.modelId);
-      const file = req.file;
-      if (!file) return res.status(400).json({ message: 'No file uploaded' });
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) return res.status(400).json({ message: 'No file uploaded' });
 
-      const ext = path.extname(file.originalname).toLowerCase();
-      const filename = `documents/${userId}/${modelId}/${Date.now()}${ext}`;
-      const url = await fileStorage.uploadFile(file, filename);
+      // Verify the model belongs to the authenticated user
+      const model = await storage.getModel(modelId, userId);
+      if (!model) return res.status(403).json({ message: 'Model not found or access denied' });
 
-      fs.unlink(file.path, () => {});
+      const description = req.body.description || null;
+      const documentType = req.body.documentType || 'other';
 
-      const doc = await storage.createModelDocument({
-        modelId,
-        userId,
-        filename,
-        originalName: file.originalname,
-        url,
-        description: req.body.description || null,
-        documentType: req.body.documentType || 'other',
-        fileSize: file.size,
-      });
-      res.json(doc);
+      const docs = [];
+      for (const file of files) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        // Flat key compatible with /api/files/:filename single-segment route
+        const gcsKey = `model-doc-${modelId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
+        const savedFilename = await fileStorage.uploadFile(file, gcsKey);
+        const url = fileStorage.getFileUrl(savedFilename);
+
+        const doc = await storage.createModelDocument({
+          modelId,
+          userId,
+          filename: savedFilename,
+          originalName: file.originalname,
+          url,
+          description,
+          documentType,
+          fileSize: file.size,
+        });
+        docs.push(doc);
+      }
+      res.json(docs.length === 1 ? docs[0] : docs);
     } catch (error: any) {
       console.error('Document upload error:', error);
       res.status(500).json({ message: 'Failed to upload document' });
