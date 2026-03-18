@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, insertMotorSchema, insertEscSchema, insertServoSchema, insertReceiverSchema, insertHopUpLibrarySchema, insertModelDocumentSchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
+import { insertModelSchema, insertPhotoSchema, insertBuildLogEntrySchema, insertHopUpPartSchema, insertFeedbackPostSchema, insertMotorSchema, insertEscSchema, insertServoSchema, insertReceiverSchema, insertHopUpLibrarySchema, pricingTiers, purchases, users, feedbackPosts } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -2867,8 +2867,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const model = await storage.getModel(modelId, userId);
       if (!model) return res.status(403).json({ message: 'Model not found or access denied' });
 
+      const VALID_DOC_TYPES = ['manual', 'setup_sheet', 'leaflet', 'other'];
       const description = req.body.description || null;
-      const documentType = req.body.documentType || 'other';
+      const documentType = VALID_DOC_TYPES.includes(req.body.documentType) ? req.body.documentType : 'other';
 
       const docs = [];
       for (const file of files) {
@@ -2905,10 +2906,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getUserId(req);
       const docId = parseInt(req.params.docId);
-      const { description, documentType } = req.body;
-      const updated = await storage.updateModelDocument(docId, userId, { description, documentType });
+      const modelId = parseInt(req.params.modelId);
+      const VALID_TYPES = ['manual', 'setup_sheet', 'leaflet', 'other'];
+
+      // Verify document belongs to this model and user
+      const docs = await storage.getModelDocuments(modelId, userId);
+      if (!docs.find(d => d.id === docId)) return res.status(404).json({ message: 'Document not found' });
+
+      const { description } = req.body;
+      const documentType = VALID_TYPES.includes(req.body.documentType) ? req.body.documentType : undefined;
+      const updated = await storage.updateModelDocument(docId, userId, {
+        ...(description !== undefined ? { description: description || null } : {}),
+        ...(documentType ? { documentType } : {}),
+      });
       if (!updated) return res.status(404).json({ message: 'Document not found' });
-      res.json(updated);
+      res.json({ ...updated, url: `/api/models/${modelId}/documents/${updated.id}/download` });
     } catch (error: any) {
       res.status(500).json({ message: 'Failed to update document' });
     }
