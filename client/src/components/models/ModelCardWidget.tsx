@@ -45,10 +45,12 @@ export default function ModelCardWidget({ model }: Props) {
 
   const { data: rawPrefs } = useQuery<Record<string, boolean>>({
     queryKey: ["/api/user/card-print-prefs"],
+    refetchOnMount: "always",
   });
 
   const { data: dbLogos = [] } = useQuery<BrandLogo[]>({
     queryKey: ["/api/brand-logos"],
+    refetchOnMount: "always",
   });
 
   if (!model.name) return null;
