@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EditModelDialog from "@/components/models/edit-model-dialog";
+import ModelCardWidget from "@/components/models/ModelCardWidget";
 import ModelResources from "@/components/resources/ModelResources";
 import AddPhotoDialog from "@/components/photos/add-photo-dialog";
 import PhotoSlideshow from "@/components/photos/photo-slideshow";
@@ -538,6 +539,11 @@ export default function ModelDetail() {
           {/* Resources - mobile only (desktop version is in the sidebar) */}
           <div className="lg:hidden mb-2">
             <ModelResources modelId={model.id} />
+          </div>
+
+          {/* Card Preview Widget - mobile only */}
+          <div className="lg:hidden mb-2">
+            <ModelCardWidget model={model} />
           </div>
 
           {/* Tabs for different sections */}
@@ -1067,6 +1073,9 @@ export default function ModelDetail() {
 
         {/* Desktop Sidebar - Hidden on Mobile */}
         <div className="hidden lg:block space-y-6">
+          {/* Card Preview Widget - desktop only */}
+          <ModelCardWidget model={model} />
+
           {/* Model Info */}
           <Card>
             <CardHeader>

@@ -110,6 +110,10 @@ const DEFAULT_CARD_PREFS = {
   showReleaseYear: false,
 };
 
+export async function printSingleModelCard(model: ModelWithRelations) {
+  await printModelCards([model]);
+}
+
 export async function printModelCards(models: ModelWithRelations[]) {
   if (!models || models.length === 0) {
     alert("No models to print.");
