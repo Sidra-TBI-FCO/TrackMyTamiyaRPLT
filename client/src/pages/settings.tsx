@@ -120,10 +120,92 @@ const DEFAULT_CARD_PREFS = {
   showReleaseYear: false,
 };
 
+const PREVIEW_MOCK = {
+  name: "Lancia Delta HF Integrale",
+  chassis: "TT-01E",
+  scale: "1/10",
+  itemNumber: "58422",
+  releaseYear: "1993",
+};
+
+function ModelCardPreview({ prefs }: { prefs: typeof DEFAULT_CARD_PREFS }) {
+  return (
+    <div className="flex flex-col items-center gap-1 my-4">
+      <div
+        className="relative bg-white rounded overflow-hidden"
+        style={{ width: 270, height: 180, border: "1px solid #ddd", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+      >
+        {/* Crop mark corners */}
+        <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-gray-300" />
+        <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-gray-300" />
+        <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-gray-300" />
+        <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-gray-300" />
+
+        {/* Tamiya stamp — top-left */}
+        {prefs.showRcBrand && (
+          <img
+            src="/brand_logos/Tamiya.png"
+            alt="Tamiya"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            style={{ position: "absolute", top: 9, left: 9, width: 117, height: 63, objectFit: "contain", objectPosition: "left center" }}
+          />
+        )}
+
+        {/* Car make logo — top-right */}
+        {prefs.showCarMake && (
+          <img
+            src="/brand_logos/Lancia.png"
+            alt="Brand"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+            style={{ position: "absolute", top: 9, right: 9, width: 117, height: 63, objectFit: "contain", objectPosition: "right center" }}
+          />
+        )}
+
+        {/* Model name + chassis — vertically centered */}
+        <div style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", left: 12, right: 12, textAlign: "center" }}>
+          <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontWeight: "bold", fontSize: 13, color: "#1e1e1e", margin: 0, lineHeight: 1.35 }}>
+            {PREVIEW_MOCK.name}
+          </p>
+          {prefs.showChassis && (
+            <p style={{ fontFamily: "Helvetica, Arial, sans-serif", fontSize: 10, color: "#5a5a5a", margin: "3px 0 0 0" }}>
+              {PREVIEW_MOCK.chassis}
+            </p>
+          )}
+        </div>
+
+        {/* Bottom row — scale / year / item number */}
+        <div style={{ position: "absolute", bottom: 8, left: 9, right: 9, display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "Courier New, monospace", fontSize: 8, color: "#3c3c3c" }}>
+            {prefs.showScale ? PREVIEW_MOCK.scale : ""}
+          </span>
+          <span style={{ fontFamily: "Courier New, monospace", fontSize: 8, color: "#3c3c3c" }}>
+            {prefs.showReleaseYear ? PREVIEW_MOCK.releaseYear : ""}
+          </span>
+          <span style={{ fontFamily: "Courier New, monospace", fontSize: 8, color: "#3c3c3c" }}>
+            {prefs.showItemNumber ? PREVIEW_MOCK.itemNumber : ""}
+          </span>
+        </div>
+
+        {/* "preview" label */}
+        <div style={{
+          position: "absolute", top: 3, left: "50%", transform: "translateX(-50%)",
+          background: "#f3f4f6", color: "#9ca3af", fontSize: 8, fontFamily: "monospace",
+          padding: "1px 5px", borderRadius: 3, pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap"
+        }}>
+          preview
+        </div>
+      </div>
+      <p style={{ fontSize: 11, color: "#9ca3af", fontFamily: "monospace", margin: 0 }}>
+        Sample card — 90 × 60 mm
+      </p>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SlideshowSettings>(getSlideshowSettings());
   const [appSettings, setAppSettings] = useState(getAppSettings());
-  const [cardPrintPrefs, setCardPrintPrefs] = useState(DEFAULT_CARD_PREFS);
+  const [cardPrintPrefs, setCardPrintPrefs] = useState<Partial<typeof DEFAULT_CARD_PREFS>>({});
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [clientSecret, setClientSecret] = useState<string>("");
@@ -301,7 +383,7 @@ export default function SettingsPage() {
     },
   });
 
-  const effectiveCardPrintPrefs = { ...DEFAULT_CARD_PREFS, ...(fetchedCardPrintPrefs || {}) };
+  const effectiveCardPrintPrefs = { ...DEFAULT_CARD_PREFS, ...(fetchedCardPrintPrefs || {}), ...cardPrintPrefs };
 
   const toggleCardPref = (key: keyof typeof DEFAULT_CARD_PREFS) => {
     const updated = { ...effectiveCardPrintPrefs, [key]: !effectiveCardPrintPrefs[key] };
@@ -803,6 +885,9 @@ export default function SettingsPage() {
           <p className="text-sm font-mono text-gray-600 dark:text-gray-400">
             Choose which fields appear on your printed model cards.
           </p>
+
+          <ModelCardPreview prefs={effectiveCardPrintPrefs} />
+
           <div className="space-y-3">
             {([
               { key: "showRcBrand", label: "RC Brand Logo", description: "Tamiya stamp top-left" },

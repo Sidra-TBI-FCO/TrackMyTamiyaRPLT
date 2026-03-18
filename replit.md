@@ -90,11 +90,21 @@ The application employs a full-stack TypeScript architecture, utilizing React fo
 
 ### Model Resources Section
 - `model_documents` table: `id`, `model_id`, `user_id`, `filename`, `original_name`, `url`, `description`, `document_type` (manual / setup_sheet / leaflet / other), `file_size`, `created_at`
-- Files stored in GCS under `documents/<userId>/<modelId>/<timestamp>.<ext>`
+- Files stored in GCS under `model-documents/<modelId>-<timestamp>-<rand>.<ext>`
 - API: `GET/POST /api/models/:modelId/documents`, `PATCH/DELETE /api/models/:modelId/documents/:docId`
+- Protected download: `GET /api/models/:modelId/documents/:docId/download` — verifies ownership before streaming from GCS; all URLs returned to clients point to this endpoint (not raw GCS URLs)
+- `documentType` validated against explicit enum ('manual', 'setup_sheet', 'leaflet', 'other') in POST and PATCH routes
 - Document scanner: camera or file picker → perspective-correction UI with 4 draggable corner handles → homography warp → corrected JPEG uploaded
 - **ModelResources** card appears in the model-detail sidebar below Quick Actions; supports Upload File, Scan Document, inline edit (type + description), delete
 - Components: `client/src/components/resources/DocumentScanner.tsx`, `client/src/components/resources/ModelResources.tsx`
+- BigQuery migration: `migrations/2026-03-model-documents-bigquery.sql`
+
+### Print Card Preview Widget
+- Live 270×180 px HTML card mock (exact 90×60mm ratio) rendered inside Settings → Print Card Layout section
+- Updates **instantly** as toggles are changed (local state layer on top of server prefs, no API round-trip delay)
+- Shows: Tamiya stamp (if RC Brand Logo ON), Lancia logo (if Car Make Logo ON), name "Lancia Delta HF Integrale", chassis "TT-01E" (if Chassis ON), scale "1/10" (if Scale ON), year "1993" (if Release Year ON), item number "58422" (if Item Number ON)
+- `ModelCardPreview` component defined inline in `client/src/pages/settings.tsx`
+- `cardPrintPrefs` state is now `Partial<typeof DEFAULT_CARD_PREFS>` (starts empty, populated only on toggle) so server prefs are respected on load and local overrides apply immediately on toggle
 
 ### Recent Migrations
 -   **2025-12-field-options-management.sql**: Creates the field_options table for admin-managed dropdown values. Automatically populates with existing values from models and hop_up_parts tables, plus default options. Run this on production database to enable the Field Options admin feature.
