@@ -504,6 +504,11 @@ export default function ModelDetail() {
             </CardContent>
           </Card>
 
+          {/* Card Preview Widget - mobile only, below photo, above quick actions */}
+          <div className="lg:hidden mb-4">
+            <ModelCardWidget model={model} />
+          </div>
+
           {/* Mobile Quick Actions - Show only on mobile, above tabs */}
           <Card className="lg:hidden">
             <CardContent className="p-3">
@@ -539,11 +544,6 @@ export default function ModelDetail() {
           {/* Resources - mobile only (desktop version is in the sidebar) */}
           <div className="lg:hidden mb-2">
             <ModelResources modelId={model.id} />
-          </div>
-
-          {/* Card Preview Widget - mobile only */}
-          <div className="lg:hidden mb-2">
-            <ModelCardWidget model={model} />
           </div>
 
           {/* Tabs for different sections */}
