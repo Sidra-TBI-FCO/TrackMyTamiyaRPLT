@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SlideshowProvider } from "@/lib/slideshow-context";
 import { ThemeProvider } from "@/lib/theme-context";
-import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 // Marketing pages
@@ -44,6 +43,14 @@ import MarketingHeader from "@/components/layout/marketing-header";
 // Marketing routes that should always be accessible
 const MARKETING_ROUTES = ['/features', '/screenshots', '/pricing', '/download', '/disclaimer', '/feedback', '/auth', '/forgot-password', '/reset-password', '/community'];
 
+function AuthLoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400" />
+    </div>
+  );
+}
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -61,9 +68,11 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
-      
-      {/* Protected application routes */}
-      {isLoading || !isAuthenticated ? (
+
+      {/* While auth is being checked, show a spinner instead of NotFound */}
+      {isLoading ? (
+        <Route component={AuthLoadingSpinner} />
+      ) : !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
         <>
