@@ -20,7 +20,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Camera, Mic, MicOff, Trash2, Upload, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon, Camera, Mic, MicOff, Trash2, Upload, X } from "lucide-react";
 import { insertBuildLogEntrySchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -283,21 +286,59 @@ export default function BuildLogEntryDialog({
             <FormField
               control={form.control}
               name="entryDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-mono">Entry Date</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="datetime-local"
-                      {...field}
-                      value={field.value ? (typeof field.value === 'string' ? new Date(field.value).toISOString().slice(0, 16) : field.value.toISOString().slice(0, 16)) : ""}
-                      onChange={(e) => field.onChange(new Date(e.target.value).toISOString())}
-                      className="font-mono"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const currentDate = field.value ? new Date(field.value) : new Date();
+                const timeString = `${currentDate.getHours().toString().padStart(2, '0')}:${currentDate.getMinutes().toString().padStart(2, '0')}`;
+
+                const handleDateSelect = (date: Date | undefined) => {
+                  if (!date) return;
+                  const [h, m] = timeString.split(':').map(Number);
+                  const combined = new Date(date);
+                  combined.setHours(h, m, 0, 0);
+                  field.onChange(combined.toISOString());
+                };
+
+                const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const [h, m] = e.target.value.split(':').map(Number);
+                  const combined = new Date(field.value || new Date());
+                  combined.setHours(h || 0, m || 0, 0, 0);
+                  field.onChange(combined.toISOString());
+                };
+
+                return (
+                  <FormItem>
+                    <FormLabel className="font-mono">Entry Date</FormLabel>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="flex-1 justify-start text-left font-mono font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                            {currentDate ? format(currentDate, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={currentDate}
+                            onSelect={handleDateSelect}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Input
+                        type="time"
+                        value={timeString}
+                        onChange={handleTimeChange}
+                        className="w-32 font-mono"
+                      />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
