@@ -1819,32 +1819,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Build log entry not found' });
       }
 
-      const uploadedPhotos = [];
+      const uploadedPhotos = await Promise.all(
+        files.map(async (file, i) => {
+          const caption = req.body[`caption_${i}`] || '';
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const caption = req.body[`caption_${i}`] || '';
+          // Upload file to GCS
+          const storedFile = await fileStorage.uploadFile(file, file.originalname);
 
-        // Upload file to storage
-        const storedFile = await fileStorage.uploadFile(file, file.originalname);
-        
-        // Create photo record with actual modelId from entry
-        const photoData = {
-          modelId: entry.modelId,
-          filename: storedFile,
-          originalName: file.originalname,
-          url: `/api/files/${storedFile}`,
-          caption,
-          isBoxArt: false,
-        };
+          // Create photo record with actual modelId from entry
+          const photoData = {
+            modelId: entry.modelId,
+            filename: storedFile,
+            originalName: file.originalname,
+            url: `/api/files/${storedFile}`,
+            caption,
+            isBoxArt: false,
+          };
 
-        const photo = await storage.createPhoto(photoData);
-        
-        // Link photo to build log entry
-        await storage.addPhotosToEntry(entryId, [photo.id]);
-        
-        uploadedPhotos.push(photo);
-      }
+          const photo = await storage.createPhoto(photoData);
+
+          // Link photo to build log entry
+          await storage.addPhotosToEntry(entryId, [photo.id]);
+
+          return photo;
+        })
+      );
 
       res.status(201).json(uploadedPhotos);
     } catch (error: any) {

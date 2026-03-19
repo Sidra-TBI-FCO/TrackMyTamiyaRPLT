@@ -59,6 +59,7 @@ export default function BuildLogEntryDialog({
   const [isRecording, setIsRecording] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Array<{ file: File; caption: string }>>([]);
   const [selectedExistingPhotos, setSelectedExistingPhotos] = useState<Array<{ id: number; caption: string }>>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
@@ -142,15 +143,20 @@ export default function BuildLogEntryDialog({
         : await apiRequest("POST", `/api/models/${modelId}/build-log-entries`, entryData);
       
       const response = await responseRaw.json();
-      
+
+      // Upload photos one at a time so each stays within the request timeout
       if (selectedFiles.length > 0) {
-        const formData = new FormData();
-        selectedFiles.forEach((item, index) => {
+        setUploadProgress({ current: 0, total: selectedFiles.length });
+        for (let i = 0; i < selectedFiles.length; i++) {
+          setUploadProgress({ current: i + 1, total: selectedFiles.length });
+          const item = selectedFiles[i];
+          const formData = new FormData();
           formData.append('photos', item.file);
-          formData.append(`caption_${index}`, item.caption);
-        });
-        formData.append('buildLogEntryId', response.id.toString());
-        await apiRequest("POST", `/api/build-log-entries/${response.id}/photos`, formData);
+          formData.append('caption_0', item.caption);
+          formData.append('buildLogEntryId', response.id.toString());
+          await apiRequest("POST", `/api/build-log-entries/${response.id}/photos`, formData);
+        }
+        setUploadProgress(null);
       }
 
       if (selectedExistingPhotos.length > 0) {
@@ -175,8 +181,10 @@ export default function BuildLogEntryDialog({
       form.reset();
       setSelectedFiles([]);
       setSelectedExistingPhotos([]);
+      setUploadProgress(null);
     },
     onError: (error: any) => {
+      setUploadProgress(null);
       toast({
         title: "Error",
         description: error.message || "Failed to save build log entry",
@@ -588,11 +596,29 @@ export default function BuildLogEntryDialog({
               )}
             </div>
 
+            {uploadProgress && (
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm font-mono mb-1">
+                    <span>Uploading photo {uploadProgress.current} of {uploadProgress.total}…</span>
+                    <span>{Math.round((uploadProgress.current / uploadProgress.total) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div
+                      className="bg-red-600 h-1.5 rounded-full transition-all duration-300"
+                      style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={createEntryMutation.isPending}
                 className="font-mono"
               >
                 Cancel
@@ -603,7 +629,9 @@ export default function BuildLogEntryDialog({
                 className="bg-red-600 hover:bg-red-700 text-white font-mono"
               >
                 {createEntryMutation.isPending 
-                  ? (existingEntry ? "Updating..." : "Creating...") 
+                  ? (uploadProgress 
+                      ? `Uploading ${uploadProgress.current}/${uploadProgress.total}…` 
+                      : (existingEntry ? "Saving…" : "Creating…"))
                   : (existingEntry ? "Update Entry" : "Create Entry")
                 }
               </Button>
