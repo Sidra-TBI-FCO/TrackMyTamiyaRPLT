@@ -229,8 +229,8 @@ export const modelComments = pgTable("model_comments", {
 // Field options - admin-managed options for multiple choice fields
 export const fieldOptions = pgTable("field_options", {
   id: serial("id").primaryKey(),
-  fieldKey: varchar("field_key", { length: 50 }).notNull(), // e.g., "scale", "driveType", "chassisMaterial"
-  value: varchar("value", { length: 100 }).notNull(), // The stored value (also displayed)
+  fieldKey: varchar("field_key", { length: 100 }).notNull(), // e.g., "scale", "driveType", "chassisMaterial"
+  value: varchar("value", { length: 255 }).notNull(), // The stored value (also displayed)
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
