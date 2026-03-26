@@ -7,10 +7,15 @@ TrackMyRC is a comprehensive web application for tracking and managing RC car mo
 - Preferred communication style: Simple, everyday language.
 - Public-facing contact/feedback email: `trackmyrc25@gmail.com` (used on pricing page and feedback links — NOT the personal email)
 
+### Deployment
+- **Production host:** Google Cloud (NOT Replit's deploy/publish system — never suggest "Redeploy" or "Publish" on Replit)
+- **CI/CD:** GitHub → Google Cloud build trigger
+- **Production env vars:** Must be set manually in the Google Cloud console (e.g. Cloud Run environment variables or Secret Manager)
+
 ### Database Setup
 - **Provider:** Neon serverless PostgreSQL
-- **Connection:** App uses `NEON_DATABASE_URL` secret (pooler endpoint) — takes priority over Replit's runtime `DATABASE_URL`
-- **Migrations:** Use `npm run db:push` to sync schema changes (Drizzle ORM)
+- **Connection:** App uses `NEON_DATABASE_URL` env var (pooler endpoint) — takes priority over Replit's runtime `DATABASE_URL`
+- **Migrations:** Use `npm run db:push` (with `DATABASE_URL` overridden to Neon URL) to sync schema changes (Drizzle ORM)
 - **Backup location:** `DatabaseBackups/` folder (excluded from Git)
 
 ### System Architecture
