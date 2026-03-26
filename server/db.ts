@@ -3,17 +3,23 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
 // NEON_DATABASE_URL takes priority over Replit's runtime-managed DATABASE_URL
-const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+const rawConnectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
 
-if (!connectionString && !process.env.PGHOST) {
+if (!rawConnectionString && !process.env.PGHOST) {
   throw new Error(
     "Either NEON_DATABASE_URL, DATABASE_URL or PG* credentials must be set",
   );
 }
 
+function ensureSsl(url: string): string {
+  if (url.includes('sslmode=')) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'sslmode=require';
+}
+
 let poolConfig: pg.PoolConfig;
 
-if (connectionString) {
+if (rawConnectionString) {
+  const connectionString = ensureSsl(rawConnectionString);
   const provider = process.env.NEON_DATABASE_URL ? 'Neon' : 'Postgres';
   console.log(`🔒 Database: Connecting to ${provider} with SSL`);
   poolConfig = {
