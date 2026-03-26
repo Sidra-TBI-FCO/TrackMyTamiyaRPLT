@@ -63,13 +63,18 @@ export function AdminFieldOptions() {
     queryKey: ["/api/admin/field-options"],
   });
 
+  const invalidateFieldOptions = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/field-options"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/field-options"] });
+  };
+
   const createMutation = useMutation({
     mutationFn: async (option: { fieldKey: string; value: string }) => {
       const res = await apiRequest("POST", "/api/admin/field-options", option);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/field-options"] });
+      invalidateFieldOptions();
       setIsAddOpen(false);
       setNewValue("");
       toast({ title: "Option added successfully" });
@@ -84,7 +89,7 @@ export function AdminFieldOptions() {
       await apiRequest("DELETE", `/api/admin/field-options/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/field-options"] });
+      invalidateFieldOptions();
       toast({ title: "Option deleted successfully" });
     },
     onError: (error: any) => {
@@ -98,7 +103,7 @@ export function AdminFieldOptions() {
       return res.json();
     },
     onSuccess: (data: { recordsUpdated: number }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/field-options"] });
+      invalidateFieldOptions();
       setIsReplaceOpen(false);
       setSelectedOption(null);
       setReplaceValue("");
@@ -120,6 +125,7 @@ export function AdminFieldOptions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/field-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/field-options"] });
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to reorder options", variant: "destructive" });
