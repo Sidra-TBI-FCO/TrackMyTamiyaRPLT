@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, RefreshCw, AlertTriangle, Check, X, Edit2 } from "lucide-react";
+import { Plus, Trash2, RefreshCw, AlertTriangle, Check, X, Edit2, ChevronUp, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { FIELD_OPTION_KEYS, type FieldOption, type FieldOptionKey } from "@shared/schema";
@@ -114,7 +114,27 @@ export function AdminFieldOptions() {
     enabled: !!selectedOption && isReplaceOpen,
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedIds: number[]) => {
+      await apiRequest("PUT", "/api/admin/field-options/reorder", { orderedIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/field-options"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reorder options", variant: "destructive" });
+    },
+  });
+
   const options = data?.options?.[selectedField] || [];
+
+  const handleMove = (index: number, direction: "up" | "down") => {
+    const newOptions = [...options];
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= newOptions.length) return;
+    [newOptions[index], newOptions[swapIndex]] = [newOptions[swapIndex], newOptions[index]];
+    reorderMutation.mutate(newOptions.map(o => o.id));
+  };
 
   const handleAddOption = () => {
     if (!newValue.trim()) return;
@@ -197,10 +217,10 @@ export function AdminFieldOptions() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-16">#</TableHead>
+                <TableHead className="w-20">Order</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead className="w-24">Status</TableHead>
-                <TableHead className="w-32 text-right">Actions</TableHead>
+                <TableHead className="w-40 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -213,7 +233,31 @@ export function AdminFieldOptions() {
               ) : (
                 options.map((option, index) => (
                   <TableRow key={option.id}>
-                    <TableCell className="font-mono text-muted-foreground">{index + 1}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-muted-foreground w-5 text-sm">{index + 1}</span>
+                        <div className="flex flex-col">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            disabled={index === 0 || reorderMutation.isPending}
+                            onClick={() => handleMove(index, "up")}
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0"
+                            disabled={index === options.length - 1 || reorderMutation.isPending}
+                            onClick={() => handleMove(index, "down")}
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">{option.value}</TableCell>
                     <TableCell>
                       {option.isActive ? (

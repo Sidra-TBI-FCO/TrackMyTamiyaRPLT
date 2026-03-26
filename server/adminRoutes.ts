@@ -4,7 +4,7 @@ import {
   users, models, photos, purchases, pricingTiers, adminAuditLog, userActivityLog,
   featureScreenshots, insertPricingTierSchema, insertPurchaseSchema, insertAdminAuditLogSchema,
   insertFeatureScreenshotSchema, FIELD_OPTION_KEYS, insertFieldOptionSchema, feedbackPosts, feedbackVotes,
-  modelComments, motors, escs, servos, receivers, hopUpLibrary
+  modelComments, motors, escs, servos, receivers, hopUpLibrary, fieldOptions
 } from "@shared/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAdmin, getClientIP } from "./adminMiddleware";
@@ -952,6 +952,25 @@ router.get("/field-options/:id/usage", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin get field option usage error:", error);
     res.status(500).json({ message: "Failed to get usage count" });
+  }
+});
+
+// PUT /api/admin/field-options/reorder - Reorder field options
+router.put("/field-options/reorder", requireAdmin, async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds) || orderedIds.some(id => typeof id !== "number")) {
+      return res.status(400).json({ message: "orderedIds must be an array of numbers" });
+    }
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        db.update(fieldOptions).set({ sortOrder: index * 10 }).where(eq(fieldOptions.id, id))
+      )
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Reorder field options error:", error);
+    res.status(500).json({ message: "Failed to reorder options" });
   }
 });
 
