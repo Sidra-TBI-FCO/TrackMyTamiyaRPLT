@@ -5,8 +5,13 @@ TrackMyRC is a comprehensive web application for tracking and managing RC car mo
 
 ### User Preferences
 - Preferred communication style: Simple, everyday language.
-- Production database: Google BigQuery (NOT PostgreSQL) - always write migrations in BigQuery SQL syntax.
 - Public-facing contact/feedback email: `trackmyrc25@gmail.com` (used on pricing page and feedback links — NOT the personal email)
+
+### Database Setup
+- **Provider:** Neon serverless PostgreSQL
+- **Connection:** App uses `NEON_DATABASE_URL` secret (pooler endpoint) — takes priority over Replit's runtime `DATABASE_URL`
+- **Migrations:** Use `npm run db:push` to sync schema changes (Drizzle ORM)
+- **Backup location:** `DatabaseBackups/` folder (excluded from Git)
 
 ### System Architecture
 The application employs a full-stack TypeScript architecture, utilizing React for the frontend, Express.js for the backend, and PostgreSQL as the database. It leverages modern web technologies including shadcn/ui components, Tailwind CSS for styling, and Drizzle ORM for database interactions.
