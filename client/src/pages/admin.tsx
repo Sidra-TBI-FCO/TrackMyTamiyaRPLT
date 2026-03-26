@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, DollarSign, Activity, Image, Settings, Share2, List, MessageSquare, Tag } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Users, DollarSign, Activity, Image, Settings, Share2, List, MessageSquare, Tag, Database, CheckCircle2, XCircle } from "lucide-react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPricing } from "@/components/admin/AdminPricing";
@@ -14,12 +15,25 @@ import { AdminFieldOptions } from "@/components/admin/AdminFieldOptions";
 import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { AdminBrandLogos } from "@/components/admin/AdminBrandLogos";
 
+interface DbInfo {
+  provider: string;
+  host: string;
+  database: string;
+  version: string;
+  connected: boolean;
+}
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   
   // Check if user is admin
   const { data: user, isLoading } = useQuery<{ isAdmin?: boolean }>({
     queryKey: ["/api/auth/user"],
+  });
+
+  const { data: dbInfo } = useQuery<DbInfo>({
+    queryKey: ["/api/admin/db-info"],
+    enabled: !!user?.isAdmin,
   });
   
   if (isLoading) {
@@ -55,14 +69,34 @@ export default function AdminPage() {
   
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Shield className="w-8 h-8 text-[var(--theme-primary)]" />
-          Admin Panel
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage users, pricing, and monitor system activity
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Shield className="w-8 h-8 text-[var(--theme-primary)]" />
+            Admin Panel
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage users, pricing, and monitor system activity
+          </p>
+        </div>
+        {dbInfo && (
+          <div className="flex items-center gap-2 bg-muted/50 border rounded-lg px-3 py-2 text-sm">
+            <Database className="w-4 h-4 text-muted-foreground shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                {dbInfo.connected
+                  ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                  : <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                }
+                <span className="font-medium">{dbInfo.provider}</span>
+                <Badge variant="outline" className="text-xs py-0 h-5">
+                  {dbInfo.connected ? "Connected" : "Error"}
+                </Badge>
+              </div>
+              <span className="text-xs text-muted-foreground truncate">{dbInfo.host} · {dbInfo.database} · {dbInfo.version}</span>
+            </div>
+          </div>
+        )}
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

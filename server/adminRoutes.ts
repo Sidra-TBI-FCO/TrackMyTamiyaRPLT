@@ -103,6 +103,33 @@ router.get("/dashboard", requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/db-info - Database connection info
+router.get("/db-info", requireAdmin, async (req, res) => {
+  try {
+    const connStr = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || "";
+    const isNeon = !!process.env.NEON_DATABASE_URL;
+    let host = "unknown";
+    try {
+      const url = new URL(connStr);
+      host = url.hostname;
+    } catch {}
+
+    // Run a quick query to confirm connectivity
+    const result = await db.execute(sql`SELECT current_database() as db_name, version() as version`);
+    const row = result.rows[0] as any;
+
+    res.json({
+      provider: isNeon ? "Neon PostgreSQL" : "Replit PostgreSQL",
+      host,
+      database: row?.db_name || "unknown",
+      version: (row?.version || "").split(" ").slice(0, 2).join(" "),
+      connected: true,
+    });
+  } catch (error) {
+    res.json({ provider: "Unknown", host: "unknown", database: "unknown", version: "unknown", connected: false });
+  }
+});
+
 // GET /api/admin/users - Get all users with stats
 router.get("/users", requireAdmin, async (req, res) => {
   try {
