@@ -20,6 +20,7 @@ interface BuildLogListProps {
 
 export default function BuildLogList({ modelId, modelName }: BuildLogListProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: entries, isLoading } = useQuery<BuildLogEntryWithPhotos[]>({
@@ -150,10 +151,7 @@ export default function BuildLogList({ modelId, modelName }: BuildLogListProps) 
             <BuildLogEntry
               key={entry.id}
               entry={entry}
-              onEdit={() => {
-                // TODO: Implement edit functionality
-                console.log("Edit entry", entry.id);
-              }}
+              onEdit={() => setEditingEntry(entry)}
               onDelete={() => {
                 // TODO: Implement delete functionality
                 console.log("Delete entry", entry.id);
@@ -201,6 +199,15 @@ export default function BuildLogList({ modelId, modelName }: BuildLogListProps) 
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         nextEntryNumber={nextEntryNumber}
+      />
+
+      {/* Edit Entry Dialog */}
+      <BuildLogEntryDialog
+        modelId={modelId}
+        open={!!editingEntry}
+        onOpenChange={(open) => { if (!open) setEditingEntry(null); }}
+        nextEntryNumber={nextEntryNumber}
+        existingEntry={editingEntry}
       />
     </div>
   );
