@@ -2,6 +2,7 @@ import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 import { setupTraditionalAuth } from "./traditionalAuth";
 import { setupGoogleAuth } from "./googleAuth";
 import { setupMobileAuth, getMobileUser } from "./mobileAuth";
@@ -9,10 +10,8 @@ import { setupMobileAuth, getMobileUser } from "./mobileAuth";
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
-  // Use same SSL-disabled connection string as main database
-  const connectionString = process.env.DATABASE_URL?.replace('?sslmode=require', '?sslmode=disable') || process.env.DATABASE_URL;
   const sessionStore = new pgStore({
-    conString: connectionString,
+    pool,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
