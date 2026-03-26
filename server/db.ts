@@ -11,47 +11,25 @@ if (!connectionString && !process.env.PGHOST) {
   );
 }
 
-function parsePostgresUrl(url: string) {
-  const parsed = new URL(url);
-  return {
-    host: parsed.hostname,
-    port: parseInt(parsed.port || '5432'),
-    database: parsed.pathname.slice(1),
-    user: parsed.username,
-    password: parsed.password,
-  };
-}
-
 let poolConfig: pg.PoolConfig;
 
 if (connectionString) {
-  const dbConfig = parsePostgresUrl(connectionString);
+  const provider = process.env.NEON_DATABASE_URL ? 'Neon' : 'Postgres';
+  console.log(`🔒 Database: Connecting to ${provider} with SSL`);
   poolConfig = {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    database: dbConfig.database,
-    user: dbConfig.user,
-    password: dbConfig.password,
-    ssl: {
-      rejectUnauthorized: false,
-      minVersion: 'TLSv1.2'
-    }
+    connectionString,
+    ssl: { rejectUnauthorized: false },
   };
-  const provider = process.env.NEON_DATABASE_URL ? 'Neon' : 'Replit Postgres';
-  console.log(`🔒 Database: Connected to ${provider} with SSL`);
 } else {
+  console.log('🔒 Database: Connecting via PG* variables with SSL');
   poolConfig = {
     host: process.env.PGHOST,
     port: parseInt(process.env.PGPORT || '5432'),
     database: process.env.PGDATABASE,
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
-    ssl: {
-      rejectUnauthorized: false,
-      minVersion: 'TLSv1.2'
-    }
+    ssl: { rejectUnauthorized: false },
   };
-  console.log('🔒 Database: Connected via PG* variables with explicit SSL config');
 }
 
 export const pool = new pg.Pool(poolConfig);
