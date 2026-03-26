@@ -7,3 +7,6 @@ vite.config.ts.*
 
 # Sensitive user assets - contains screenshots, personal images, and sensitive data
 attached_assets/
+
+# Database backups - never sync to Git
+DatabaseBackups/

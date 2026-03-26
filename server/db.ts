@@ -2,9 +2,12 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL && !process.env.PGHOST) {
+// NEON_DATABASE_URL takes priority over Replit's runtime-managed DATABASE_URL
+const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!connectionString && !process.env.PGHOST) {
   throw new Error(
-    "Either DATABASE_URL or Google Cloud SQL credentials must be set",
+    "Either NEON_DATABASE_URL, DATABASE_URL or PG* credentials must be set",
   );
 }
 
@@ -13,7 +16,7 @@ function parsePostgresUrl(url: string) {
   return {
     host: parsed.hostname,
     port: parseInt(parsed.port || '5432'),
-    database: parsed.pathname.slice(1), // Remove leading /
+    database: parsed.pathname.slice(1),
     user: parsed.username,
     password: parsed.password,
   };
@@ -21,11 +24,8 @@ function parsePostgresUrl(url: string) {
 
 let poolConfig: pg.PoolConfig;
 
-if (process.env.DATABASE_URL) {
-  // Parse DATABASE_URL manually to avoid env var conflicts
-  const dbConfig = parsePostgresUrl(process.env.DATABASE_URL);
-  
-  // Build explicit config that overrides any env SSL settings
+if (connectionString) {
+  const dbConfig = parsePostgresUrl(connectionString);
   poolConfig = {
     host: dbConfig.host,
     port: dbConfig.port,
@@ -33,13 +33,13 @@ if (process.env.DATABASE_URL) {
     user: dbConfig.user,
     password: dbConfig.password,
     ssl: {
-      rejectUnauthorized: false,  // Force disable certificate verification
+      rejectUnauthorized: false,
       minVersion: 'TLSv1.2'
     }
   };
-  console.log('🔒 Database: Connected with explicit SSL config (rejectUnauthorized: false)');
+  const provider = process.env.NEON_DATABASE_URL ? 'Neon' : 'Replit Postgres';
+  console.log(`🔒 Database: Connected to ${provider} with SSL`);
 } else {
-  // Fallback to PG* variables with explicit SSL config
   poolConfig = {
     host: process.env.PGHOST,
     port: parseInt(process.env.PGPORT || '5432'),
